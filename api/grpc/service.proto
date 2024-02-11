@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package awakari.int.activitypub;
+
+option go_package = "./api/grpc";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+service Service {
+  rpc Create(CreateRequest) returns (CreateResponse);
+  rpc Read(ReadRequest) returns (ReadResponse);
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
+  rpc ListUrls(ListUrlsRequest) returns (ListUrlsResponse);
+}
+
+message CreateRequest {
+}
+
+message CreateResponse {
+}
+
+message ReadRequest {
+}
+
+message ReadResponse {
+}
+
+message DeleteRequest {
+}
+
+message DeleteResponse {
+}
+
+message ListUrlsRequest {
+  Filter filter = 1;
+  uint32 limit = 2;
+  string cursor = 3;
+  Order order = 4;
+}
+
+enum Order {
+  ASC = 0;
+  DESC = 1;
+}
+
+message ListUrlsResponse {
+  repeated string page = 1;
+}
+
+message Filter {
+  string groupId = 1;
+  string userId = 2;
+  string pattern = 3;
+}

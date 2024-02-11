@@ -35,10 +35,6 @@ spec:
             - name: API_HTTP_PORT
               value: "{{ .Values.service.http.port }}"
             {{- range .Values.ingressHttpV1.hosts }}
-            {{- range .paths }}
-            - name: API_HTTP_PATH
-              value: "{{ .path }}"
-            {{- end }}
             - name: API_HTTP_HOST
               value: "{{ .host }}"
             {{- end }}
@@ -74,40 +70,16 @@ spec:
               value: "{{ .Values.db.tls.insecure }}"
             - name: LOG_LEVEL
               value: "{{ .Values.log.level }}"
-            - name: FEED_TLS_SKIP_VERIFY
-              value: "{{ .Values.feed.tls.skipVerify }}"
-            - name: FEED_UPDATE_TIMEOUT
-              value: "{{ .Values.feed.update.timeout }}"
-            - name: FEED_UPDATE_PERIOD_JITTER
-              value: "{{ .Values.feed.update.period.jitter }}"
-            - name: FEED_USER_AGENT
-              value: "{{ .Values.feed.userAgent }}"
-            - name: MSG_MD_KEY_FEED_CATEGORIES
-              value: "{{ .Values.message.metadata.key.feedCategories }}"
-            - name: MSG_MD_KEY_FEED_DESCRIPTION
-              value: "{{ .Values.message.metadata.key.feedDescription }}"
-            - name: MSG_MD_KEY_FEED_IMAGE_TITLE
-              value: "{{ .Values.message.metadata.key.feedImageTitle }}"
-            - name: MSG_MD_KEY_FEED_IMAGE_URL
-              value: "{{ .Values.message.metadata.key.feedImageUrl }}"
-            - name: MSG_MD_KEY_FEED_TITLE
-              value: "{{ .Values.message.metadata.key.feedTitle }}"
-            - name: MSG_MD_KEY_AUTHOR
-              value: "{{ .Values.message.metadata.key.author }}"
-            - name: MSG_MD_KEY_CATEGORIES
-              value: "{{ .Values.message.metadata.key.categories }}"
-            - name: MSG_MD_KEY_IMAGE_TITLE
-              value: "{{ .Values.message.metadata.key.imageTitle }}"
-            - name: MSG_MD_KEY_IMAGE_URL
-              value: "{{ .Values.message.metadata.key.imageUrl }}"
-            - name: MSG_MD_KEY_LANGUAGE
-              value: "{{ .Values.message.metadata.key.language }}"
-            - name: MSG_MD_KEY_SUMMARY
-              value: "{{ .Values.message.metadata.key.summary }}"
-            - name: MSG_MD_KEY_TITLE
-              value: "{{ .Values.message.metadata.key.title }}"
-            - name: MSG_MD_SPEC_VERSION
-              value: "{{ .Values.message.metadata.specVersion }}"
+            - name: API_KEY_PUBLIC
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ include "int-activitypub.fullname" . }}-keys"
+                  key: public
+            - name: API_KEY_PRIVATE
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ include "int-activitypub.fullname" . }}-keys"
+                  key: private
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
