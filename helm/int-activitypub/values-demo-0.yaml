@@ -1,0 +1,21 @@
+api:
+  writer:
+    uri: "api:50051"
+
+# prod
+cert:
+  acme:
+    server: "https://acme-v02.api.letsencrypt.org/directory"
+  issuer:
+    name: letsencrypt
+
+ingressHttpV1:
+  hosts:
+    - host: activitypub.awakari.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: secret-activitypub-tls-server
+      hosts:
+        - activitypub.awakari.com

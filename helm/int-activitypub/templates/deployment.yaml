@@ -1,0 +1,148 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "int-activitypub.fullname" . }}
+  labels:
+    {{- include "int-activitypub.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "int-activitypub.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "int-activitypub.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "int-activitypub.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          env:
+            - name: API_PORT
+              value: "{{ .Values.service.port }}"
+            - name: API_HTTP_PORT
+              value: "{{ .Values.service.http.port }}"
+            {{- range .Values.ingressHttpV1.hosts }}
+            {{- range .paths }}
+            - name: API_HTTP_PATH
+              value: "{{ .path }}"
+            {{- end }}
+            - name: API_HTTP_HOST
+              value: "{{ .host }}"
+            {{- end }}
+            - name: API_WRITER_BACKOFF
+              value: "{{ .Values.api.writer.backoff }}"
+            - name: API_WRITER_BATCH_SIZE
+              value: "{{ .Values.api.writer.batchSize }}"
+            - name: API_WRITER_URI
+              value: "{{ .Values.api.writer.uri }}"
+            - name: DB_URI
+              value: "{{ .Values.db.protocol }}://{{ .Values.db.hostname }}/?retryWrites=true&w=majority"
+            - name: DB_NAME
+              value: {{ .Values.db.name }}
+            - name: DB_USERNAME
+              value: {{ .Values.db.username }}
+            {{- if .Values.db.password.secret.enabled }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.db.password.secret.name }}"
+                  key: "{{ .Values.db.password.secret.key }}"
+            {{- else }}
+            - name: DB_PASSWORD
+              value: "{{ .Values.db.password.raw }}"
+            {{- end }}
+            - name: DB_TABLE_NAME
+              value: {{ .Values.db.table.name }}
+            - name: DB_TABLE_SHARD
+              value: "{{ .Values.db.table.shard }}"
+            - name: DB_TLS_ENABLED
+              value: "{{ .Values.db.tls.enabled }}"
+            - name: DB_TLS_INSECURE
+              value: "{{ .Values.db.tls.insecure }}"
+            - name: LOG_LEVEL
+              value: "{{ .Values.log.level }}"
+            - name: FEED_TLS_SKIP_VERIFY
+              value: "{{ .Values.feed.tls.skipVerify }}"
+            - name: FEED_UPDATE_TIMEOUT
+              value: "{{ .Values.feed.update.timeout }}"
+            - name: FEED_UPDATE_PERIOD_JITTER
+              value: "{{ .Values.feed.update.period.jitter }}"
+            - name: FEED_USER_AGENT
+              value: "{{ .Values.feed.userAgent }}"
+            - name: MSG_MD_KEY_FEED_CATEGORIES
+              value: "{{ .Values.message.metadata.key.feedCategories }}"
+            - name: MSG_MD_KEY_FEED_DESCRIPTION
+              value: "{{ .Values.message.metadata.key.feedDescription }}"
+            - name: MSG_MD_KEY_FEED_IMAGE_TITLE
+              value: "{{ .Values.message.metadata.key.feedImageTitle }}"
+            - name: MSG_MD_KEY_FEED_IMAGE_URL
+              value: "{{ .Values.message.metadata.key.feedImageUrl }}"
+            - name: MSG_MD_KEY_FEED_TITLE
+              value: "{{ .Values.message.metadata.key.feedTitle }}"
+            - name: MSG_MD_KEY_AUTHOR
+              value: "{{ .Values.message.metadata.key.author }}"
+            - name: MSG_MD_KEY_CATEGORIES
+              value: "{{ .Values.message.metadata.key.categories }}"
+            - name: MSG_MD_KEY_IMAGE_TITLE
+              value: "{{ .Values.message.metadata.key.imageTitle }}"
+            - name: MSG_MD_KEY_IMAGE_URL
+              value: "{{ .Values.message.metadata.key.imageUrl }}"
+            - name: MSG_MD_KEY_LANGUAGE
+              value: "{{ .Values.message.metadata.key.language }}"
+            - name: MSG_MD_KEY_SUMMARY
+              value: "{{ .Values.message.metadata.key.summary }}"
+            - name: MSG_MD_KEY_TITLE
+              value: "{{ .Values.message.metadata.key.title }}"
+            - name: MSG_MD_SPEC_VERSION
+              value: "{{ .Values.message.metadata.specVersion }}"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            grpc:
+              port: {{ .Values.service.port }}
+          readinessProbe:
+            grpc:
+              port: {{ .Values.service.port }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "int-activitypub.name" . }}

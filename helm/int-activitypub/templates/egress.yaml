@@ -1,0 +1,19 @@
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: int-activitypub-allow-fetch-from-internet
+spec:
+  policyTypes:
+    - Egress
+  podSelector:
+    matchLabels:
+      app: int-activitypub
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    ports:
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 443

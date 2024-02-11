@@ -1,0 +1,15 @@
+{{- $fullName := include "int-activitypub.fullname" . -}}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: "{{ .Values.cert.issuer.name }}-int-activitypub"
+spec:
+  acme:
+    server: {{ .Values.cert.acme.server }}
+    email: {{ .Values.cert.acme.email }}
+    privateKeySecretRef:
+      name: {{ .Values.cert.issuer.name }}
+    solvers:
+      - http01:
+          ingress:
+            name: "{{ $fullName }}-http-v1"

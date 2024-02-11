@@ -1,0 +1,74 @@
+name: Staging
+
+on:
+  push:
+    branches:
+      - "master"
+
+env:
+  COMPONENT: int-activitypub
+  VERSION: latest
+  CHART_VERSION: 0.0.0
+
+jobs:
+
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v2
+
+      - name: Registry login
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_ACCESS_TOKEN }}
+
+      - name: Staging
+        run: make staging
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.12.0
+
+      - name: Helm Lint
+        run: |
+          helm lint helm/${COMPONENT}
+
+      - name: Helm Package
+        run: |
+          helm dependency update helm/${COMPONENT}
+          mkdir helm/package
+          helm package helm/${COMPONENT} --destination helm/package
+          cd helm/package
+          helm repo index .
+
+      - name: Publish Helm Chart
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: helm/package/
+
+      - name: Google Cloud Auth
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GKE_SA_KEY }}'
+
+      - uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.GKE_RPOJECT_ID }}
+
+      - name: Kubeconfig
+        run: |
+          gcloud components install gke-gcloud-auth-plugin
+          gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME_DEMO }} \
+            --region ${{ secrets.GKE_CLUSTER_REGION }} \
+            --project ${{ secrets.GKE_PROJECT_ID }}
+
+      - name: Helm Upgrade
+        run: |
+          helm upgrade --install ${COMPONENT} helm/package/${COMPONENT}-0.0.0.tgz \
+            --values helm/int-activitypub/values-demo-0.yaml \
+            --set podAnnotations.commit=$(git rev-parse --short HEAD),db.password.secret.enabled=false,db.protocol=mongodb+srv,db.tls.enabled=true,db.tls.insecure=true,db.hostname=${{ secrets.DB_HOST_DEMO }},db.username=${{ secrets.DB_USERNAME_DEMO }},db.password.raw=${{ secrets.DB_PASSWORD_DEMO }}

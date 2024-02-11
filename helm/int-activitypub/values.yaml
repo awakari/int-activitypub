@@ -1,0 +1,124 @@
+# Default values for int-activitypub.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/awakari/int-activitypub
+  pullPolicy: Always
+  tag: "latest"
+imagePullSecrets:
+  - name: github-registry
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 50051
+  http:
+    port: 8080
+
+ingress:
+  enabled: false
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+  hosts:
+    - host: int-activitypub.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+ingressHttpV1:
+  enabled: true
+  hosts:
+    - host: activitypub.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: secret-activitypub-tls-server
+      hosts:
+        - activitypub.local
+
+resources:
+  requests:
+    cpu: 1m
+    memory: 16Mi
+  limits:
+    cpu: 100m
+    memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationValue: 1000m
+  targetMemoryUtilizationValue: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+api:
+  writer:
+    backoff: "10s"
+    batchSize: 16
+    uri: "resolver:50051"
+cert:
+  acme:
+    email: "awakari@awakari.com"
+    server: "https://acme-staging-v02.api.letsencrypt.org/directory"
+  issuer:
+    name: letsencrypt-staging
+db:
+  protocol: mongodb
+  hostname: "mongodb:27017"
+  # Database name to use.
+  name: int-activitypub
+  username: ""
+  password:
+    raw: "" # used if db.password.secret.enabled is false
+    secret:
+      enabled: false
+      name: "mongodb"
+      key: "mongodb-root-password"
+  table:
+    # Database table name to use.
+    name: int-activitypub
+    shard: true
+  tls:
+    enabled: false
+    insecure: false
+log:
+  # https://pkg.go.dev/golang.org/x/exp/slog#Level
+  level: -4
