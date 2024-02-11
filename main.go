@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"github.com/awakari/client-sdk-go/api"
 	apiGrpc "github.com/awakari/int-activitypub/api/grpc"
-	"github.com/awakari/int-activitypub/api/http"
+	apiHttp "github.com/awakari/int-activitypub/api/http"
 	"github.com/awakari/int-activitypub/config"
 	"github.com/awakari/int-activitypub/service"
 	"github.com/awakari/int-activitypub/storage"
 	"github.com/gin-gonic/gin"
+	"io"
 	"log/slog"
+	"net/http"
 	"os"
 )
 
@@ -55,7 +57,7 @@ func main() {
 		}
 	}()
 	//
-	a := http.Actor{
+	a := apiHttp.Actor{
 		Context: []string{
 			"https://www.w3.org/ns/activitystreams",
 			"https://w3id.org/security/v1",
@@ -68,17 +70,17 @@ func main() {
 		Outbox:            fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host),
 		Following:         fmt.Sprintf("https://%s/following", cfg.Api.Http.Host),
 		Followers:         fmt.Sprintf("https://%s/followers", cfg.Api.Http.Host),
-		PublicKey: http.ActorPublicKey{
+		PublicKey: apiHttp.ActorPublicKey{
 			Id:           fmt.Sprintf("https://%s/actor#main-key", cfg.Api.Http.Host),
 			Owner:        fmt.Sprintf("https://%s/actor", cfg.Api.Http.Host),
 			PublicKeyPem: cfg.Api.Key.Public,
 		},
 	}
-	ha := http.NewActorHandler(a)
+	ha := apiHttp.NewActorHandler(a)
 	//
-	wf := http.WebFinger{
+	wf := apiHttp.WebFinger{
 		Subject: fmt.Sprintf("acct:awakari@%s", cfg.Api.Http.Host),
-		Links: []http.WebFingerLink{
+		Links: []apiHttp.WebFingerLink{
 			{
 				Rel:  "self",
 				Type: "application/activity+json",
@@ -86,11 +88,19 @@ func main() {
 			},
 		},
 	}
-	hwf := http.NewWebFingerHandler(wf)
+	hwf := apiHttp.NewWebFingerHandler(wf)
 	//
 	r := gin.Default()
 	r.GET("/actor", ha.Handle)
 	r.GET("/.well-known/webfinger", hwf.Handle)
+	r.POST("/inbox", func(ctx *gin.Context) {
+		data, err := io.ReadAll(io.LimitReader(ctx.Request.Body, 65536))
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("Incoming Activity:%s\n", string(data))
+		ctx.Status(http.StatusOK)
+	})
 	log.Info(fmt.Sprintf("starting to listen the HTTP API @ port #%d...", cfg.Api.Http.Port))
 	err = r.Run(fmt.Sprintf(":%d", cfg.Api.Http.Port))
 	if err != nil {
