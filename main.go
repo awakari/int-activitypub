@@ -28,6 +28,7 @@ func main() {
 	//
 	var stor storage.Storage
 	//stor, err = storage.NewStorage(context.TODO(), cfg.Db)
+	stor = storage.NewStorageMock()
 	if err != nil {
 		panic(fmt.Sprintf("failed to initialize the storage: %s", err))
 	}
@@ -54,7 +55,7 @@ func main() {
 		}
 	}()
 	//
-	actor := http.Actor{
+	a := http.Actor{
 		Context: []string{
 			"https://www.w3.org/ns/activitystreams",
 			"https://w3id.org/security/v1",
@@ -73,10 +74,23 @@ func main() {
 			PublicKeyPem: cfg.Api.Key.Public,
 		},
 	}
-	handlerActor := http.NewActorHandler(actor)
+	ha := http.NewActorHandler(a)
+	//
+	wf := http.WebFinger{
+		Subject: fmt.Sprintf("acct:awakari@%s", cfg.Api.Http.Host),
+		Links: []http.WebFingerLink{
+			{
+				Rel:  "self",
+				Type: "application/activity+json",
+				Href: "https://mastodon.social/users/awakari",
+			},
+		},
+	}
+	hwf := http.NewWebFingerHandler(wf)
 	//
 	r := gin.Default()
-	r.GET("/actor", handlerActor.Handle)
+	r.GET("/actor", ha.Handle)
+	r.GET("/.well-known/webfinger", hwf.Handle)
 	log.Info(fmt.Sprintf("starting to listen the HTTP API @ port #%d...", cfg.Api.Http.Port))
 	err = r.Run(fmt.Sprintf(":%d", cfg.Api.Http.Port))
 	if err != nil {
