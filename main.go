@@ -84,7 +84,7 @@ func main() {
 			{
 				Rel:  "self",
 				Type: "application/activity+json",
-				Href: "https://mastodon.social/users/awakari",
+				Href: fmt.Sprintf("https://%s/actor", cfg.Api.Http.Host),
 			},
 		},
 	}
