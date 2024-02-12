@@ -62,7 +62,7 @@ func main() {
 			"https://www.w3.org/ns/activitystreams",
 			"https://w3id.org/security/v1",
 		},
-		Type:              "Person",
+		Type:              "Service",
 		Id:                fmt.Sprintf("https://%s/actor", cfg.Api.Http.Host),
 		Name:              "Awakari",
 		PreferredUsername: "Awakari",
@@ -70,6 +70,7 @@ func main() {
 		Outbox:            fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host),
 		Following:         fmt.Sprintf("https://%s/following", cfg.Api.Http.Host),
 		Followers:         fmt.Sprintf("https://%s/followers", cfg.Api.Http.Host),
+		Summary:           "ActivityPub Bot: https://awakari.com",
 		PublicKey: apiHttp.ActorPublicKey{
 			Id:           fmt.Sprintf("https://%s/actor#main-key", cfg.Api.Http.Host),
 			Owner:        fmt.Sprintf("https://%s/actor", cfg.Api.Http.Host),
@@ -98,7 +99,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("Incoming Activity:%s\n", string(data))
+		fmt.Printf("Incoming Activity:\nHeaders: %+v\nBody: %s\n", ctx.Request.Header, string(data))
 		ctx.Status(http.StatusOK)
 	})
 	log.Info(fmt.Sprintf("starting to listen the HTTP API @ port #%d...", cfg.Api.Http.Port))

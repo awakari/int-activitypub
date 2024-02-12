@@ -15,6 +15,7 @@ type Actor struct {
 	Outbox            string         `json:"outbox"`
 	Following         string         `json:"following"`
 	Followers         string         `json:"followers"`
+	Summary           string         `json:"summary"`
 	PublicKey         ActorPublicKey `json:"publicKey"`
 }
 
