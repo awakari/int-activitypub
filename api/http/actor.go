@@ -15,7 +15,11 @@ type Actor struct {
 	Outbox            string         `json:"outbox"`
 	Following         string         `json:"following"`
 	Followers         string         `json:"followers"`
+	Endpoints         ActorEndpoints `json:"endpoints"`
+	Url               string         `json:"url"`
 	Summary           string         `json:"summary"`
+	Icon              ActorMedia     `json:"icon"`
+	Image             ActorMedia     `json:"image"`
 	PublicKey         ActorPublicKey `json:"publicKey"`
 }
 
@@ -23,6 +27,16 @@ type ActorPublicKey struct {
 	Id           string `json:"id"`
 	Owner        string `json:"owner"`
 	PublicKeyPem string `json:"publicKeyPem"`
+}
+
+type ActorEndpoints struct {
+	SharedInbox string `json:"sharedInbox"`
+}
+
+type ActorMedia struct {
+	MediaType string `json:"mediaType"`
+	Type      string `json:"type"`
+	Url       string `json:"url"`
 }
 
 type actorHandler struct {

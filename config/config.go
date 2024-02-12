@@ -34,8 +34,14 @@ type DbConfig struct {
 	UserName string `envconfig:"DB_USERNAME" default:""`
 	Password string `envconfig:"DB_PASSWORD" default:""`
 	Table    struct {
-		Name  string `envconfig:"DB_TABLE_NAME" default:"int-activitypub" required:"true"`
-		Shard bool   `envconfig:"DB_TABLE_SHARD" default:"true"`
+		Followers struct {
+			Name  string `envconfig:"DB_TABLE_NAME_FOLLOWERS" default:"followers" required:"true"`
+			Shard bool   `envconfig:"DB_TABLE_SHARD_FOLLOWERS" default:"true"`
+		}
+		Following struct {
+			Name  string `envconfig:"DB_TABLE_NAME_FOLLOWING" default:"following" required:"true"`
+			Shard bool   `envconfig:"DB_TABLE_SHARD_FOLLOWING" default:"true"`
+		}
 	}
 	Tls struct {
 		Enabled  bool `envconfig:"DB_TLS_ENABLED" default:"false" required:"true"`

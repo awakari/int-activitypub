@@ -114,8 +114,12 @@ db:
       key: "mongodb-root-password"
   table:
     # Database table name to use.
-    name: int-activitypub
-    shard: true
+    name:
+      followers: followers
+      following: following
+    shard:
+      followers: true
+      following: true
   tls:
     enabled: false
     insecure: false

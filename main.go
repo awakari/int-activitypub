@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/awakari/client-sdk-go/api"
 	apiGrpc "github.com/awakari/int-activitypub/api/grpc"
@@ -9,10 +10,13 @@ import (
 	"github.com/awakari/int-activitypub/service"
 	"github.com/awakari/int-activitypub/storage"
 	"github.com/gin-gonic/gin"
+	"github.com/superseriousbusiness/httpsig"
+	"golang.org/x/crypto/ssh"
 	"io"
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 )
 
 func main() {
@@ -70,7 +74,21 @@ func main() {
 		Outbox:            fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host),
 		Following:         fmt.Sprintf("https://%s/following", cfg.Api.Http.Host),
 		Followers:         fmt.Sprintf("https://%s/followers", cfg.Api.Http.Host),
-		Summary:           "ActivityPub Bot: https://awakari.com",
+		Endpoints: apiHttp.ActorEndpoints{
+			SharedInbox: fmt.Sprintf("https://%s/inbox", cfg.Api.Http.Host),
+		},
+		Url:     "https://awakari.com",
+		Summary: "Awakari ActivityPub Bot",
+		Icon: apiHttp.ActorMedia{
+			MediaType: "image/png",
+			Type:      "Image",
+			Url:       "https://awakari.com/logo-color-64.png",
+		},
+		Image: apiHttp.ActorMedia{
+			MediaType: "image/svg+xml",
+			Type:      "Image",
+			Url:       "https://awakari.com/logo-color.svg",
+		},
 		PublicKey: apiHttp.ActorPublicKey{
 			Id:           fmt.Sprintf("https://%s/actor#main-key", cfg.Api.Http.Host),
 			Owner:        fmt.Sprintf("https://%s/actor", cfg.Api.Http.Host),
@@ -103,8 +121,62 @@ func main() {
 		ctx.Status(http.StatusOK)
 	})
 	log.Info(fmt.Sprintf("starting to listen the HTTP API @ port #%d...", cfg.Api.Http.Port))
+	go func() {
+		time.Sleep(5 * time.Second)
+		err = follow([]byte(cfg.Api.Key.Private), cfg.Api.Http.Host)
+		if err != nil {
+			fmt.Printf("failed to follow: %s\n", err)
+		}
+	}()
 	err = r.Run(fmt.Sprintf(":%d", cfg.Api.Http.Port))
 	if err != nil {
 		panic(err)
 	}
+}
+
+func follow(privKey []byte, host string) (err error) {
+	data := []byte(fmt.Sprintf(`{
+        "@context": "https://www.w3.org/ns/activitystreams",
+        "type": "Follow",
+        "actor": "https://%s/actor",
+        "object": "https://mastodon.social/users/akurilov"
+    }`, host))
+	req, err := http.NewRequest("POST", "https://mastodon.social/users/akurilov/inbox", bytes.NewReader(data))
+	if err != nil {
+		return
+	}
+	req.Header.Set("Content-Type", "application/ld+json; profile=\"http://www.w3.org/ns/activitystreams\"")
+	req.Header.Add("Accept-Charset", "utf-8")
+	req.Header.Add("User-Agent", host)
+	req.Header.Set("Host", "mastodon.social")
+	prefs := []httpsig.Algorithm{httpsig.RSA_SHA256}
+	digestAlgorithm := httpsig.DigestSha256
+	headersToSign := []string{httpsig.RequestTarget, "host", "date", "digest"}
+	signer, _, err := httpsig.NewSigner(prefs, digestAlgorithm, headersToSign, httpsig.Signature, 120)
+	if err != nil {
+		return
+	}
+	now := time.Now().UTC()
+	req.Header.Set("Date", now.Format(http.TimeFormat))
+	priv, err := ssh.ParseRawPrivateKey(privKey)
+	if err != nil {
+		fmt.Printf("failed to parse the private key: %s\n", err)
+		return
+	}
+	err = signer.SignRequest(priv, fmt.Sprintf("https://%s/actor#main-key", host), req, data)
+	if err != nil {
+		fmt.Printf("failed to sign the follow request: %s\n", err)
+		return
+	}
+
+	client := &http.Client{}
+	fmt.Printf("Follow, headers: %+v\n", req.Header)
+	resp, err := client.Do(req)
+	if err == nil {
+		respData, err := io.ReadAll(resp.Body)
+		if err == nil {
+			fmt.Printf("Follow, response status: %d, headers: %+v, content:\n%s\n", resp.StatusCode, resp.Header, string(respData))
+		}
+	}
+	return
 }

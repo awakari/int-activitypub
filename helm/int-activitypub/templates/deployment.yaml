@@ -60,10 +60,14 @@ spec:
             - name: DB_PASSWORD
               value: "{{ .Values.db.password.raw }}"
             {{- end }}
-            - name: DB_TABLE_NAME
-              value: {{ .Values.db.table.name }}
-            - name: DB_TABLE_SHARD
-              value: "{{ .Values.db.table.shard }}"
+            - name: DB_TABLE_NAME_FOLLOWERS
+              value: {{ .Values.db.table.name.followers }}
+            - name: DB_TABLE_SHARD_FOLLOWERS
+              value: "{{ .Values.db.table.shard.followers }}"
+            - name: DB_TABLE_NAME_FOLLOWING
+              value: {{ .Values.db.table.name.following }}
+            - name: DB_TABLE_SHARD_FOLLOWING
+              value: "{{ .Values.db.table.shard.following }}"
             - name: DB_TLS_ENABLED
               value: "{{ .Values.db.tls.enabled }}"
             - name: DB_TLS_INSECURE
