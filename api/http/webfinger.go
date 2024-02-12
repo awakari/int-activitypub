@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -27,6 +28,7 @@ func NewWebFingerHandler(wf WebFinger) Handler {
 }
 
 func (w webFingerHandler) Handle(ctx *gin.Context) {
+	fmt.Printf("WebFinger request headers: %+v\n", ctx.Request.Header)
 	ctx.Writer.Header().Add("Content-Type", "application/jrd+json; charset=utf-8")
 	ctx.JSON(http.StatusOK, w.wf)
 	return
