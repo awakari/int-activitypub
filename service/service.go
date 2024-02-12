@@ -3,8 +3,12 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/awakari/int-activitypub/api/http/activitypub"
 	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/storage"
+	vocab "github.com/go-ap/activitypub"
+	"strings"
 )
 
 type Service interface {
@@ -20,31 +24,62 @@ var ErrNotFound = errors.New("not found")
 var ErrConflict = errors.New("already exists")
 
 type service struct {
-	stor storage.Storage
+	stor           storage.Storage
+	svcActivityPub activitypub.Service
 }
 
-func NewService(stor storage.Storage) Service {
+const acctSep = "@"
+
+func NewService(stor storage.Storage, svcActivityPub activitypub.Service) Service {
 	return service{
-		stor: stor,
+		stor:           stor,
+		svcActivityPub: svcActivityPub,
 	}
 }
 
-func (s service) Follow(ctx context.Context, addr string) (err error) {
+func (svc service) Follow(ctx context.Context, addr string) (err error) {
+	acct := strings.SplitN(addr, acctSep, 3)
+	if len(acct) != 2 {
+		err = fmt.Errorf("%s address to follow: %s, should be <name>@<host>", ErrInvalid, addr)
+	}
+	var host, name string
+	if err == nil {
+		name, host = acct[0], acct[1]
+		if name == "" || host == "" {
+			err = fmt.Errorf("%s address to follow: %s, should be <name>@<host>", ErrInvalid, addr)
+		}
+	}
+	var obj vocab.IRI
+	if err == nil {
+		obj, err = svc.svcActivityPub.ResolveActor(ctx, host, name)
+		if err != nil {
+			err = fmt.Errorf("%w: failed to resolve the actor %s@%s, cause: %s", ErrInvalid, name, host, err)
+		}
+	}
+	var inbox vocab.IRI
+	if err == nil {
+		inbox, err = svc.svcActivityPub.ResolveInbox(ctx, obj)
+		if err != nil {
+			err = fmt.Errorf("%w: failed to resolve the actor's inbox, addr: %s, cause: %s", ErrInvalid, obj, err)
+		}
+	}
+	if err == nil {
+		err = svc.svcActivityPub.RequestFollow(ctx, host, obj, inbox)
+	}
+	return
+}
+
+func (svc service) Read(ctx context.Context, addr string) (a model.Actor, err error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s service) Read(ctx context.Context, addr string) (a model.Actor, err error) {
+func (svc service) List(ctx context.Context, filter model.ActorFilter, limit uint32, cursor string, order model.Order) (page []string, err error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s service) List(ctx context.Context, filter model.ActorFilter, limit uint32, cursor string, order model.Order) (page []string, err error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s service) Unfollow(ctx context.Context, addr string) (err error) {
+func (svc service) Unfollow(ctx context.Context, addr string) (err error) {
 	//TODO implement me
 	panic("implement me")
 }

@@ -1,22 +1,20 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/awakari/client-sdk-go/api"
 	apiGrpc "github.com/awakari/int-activitypub/api/grpc"
 	apiHttp "github.com/awakari/int-activitypub/api/http"
+	"github.com/awakari/int-activitypub/api/http/activitypub"
 	"github.com/awakari/int-activitypub/config"
 	"github.com/awakari/int-activitypub/service"
 	"github.com/awakari/int-activitypub/storage"
 	"github.com/gin-gonic/gin"
-	"github.com/superseriousbusiness/httpsig"
-	"golang.org/x/crypto/ssh"
+	vocab "github.com/go-ap/activitypub"
 	"io"
 	"log/slog"
 	"net/http"
 	"os"
-	"time"
 )
 
 func main() {
@@ -51,7 +49,11 @@ func main() {
 	defer clientAwk.Close()
 	log.Info("initialized the Awakari API client")
 	//
-	svc := service.NewService(stor)
+	clientHttp := &http.Client{}
+	svcActivityPub := activitypub.NewService(clientHttp, cfg.Api.Http.Host, []byte(cfg.Api.Key.Private))
+	svcActivityPub = activitypub.NewLogging(svcActivityPub, log)
+	//
+	svc := service.NewService(stor, svcActivityPub)
 	svc = service.NewLogging(svc, log)
 	//
 	log.Info(fmt.Sprintf("starting to listen the gRPC API @ port #%d...", cfg.Api.Port))
@@ -61,37 +63,37 @@ func main() {
 		}
 	}()
 	//
-	a := apiHttp.Actor{
-		Context: []string{
+	a := vocab.Actor{
+		ID:   vocab.ID(fmt.Sprintf("https://%s/actor", cfg.Api.Http.Host)),
+		Type: vocab.ServiceType,
+		Name: vocab.DefaultNaturalLanguageValue("awakari"),
+		Context: vocab.IRIs{
 			"https://www.w3.org/ns/activitystreams",
 			"https://w3id.org/security/v1",
 		},
-		Type:              "Service",
-		Id:                fmt.Sprintf("https://%s/actor", cfg.Api.Http.Host),
-		Name:              "awakari",
-		PreferredUsername: "awakari",
-		Inbox:             fmt.Sprintf("https://%s/inbox", cfg.Api.Http.Host),
-		Outbox:            fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host),
-		Following:         fmt.Sprintf("https://%s/following", cfg.Api.Http.Host),
-		Followers:         fmt.Sprintf("https://%s/followers", cfg.Api.Http.Host),
-		Endpoints: apiHttp.ActorEndpoints{
-			SharedInbox: fmt.Sprintf("https://%s/inbox", cfg.Api.Http.Host),
-		},
-		Url:     "https://awakari.com",
-		Summary: "Awakari ActivityPub Bot",
-		Icon: apiHttp.ActorMedia{
+		Icon: vocab.Image{
 			MediaType: "image/png",
-			Type:      "Image",
-			Url:       "https://awakari.com/logo-color-64.png",
+			Type:      vocab.ImageType,
+			URL:       vocab.IRI("https://awakari.com/logo-color-64.png"),
 		},
-		Image: apiHttp.ActorMedia{
+		Image: vocab.Image{
 			MediaType: "image/svg+xml",
-			Type:      "Image",
-			Url:       "https://awakari.com/logo-color.svg",
+			Type:      vocab.ImageType,
+			URL:       vocab.IRI("https://awakari.com/logo-color.svg"),
 		},
-		PublicKey: apiHttp.ActorPublicKey{
-			Id:           fmt.Sprintf("https://%s/actor#main-key", cfg.Api.Http.Host),
-			Owner:        fmt.Sprintf("https://%s/actor", cfg.Api.Http.Host),
+		Summary:           vocab.DefaultNaturalLanguageValue("Awakari ActivityPub Bot"),
+		URL:               vocab.IRI("https://awakari.com"),
+		Inbox:             vocab.IRI(fmt.Sprintf("https://%s/inbox", cfg.Api.Http.Host)),
+		Outbox:            vocab.IRI(fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host)),
+		Following:         vocab.IRI(fmt.Sprintf("https://%s/following", cfg.Api.Http.Host)),
+		Followers:         vocab.IRI(fmt.Sprintf("https://%s/followers", cfg.Api.Http.Host)),
+		PreferredUsername: vocab.DefaultNaturalLanguageValue("awakari"),
+		Endpoints: &vocab.Endpoints{
+			SharedInbox: vocab.IRI(fmt.Sprintf("https://%s/inbox", cfg.Api.Http.Host)),
+		},
+		PublicKey: vocab.PublicKey{
+			ID:           vocab.ID(fmt.Sprintf("https://%s/actor#main-key", cfg.Api.Http.Host)),
+			Owner:        vocab.IRI(fmt.Sprintf("https://%s/actor", cfg.Api.Http.Host)),
 			PublicKeyPem: cfg.Api.Key.Public,
 		},
 	}
@@ -121,62 +123,8 @@ func main() {
 		ctx.Status(http.StatusOK)
 	})
 	log.Info(fmt.Sprintf("starting to listen the HTTP API @ port #%d...", cfg.Api.Http.Port))
-	go func() {
-		time.Sleep(5 * time.Second)
-		err = follow([]byte(cfg.Api.Key.Private), cfg.Api.Http.Host)
-		if err != nil {
-			fmt.Printf("failed to follow: %s\n", err)
-		}
-	}()
 	err = r.Run(fmt.Sprintf(":%d", cfg.Api.Http.Port))
 	if err != nil {
 		panic(err)
 	}
-}
-
-func follow(privKey []byte, host string) (err error) {
-	data := []byte(fmt.Sprintf(`{
-        "@context": "https://www.w3.org/ns/activitystreams",
-        "type": "Follow",
-        "actor": "https://%s/actor",
-        "object": "https://mastodon.social/users/akurilov"
-    }`, host))
-	req, err := http.NewRequest("POST", "https://mastodon.social/users/akurilov/inbox", bytes.NewReader(data))
-	if err != nil {
-		return
-	}
-	req.Header.Set("Content-Type", "application/ld+json; profile=\"http://www.w3.org/ns/activitystreams\"")
-	req.Header.Add("Accept-Charset", "utf-8")
-	req.Header.Add("User-Agent", host)
-	req.Header.Set("Host", "mastodon.social")
-	prefs := []httpsig.Algorithm{httpsig.RSA_SHA256}
-	digestAlgorithm := httpsig.DigestSha256
-	headersToSign := []string{httpsig.RequestTarget, "host", "date", "digest"}
-	signer, _, err := httpsig.NewSigner(prefs, digestAlgorithm, headersToSign, httpsig.Signature, 120)
-	if err != nil {
-		return
-	}
-	now := time.Now().UTC()
-	req.Header.Set("Date", now.Format(http.TimeFormat))
-	priv, err := ssh.ParseRawPrivateKey(privKey)
-	if err != nil {
-		fmt.Printf("failed to parse the private key: %s\n", err)
-		return
-	}
-	err = signer.SignRequest(priv, fmt.Sprintf("https://%s/actor#main-key", host), req, data)
-	if err != nil {
-		fmt.Printf("failed to sign the follow request: %s\n", err)
-		return
-	}
-
-	client := &http.Client{}
-	fmt.Printf("Follow, headers: %+v\n", req.Header)
-	resp, err := client.Do(req)
-	if err == nil {
-		respData, err := io.ReadAll(resp.Body)
-		if err == nil {
-			fmt.Printf("Follow, response status: %d, headers: %+v, content:\n%s\n", resp.StatusCode, resp.Header, string(respData))
-		}
-	}
-	return
 }
