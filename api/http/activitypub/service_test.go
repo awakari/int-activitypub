@@ -1,4 +1,4 @@
-package http
+package activitypub
 
 import (
 	"context"

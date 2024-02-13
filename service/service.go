@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/awakari/int-activitypub/api/http"
+	"github.com/awakari/int-activitypub/api/http/activitypub"
 	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/storage"
 	vocab "github.com/go-ap/activitypub"
@@ -13,6 +13,7 @@ import (
 
 type Service interface {
 	RequestFollow(ctx context.Context, addr string) (err error)
+	AcceptFollow(ctx context.Context, addr string) (err error)
 	Read(ctx context.Context, addr string) (a model.Actor, err error)
 	List(ctx context.Context, filter model.ActorFilter, limit uint32, cursor string, order model.Order) (page []string, err error)
 	Unfollow(ctx context.Context, addr string) (err error)
@@ -25,12 +26,12 @@ var ErrConflict = errors.New("already exists")
 
 type service struct {
 	stor           storage.Storage
-	svcActivityPub http.Service
+	svcActivityPub activitypub.Service
 }
 
 const acctSep = "@"
 
-func NewService(stor storage.Storage, svcActivityPub http.Service) Service {
+func NewService(stor storage.Storage, svcActivityPub activitypub.Service) Service {
 	return service{
 		stor:           stor,
 		svcActivityPub: svcActivityPub,
@@ -67,6 +68,11 @@ func (svc service) RequestFollow(ctx context.Context, addr string) (err error) {
 		err = svc.svcActivityPub.RequestFollow(ctx, host, obj, actor.Inbox.GetLink())
 	}
 	return
+}
+
+func (svc service) AcceptFollow(ctx context.Context, addr string) (err error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (svc service) Read(ctx context.Context, addr string) (a model.Actor, err error) {

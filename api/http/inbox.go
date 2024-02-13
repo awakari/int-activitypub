@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"github.com/awakari/int-activitypub/api/http/activitypub"
 	"github.com/gin-gonic/gin"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/superseriousbusiness/httpsig"
@@ -14,10 +15,12 @@ import (
 )
 
 type inboxHandler struct {
-	svc Service
+	svc activitypub.Service
 }
 
-func NewInboxHandler(svc Service) Handler {
+const limitReqBodyLen = 262_144
+
+func NewInboxHandler(svc activitypub.Service) Handler {
 	return inboxHandler{
 		svc: svc,
 	}
@@ -32,9 +35,17 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 		return
 	}
 	//
-	fmt.Printf("Inbox activity %+v from actor: %+v\n", activity.Type, actor.URL.GetLink())
-	ctx.Status(http.StatusOK)
+	fmt.Printf("inbox: %s activity from %s (%s)\n", activity.Type, actor.ID, actor.URL)
+	u, err := actor.URL.GetLink().URL()
+	u.Host
+	switch activity.Type {
+	case vocab.AcceptType:
+		// TODO accept
+	default:
+		// produce event
+	}
 	//
+	ctx.Status(http.StatusOK)
 	return
 }
 
@@ -44,7 +55,7 @@ func (h inboxHandler) verify(ctx *gin.Context) (activity vocab.Activity, actor v
 	//
 	var data []byte
 	if err == nil {
-		data, err = io.ReadAll(io.LimitReader(req.Body, limitRespLen))
+		data, err = io.ReadAll(io.LimitReader(req.Body, limitReqBodyLen))
 	}
 	if err == nil {
 		err = json.Unmarshal(data, &activity)
@@ -60,7 +71,7 @@ func (h inboxHandler) verify(ctx *gin.Context) (activity vocab.Activity, actor v
 	if err == nil {
 		pubKeyId := verifier.KeyId()
 		if pubKeyId != actor.PublicKey.ID.String() {
-			err = fmt.Errorf("the actor pub key id %s doesn't match the request's one %s", actor.PublicKey.ID, pubKeyId)
+			err = fmt.Errorf("the actor pub key %+v doesn't match the request's one %s, activity: %s", actor.PublicKey, pubKeyId, string(data))
 		}
 	}
 	//

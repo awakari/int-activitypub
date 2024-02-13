@@ -25,6 +25,12 @@ func (l logging) RequestFollow(ctx context.Context, addr string) (err error) {
 	return
 }
 
+func (l logging) AcceptFollow(ctx context.Context, addr string) (err error) {
+	err = l.svc.RequestFollow(ctx, addr)
+	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.AcceptFollow(addr=%s): %s", addr, err))
+	return
+}
+
 func (l logging) Read(ctx context.Context, addr string) (a model.Actor, err error) {
 	a, err = l.svc.Read(ctx, addr)
 	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.Read(addr=%s): %+v, %s", addr, a, err))

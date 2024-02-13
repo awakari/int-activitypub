@@ -5,6 +5,7 @@ import (
 	"github.com/awakari/client-sdk-go/api"
 	apiGrpc "github.com/awakari/int-activitypub/api/grpc"
 	apiHttp "github.com/awakari/int-activitypub/api/http"
+	"github.com/awakari/int-activitypub/api/http/activitypub"
 	"github.com/awakari/int-activitypub/config"
 	"github.com/awakari/int-activitypub/service"
 	"github.com/awakari/int-activitypub/storage"
@@ -48,8 +49,8 @@ func main() {
 	log.Info("initialized the Awakari API client")
 	//
 	clientHttp := &http.Client{}
-	svcActivityPub := apiHttp.NewService(clientHttp, cfg.Api.Http.Host, []byte(cfg.Api.Key.Private))
-	svcActivityPub = apiHttp.NewServiceLogging(svcActivityPub, log)
+	svcActivityPub := activitypub.NewService(clientHttp, cfg.Api.Http.Host, []byte(cfg.Api.Key.Private))
+	svcActivityPub = activitypub.NewServiceLogging(svcActivityPub, log)
 	//
 	svc := service.NewService(stor, svcActivityPub)
 	svc = service.NewLogging(svc, log)

@@ -1,10 +1,11 @@
-package http
+package activitypub
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	http2 "github.com/awakari/int-activitypub/api/http"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/superseriousbusiness/httpsig"
 	"golang.org/x/crypto/ssh"
@@ -26,7 +27,7 @@ type service struct {
 }
 
 const fmtWebFinger = "https://%s/.well-known/webfinger?resource=acct:%s@%s"
-const limitRespLen = 65_536
+const limitRespBodyLen = 65_536
 
 var prefs = []httpsig.Algorithm{
 	httpsig.RSA_SHA256,
@@ -58,9 +59,9 @@ func (svc service) ResolveActorLink(ctx context.Context, host, name string) (sel
 	}
 	var data []byte
 	if err == nil {
-		data, err = io.ReadAll(io.LimitReader(resp.Body, limitRespLen))
+		data, err = io.ReadAll(io.LimitReader(resp.Body, limitRespBodyLen))
 	}
-	var wf WebFinger
+	var wf http2.WebFinger
 	if err == nil {
 		err = json.Unmarshal(data, &wf)
 	}
@@ -86,7 +87,7 @@ func (svc service) FetchActor(ctx context.Context, addr vocab.IRI) (actor vocab.
 	}
 	var data []byte
 	if err == nil {
-		data, err = io.ReadAll(io.LimitReader(resp.Body, limitRespLen))
+		data, err = io.ReadAll(io.LimitReader(resp.Body, limitRespBodyLen))
 	}
 	if err == nil {
 		err = json.Unmarshal(data, &actor)
@@ -138,7 +139,7 @@ func (svc service) RequestFollow(ctx context.Context, host string, addr, inbox v
 	}
 	var respData []byte
 	if err == nil {
-		respData, err = io.ReadAll(io.LimitReader(resp.Body, limitRespLen))
+		respData, err = io.ReadAll(io.LimitReader(resp.Body, limitRespBodyLen))
 		if err == nil && resp.StatusCode >= 300 {
 			err = fmt.Errorf("follow response status: %d, headers: %+v, content:\n%s\n", resp.StatusCode, resp.Header, string(respData))
 		}

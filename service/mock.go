@@ -26,6 +26,11 @@ func (m mock) RequestFollow(ctx context.Context, addr string) (err error) {
 	return
 }
 
+func (m mock) AcceptFollow(ctx context.Context, addr string) (err error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (m mock) Read(ctx context.Context, addr string) (a model.Actor, err error) {
 	switch addr {
 	case "fail":
