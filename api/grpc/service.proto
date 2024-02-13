@@ -25,10 +25,12 @@ message CreateRequest {
 }
 
 message CreateResponse {
+  // The resolved actor URI, e.g. "https://mastodon.social/users/Mastodon"
+  string url = 1;
 }
 
 message ReadRequest {
-  string addr = 1;
+  string url = 1;
 }
 
 message ReadResponse {
@@ -36,7 +38,7 @@ message ReadResponse {
 }
 
 message DeleteRequest {
-  string addr = 1;
+  string url = 1;
 }
 
 message DeleteResponse {

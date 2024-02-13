@@ -12,11 +12,11 @@ import (
 )
 
 type Service interface {
-	RequestFollow(ctx context.Context, addr string) (err error)
-	AcceptFollow(ctx context.Context, addr string) (err error)
-	Read(ctx context.Context, addr string) (a model.Actor, err error)
+	RequestFollow(ctx context.Context, addr string) (url vocab.IRI, err error)
+	HandleActivity(ctx context.Context, url vocab.IRI, activity vocab.Activity) (err error)
+	Read(ctx context.Context, url vocab.IRI) (a model.Actor, err error)
 	List(ctx context.Context, filter model.ActorFilter, limit uint32, cursor string, order model.Order) (page []string, err error)
-	Unfollow(ctx context.Context, addr string) (err error)
+	Unfollow(ctx context.Context, url vocab.IRI) (err error)
 }
 
 var ErrInternal = errors.New("internal failure")
@@ -38,7 +38,7 @@ func NewService(stor storage.Storage, svcActivityPub activitypub.Service) Servic
 	}
 }
 
-func (svc service) RequestFollow(ctx context.Context, addr string) (err error) {
+func (svc service) RequestFollow(ctx context.Context, addr string) (url vocab.IRI, err error) {
 	acct := strings.SplitN(addr, acctSep, 3)
 	if len(acct) != 2 {
 		err = fmt.Errorf("%s address to follow: %s, should be <name>@<host>", ErrInvalid, addr)
@@ -50,32 +50,36 @@ func (svc service) RequestFollow(ctx context.Context, addr string) (err error) {
 			err = fmt.Errorf("%s address to follow: %s, should be <name>@<host>", ErrInvalid, addr)
 		}
 	}
-	var obj vocab.IRI
 	if err == nil {
-		obj, err = svc.svcActivityPub.ResolveActorLink(ctx, host, name)
+		url, err = svc.svcActivityPub.ResolveActorLink(ctx, host, name)
 		if err != nil {
 			err = fmt.Errorf("%w: failed to resolve the actor %s@%s, cause: %s", ErrInvalid, name, host, err)
 		}
 	}
 	var actor vocab.Actor
 	if err == nil {
-		actor, err = svc.svcActivityPub.FetchActor(ctx, obj)
+		actor, err = svc.svcActivityPub.FetchActor(ctx, url)
 		if err != nil {
-			err = fmt.Errorf("%w: failed to fetch actor: %s, cause: %s", ErrInvalid, obj, err)
+			err = fmt.Errorf("%w: failed to fetch actor: %s, cause: %s", ErrInvalid, url, err)
 		}
 	}
 	if err == nil {
-		err = svc.svcActivityPub.RequestFollow(ctx, host, obj, actor.Inbox.GetLink())
+		err = svc.svcActivityPub.RequestFollow(ctx, host, url, actor.Inbox.GetLink())
 	}
 	return
 }
 
-func (svc service) AcceptFollow(ctx context.Context, addr string) (err error) {
-	//TODO implement me
-	panic("implement me")
+func (svc service) HandleActivity(ctx context.Context, url vocab.IRI, activity vocab.Activity) (err error) {
+	switch activity.Type {
+	case vocab.AcceptType:
+		err = svc.stor.Create(ctx, url.String())
+	default:
+
+	}
+	return
 }
 
-func (svc service) Read(ctx context.Context, addr string) (a model.Actor, err error) {
+func (svc service) Read(ctx context.Context, url vocab.IRI) (a model.Actor, err error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -85,7 +89,7 @@ func (svc service) List(ctx context.Context, filter model.ActorFilter, limit uin
 	panic("implement me")
 }
 
-func (svc service) Unfollow(ctx context.Context, addr string) (err error) {
+func (svc service) Unfollow(ctx context.Context, url vocab.IRI) (err error) {
 	//TODO implement me
 	panic("implement me")
 }

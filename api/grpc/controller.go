@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/service"
+	vocab "github.com/go-ap/activitypub"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -21,9 +22,11 @@ func NewController(svc service.Service) ServiceServer {
 
 func (c controller) Create(ctx context.Context, req *CreateRequest) (resp *CreateResponse, err error) {
 	resp = &CreateResponse{}
-	err = c.svc.RequestFollow(ctx, req.Addr)
+	var url vocab.IRI
+	url, err = c.svc.RequestFollow(ctx, req.Addr)
 	switch err {
 	case nil:
+		resp.Url = url.String()
 	default:
 		err = encodeError(err)
 	}
@@ -32,7 +35,7 @@ func (c controller) Create(ctx context.Context, req *CreateRequest) (resp *Creat
 
 func (c controller) Read(ctx context.Context, req *ReadRequest) (resp *ReadResponse, err error) {
 	resp = &ReadResponse{}
-	a, err := c.svc.Read(ctx, req.Addr)
+	a, err := c.svc.Read(ctx, vocab.IRI(req.Url))
 	switch err {
 	case nil:
 		resp.Actor = encodeActor(a)
@@ -44,7 +47,7 @@ func (c controller) Read(ctx context.Context, req *ReadRequest) (resp *ReadRespo
 
 func (c controller) Delete(ctx context.Context, req *DeleteRequest) (resp *DeleteResponse, err error) {
 	resp = &DeleteResponse{}
-	err = c.svc.Unfollow(ctx, req.Addr)
+	err = c.svc.Unfollow(ctx, vocab.IRI(req.Url))
 	switch err {
 	case nil:
 	default:

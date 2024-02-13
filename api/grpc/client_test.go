@@ -76,7 +76,10 @@ func TestServiceClient_Create(t *testing.T) {
 	//
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
-			_, err := client.Create(context.TODO(), c.req)
+			resp, err := client.Create(context.TODO(), c.req)
+			if c.err == nil {
+				assert.Equal(t, c.req.Addr, resp.Url)
+			}
 			assert.ErrorIs(t, err, c.err)
 		})
 	}
@@ -96,7 +99,7 @@ func TestServiceClient_Read(t *testing.T) {
 	}{
 		"ok": {
 			req: &ReadRequest{
-				Addr: "user1@server1.social",
+				Url: "user1@server1.social",
 			},
 			resp: &ReadResponse{
 				Actor: &Actor{
@@ -111,13 +114,13 @@ func TestServiceClient_Read(t *testing.T) {
 		},
 		"fail": {
 			req: &ReadRequest{
-				Addr: "fail",
+				Url: "fail",
 			},
 			err: status.Error(codes.Internal, "internal failure"),
 		},
 		"missing": {
 			req: &ReadRequest{
-				Addr: "missing",
+				Url: "missing",
 			},
 			err: status.Error(codes.NotFound, "not found"),
 		},
@@ -189,24 +192,24 @@ func TestServiceClient_Delete(t *testing.T) {
 	}{
 		"ok": {
 			req: &DeleteRequest{
-				Addr: "user1@server1.social",
+				Url: "user1@server1.social",
 			},
 		},
 		"fail": {
 			req: &DeleteRequest{
-				Addr: "fail",
+				Url: "fail",
 			},
 			err: status.Error(codes.Internal, "internal failure"),
 		},
 		"missing": {
 			req: &DeleteRequest{
-				Addr: "missing",
+				Url: "missing",
 			},
 			err: status.Error(codes.NotFound, "not found"),
 		},
 		"invalid": {
 			req: &DeleteRequest{
-				Addr: "invalid",
+				Url: "invalid",
 			},
 			err: status.Error(codes.InvalidArgument, "invalid argument"),
 		},

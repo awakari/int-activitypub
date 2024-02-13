@@ -1,4 +1,4 @@
-package http
+package handler
 
 import (
 	"crypto"
@@ -7,6 +7,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"github.com/awakari/int-activitypub/api/http/activitypub"
+	"github.com/awakari/int-activitypub/service"
 	"github.com/gin-gonic/gin"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/superseriousbusiness/httpsig"
@@ -15,14 +16,16 @@ import (
 )
 
 type inboxHandler struct {
-	svc activitypub.Service
+	svcActivityPub activitypub.Service
+	svc            service.Service
 }
 
 const limitReqBodyLen = 262_144
 
-func NewInboxHandler(svc activitypub.Service) Handler {
+func NewInboxHandler(svcActivityPub activitypub.Service, svc service.Service) Handler {
 	return inboxHandler{
-		svc: svc,
+		svcActivityPub: svcActivityPub,
+		svc:            svc,
 	}
 }
 
@@ -34,15 +37,10 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 		ctx.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	//
-	fmt.Printf("inbox: %s activity from %s (%s)\n", activity.Type, actor.ID, actor.URL)
-	u, err := actor.URL.GetLink().URL()
-	u.Host
-	switch activity.Type {
-	case vocab.AcceptType:
-		// TODO accept
-	default:
-		// produce event
+	err = h.svc.HandleActivity(ctx, actor.ID, activity)
+	if err != nil {
+		ctx.String(http.StatusInternalServerError, err.Error())
+		return
 	}
 	//
 	ctx.Status(http.StatusOK)
@@ -50,9 +48,7 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 }
 
 func (h inboxHandler) verify(ctx *gin.Context) (activity vocab.Activity, actor vocab.Actor, err error) {
-	//
 	req := ctx.Request
-	//
 	var data []byte
 	if err == nil {
 		data, err = io.ReadAll(io.LimitReader(req.Body, limitReqBodyLen))
@@ -61,9 +57,8 @@ func (h inboxHandler) verify(ctx *gin.Context) (activity vocab.Activity, actor v
 		err = json.Unmarshal(data, &activity)
 	}
 	if err == nil {
-		actor, err = h.svc.FetchActor(ctx, activity.Actor.GetLink())
+		actor, err = h.svcActivityPub.FetchActor(ctx, activity.Actor.GetLink())
 	}
-	//
 	var verifier httpsig.Verifier
 	if err == nil {
 		verifier, err = httpsig.NewVerifier(req)
@@ -74,7 +69,6 @@ func (h inboxHandler) verify(ctx *gin.Context) (activity vocab.Activity, actor v
 			err = fmt.Errorf("the actor pub key %+v doesn't match the request's one %s, activity: %s", actor.PublicKey, pubKeyId, string(data))
 		}
 	}
-	//
 	var pubKeyDer *pem.Block
 	if err == nil {
 		pubKeyDer, _ = pem.Decode([]byte(actor.PublicKey.PublicKeyPem))

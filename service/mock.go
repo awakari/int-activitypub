@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"github.com/awakari/int-activitypub/model"
+	vocab "github.com/go-ap/activitypub"
 )
 
 type mock struct {
@@ -12,7 +13,8 @@ func NewServiceMock() Service {
 	return mock{}
 }
 
-func (m mock) RequestFollow(ctx context.Context, addr string) (err error) {
+func (m mock) RequestFollow(ctx context.Context, addr string) (url vocab.IRI, err error) {
+	url = vocab.IRI(addr)
 	switch addr {
 	case "fail":
 		err = ErrInternal
@@ -26,13 +28,13 @@ func (m mock) RequestFollow(ctx context.Context, addr string) (err error) {
 	return
 }
 
-func (m mock) AcceptFollow(ctx context.Context, addr string) (err error) {
+func (m mock) HandleActivity(ctx context.Context, url vocab.IRI, activity vocab.Activity) (err error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (m mock) Read(ctx context.Context, addr string) (a model.Actor, err error) {
-	switch addr {
+func (m mock) Read(ctx context.Context, url vocab.IRI) (a model.Actor, err error) {
+	switch url {
 	case "fail":
 		err = ErrInternal
 	case "missing":
@@ -61,8 +63,8 @@ func (m mock) List(ctx context.Context, filter model.ActorFilter, limit uint32, 
 	return
 }
 
-func (m mock) Unfollow(ctx context.Context, addr string) (err error) {
-	switch addr {
+func (m mock) Unfollow(ctx context.Context, url vocab.IRI) (err error) {
+	switch url {
 	case "fail":
 		err = ErrInternal
 	case "missing":

@@ -6,6 +6,7 @@ import (
 	apiGrpc "github.com/awakari/int-activitypub/api/grpc"
 	apiHttp "github.com/awakari/int-activitypub/api/http"
 	"github.com/awakari/int-activitypub/api/http/activitypub"
+	"github.com/awakari/int-activitypub/api/http/handler"
 	"github.com/awakari/int-activitypub/config"
 	"github.com/awakari/int-activitypub/service"
 	"github.com/awakari/int-activitypub/storage"
@@ -96,8 +97,7 @@ func main() {
 			PublicKeyPem: cfg.Api.Key.Public,
 		},
 	}
-	ha := apiHttp.NewActorHandler(a)
-	//
+	ha := handler.NewActorHandler(a)
 	wf := apiHttp.WebFinger{
 		Subject: fmt.Sprintf("acct:awakari@%s", cfg.Api.Http.Host),
 		Links: []apiHttp.WebFingerLink{
@@ -108,12 +108,12 @@ func main() {
 			},
 		},
 	}
-	hwf := apiHttp.NewWebFingerHandler(wf)
-	hi := apiHttp.NewInboxHandler(svcActivityPub)
+	hwf := handler.NewWebFingerHandler(wf)
+	hi := handler.NewInboxHandler(svcActivityPub, svc)
 	//
 	r := gin.Default()
-	r.GET("/actor", ha.Handle)
 	r.GET("/.well-known/webfinger", hwf.Handle)
+	r.GET("/actor", ha.Handle)
 	r.POST("/inbox", hi.Handle)
 	log.Info(fmt.Sprintf("starting to listen the HTTP API @ port #%d...", cfg.Api.Http.Port))
 	err = r.Run(fmt.Sprintf(":%d", cfg.Api.Http.Port))

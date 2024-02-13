@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	http2 "github.com/awakari/int-activitypub/api/http"
+	apiHttp "github.com/awakari/int-activitypub/api/http"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/superseriousbusiness/httpsig"
 	"golang.org/x/crypto/ssh"
@@ -61,7 +61,7 @@ func (svc service) ResolveActorLink(ctx context.Context, host, name string) (sel
 	if err == nil {
 		data, err = io.ReadAll(io.LimitReader(resp.Body, limitRespBodyLen))
 	}
-	var wf http2.WebFinger
+	var wf apiHttp.WebFinger
 	if err == nil {
 		err = json.Unmarshal(data, &wf)
 	}
