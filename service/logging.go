@@ -19,9 +19,9 @@ func NewLogging(svc Service, log *slog.Logger) Service {
 	}
 }
 
-func (l logging) Follow(ctx context.Context, addr string) (err error) {
-	err = l.svc.Follow(ctx, addr)
-	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.Follow(addr=%s): %s", addr, err))
+func (l logging) RequestFollow(ctx context.Context, addr string) (err error) {
+	err = l.svc.RequestFollow(ctx, addr)
+	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.RequestFollow(addr=%s): %s", addr, err))
 	return
 }
 

@@ -5,13 +5,11 @@ import (
 	"github.com/awakari/client-sdk-go/api"
 	apiGrpc "github.com/awakari/int-activitypub/api/grpc"
 	apiHttp "github.com/awakari/int-activitypub/api/http"
-	"github.com/awakari/int-activitypub/api/http/activitypub"
 	"github.com/awakari/int-activitypub/config"
 	"github.com/awakari/int-activitypub/service"
 	"github.com/awakari/int-activitypub/storage"
 	"github.com/gin-gonic/gin"
 	vocab "github.com/go-ap/activitypub"
-	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -50,8 +48,8 @@ func main() {
 	log.Info("initialized the Awakari API client")
 	//
 	clientHttp := &http.Client{}
-	svcActivityPub := activitypub.NewService(clientHttp, cfg.Api.Http.Host, []byte(cfg.Api.Key.Private))
-	svcActivityPub = activitypub.NewLogging(svcActivityPub, log)
+	svcActivityPub := apiHttp.NewService(clientHttp, cfg.Api.Http.Host, []byte(cfg.Api.Key.Private))
+	svcActivityPub = apiHttp.NewServiceLogging(svcActivityPub, log)
 	//
 	svc := service.NewService(stor, svcActivityPub)
 	svc = service.NewLogging(svc, log)
@@ -110,18 +108,12 @@ func main() {
 		},
 	}
 	hwf := apiHttp.NewWebFingerHandler(wf)
+	hi := apiHttp.NewInboxHandler(svcActivityPub)
 	//
 	r := gin.Default()
 	r.GET("/actor", ha.Handle)
 	r.GET("/.well-known/webfinger", hwf.Handle)
-	r.POST("/inbox", func(ctx *gin.Context) {
-		data, err := io.ReadAll(io.LimitReader(ctx.Request.Body, 65536))
-		if err != nil {
-			panic(err)
-		}
-		fmt.Printf("Incoming Activity:\nHeaders: %+v\nBody: %s\n", ctx.Request.Header, string(data))
-		ctx.Status(http.StatusOK)
-	})
+	r.POST("/inbox", hi.Handle)
 	log.Info(fmt.Sprintf("starting to listen the HTTP API @ port #%d...", cfg.Api.Http.Port))
 	err = r.Run(fmt.Sprintf(":%d", cfg.Api.Http.Port))
 	if err != nil {

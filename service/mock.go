@@ -12,7 +12,7 @@ func NewServiceMock() Service {
 	return mock{}
 }
 
-func (m mock) Follow(ctx context.Context, addr string) (err error) {
+func (m mock) RequestFollow(ctx context.Context, addr string) (err error) {
 	switch addr {
 	case "fail":
 		err = ErrInternal

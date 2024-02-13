@@ -1,4 +1,4 @@
-package activitypub
+package http
 
 import (
 	"context"
@@ -10,15 +10,15 @@ import (
 
 func TestService_ResolveActor(t *testing.T) {
 	svc := NewService(http.DefaultClient, "activitypub.awakari.com", []byte{})
-	self, err := svc.ResolveActor(context.TODO(), "mastodon.social", "akurilov")
+	self, err := svc.ResolveActorLink(context.TODO(), "mastodon.social", "akurilov")
 	assert.Equal(t, "https://mastodon.social/users/akurilov", self.String())
 	assert.Nil(t, err)
 }
 
-func TestService_ResolveInbox(t *testing.T) {
+func TestService_FetchActor(t *testing.T) {
 	svc := NewService(http.DefaultClient, "activitypub.awakari.com", []byte{})
-	inbox, err := svc.ResolveInbox(context.TODO(), "https://mastodon.social/users/akurilov")
-	assert.Equal(t, "https://mastodon.social/users/akurilov/inbox", inbox.String())
+	actor, err := svc.FetchActor(context.TODO(), "https://mastodon.social/users/akurilov")
+	assert.Equal(t, "https://mastodon.social/users/akurilov/inbox", actor.Inbox.GetLink().String())
 	assert.Nil(t, err)
 }
 

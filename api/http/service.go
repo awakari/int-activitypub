@@ -1,11 +1,10 @@
-package activitypub
+package http
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	apiHttp "github.com/awakari/int-activitypub/api/http"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/superseriousbusiness/httpsig"
 	"golang.org/x/crypto/ssh"
@@ -15,9 +14,9 @@ import (
 )
 
 type Service interface {
-	ResolveActor(ctx context.Context, host, name string) (self vocab.IRI, err error)
-	ResolveInbox(ctx context.Context, addr vocab.IRI) (inbox vocab.IRI, err error)
+	ResolveActorLink(ctx context.Context, host, name string) (self vocab.IRI, err error)
 	RequestFollow(ctx context.Context, host string, addr vocab.IRI, inbox vocab.IRI) (err error)
+	FetchActor(ctx context.Context, self vocab.IRI) (a vocab.Actor, err error)
 }
 
 type service struct {
@@ -27,7 +26,7 @@ type service struct {
 }
 
 const fmtWebFinger = "https://%s/.well-known/webfinger?resource=acct:%s@%s"
-const limitWebFingerRespLen = 1_048_576
+const limitRespLen = 65_536
 
 var prefs = []httpsig.Algorithm{
 	httpsig.RSA_SHA256,
@@ -48,7 +47,7 @@ func NewService(clientHttp *http.Client, hostSelf string, privKey []byte) Servic
 	}
 }
 
-func (svc service) ResolveActor(ctx context.Context, host, name string) (self vocab.IRI, err error) {
+func (svc service) ResolveActorLink(ctx context.Context, host, name string) (self vocab.IRI, err error) {
 	var req *http.Request
 	req, err = http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf(fmtWebFinger, host, name, host), nil)
 	var resp *http.Response
@@ -59,9 +58,9 @@ func (svc service) ResolveActor(ctx context.Context, host, name string) (self vo
 	}
 	var data []byte
 	if err == nil {
-		data, err = io.ReadAll(io.LimitReader(resp.Body, limitWebFingerRespLen))
+		data, err = io.ReadAll(io.LimitReader(resp.Body, limitRespLen))
 	}
-	var wf apiHttp.WebFinger
+	var wf WebFinger
 	if err == nil {
 		err = json.Unmarshal(data, &wf)
 	}
@@ -76,7 +75,7 @@ func (svc service) ResolveActor(ctx context.Context, host, name string) (self vo
 	return
 }
 
-func (svc service) ResolveInbox(ctx context.Context, addr vocab.IRI) (inbox vocab.IRI, err error) {
+func (svc service) FetchActor(ctx context.Context, addr vocab.IRI) (actor vocab.Actor, err error) {
 	var req *http.Request
 	req, err = http.NewRequestWithContext(ctx, http.MethodGet, string(addr), nil)
 	var resp *http.Response
@@ -87,14 +86,10 @@ func (svc service) ResolveInbox(ctx context.Context, addr vocab.IRI) (inbox voca
 	}
 	var data []byte
 	if err == nil {
-		data, err = io.ReadAll(io.LimitReader(resp.Body, limitWebFingerRespLen))
-	}
-	var obj vocab.Actor
-	if err == nil {
-		err = json.Unmarshal(data, &obj)
+		data, err = io.ReadAll(io.LimitReader(resp.Body, limitRespLen))
 	}
 	if err == nil {
-		inbox = obj.Inbox.GetLink()
+		err = json.Unmarshal(data, &actor)
 	}
 	return
 }
@@ -143,7 +138,7 @@ func (svc service) RequestFollow(ctx context.Context, host string, addr, inbox v
 	}
 	var respData []byte
 	if err == nil {
-		respData, err = io.ReadAll(resp.Body)
+		respData, err = io.ReadAll(io.LimitReader(resp.Body, limitRespLen))
 		if err == nil && resp.StatusCode >= 300 {
 			err = fmt.Errorf("follow response status: %d, headers: %+v, content:\n%s\n", resp.StatusCode, resp.Header, string(respData))
 		}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/awakari/int-activitypub/api/http/activitypub"
+	"github.com/awakari/int-activitypub/api/http"
 	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/storage"
 	vocab "github.com/go-ap/activitypub"
@@ -12,7 +12,7 @@ import (
 )
 
 type Service interface {
-	Follow(ctx context.Context, addr string) (err error)
+	RequestFollow(ctx context.Context, addr string) (err error)
 	Read(ctx context.Context, addr string) (a model.Actor, err error)
 	List(ctx context.Context, filter model.ActorFilter, limit uint32, cursor string, order model.Order) (page []string, err error)
 	Unfollow(ctx context.Context, addr string) (err error)
@@ -25,19 +25,19 @@ var ErrConflict = errors.New("already exists")
 
 type service struct {
 	stor           storage.Storage
-	svcActivityPub activitypub.Service
+	svcActivityPub http.Service
 }
 
 const acctSep = "@"
 
-func NewService(stor storage.Storage, svcActivityPub activitypub.Service) Service {
+func NewService(stor storage.Storage, svcActivityPub http.Service) Service {
 	return service{
 		stor:           stor,
 		svcActivityPub: svcActivityPub,
 	}
 }
 
-func (svc service) Follow(ctx context.Context, addr string) (err error) {
+func (svc service) RequestFollow(ctx context.Context, addr string) (err error) {
 	acct := strings.SplitN(addr, acctSep, 3)
 	if len(acct) != 2 {
 		err = fmt.Errorf("%s address to follow: %s, should be <name>@<host>", ErrInvalid, addr)
@@ -51,20 +51,20 @@ func (svc service) Follow(ctx context.Context, addr string) (err error) {
 	}
 	var obj vocab.IRI
 	if err == nil {
-		obj, err = svc.svcActivityPub.ResolveActor(ctx, host, name)
+		obj, err = svc.svcActivityPub.ResolveActorLink(ctx, host, name)
 		if err != nil {
 			err = fmt.Errorf("%w: failed to resolve the actor %s@%s, cause: %s", ErrInvalid, name, host, err)
 		}
 	}
-	var inbox vocab.IRI
+	var actor vocab.Actor
 	if err == nil {
-		inbox, err = svc.svcActivityPub.ResolveInbox(ctx, obj)
+		actor, err = svc.svcActivityPub.FetchActor(ctx, obj)
 		if err != nil {
-			err = fmt.Errorf("%w: failed to resolve the actor's inbox, addr: %s, cause: %s", ErrInvalid, obj, err)
+			err = fmt.Errorf("%w: failed to fetch actor: %s, cause: %s", ErrInvalid, obj, err)
 		}
 	}
 	if err == nil {
-		err = svc.svcActivityPub.RequestFollow(ctx, host, obj, inbox)
+		err = svc.svcActivityPub.RequestFollow(ctx, host, obj, actor.Inbox.GetLink())
 	}
 	return
 }
