@@ -28,17 +28,17 @@ func (s mock) Create(ctx context.Context, addr string) (err error) {
 
 func (s mock) Read(ctx context.Context, addr string) (a model.Actor, err error) {
 	switch addr {
-	case "fail":
+	case "https://host.social/users/storfail":
 		err = ErrInternal
-	case "missing":
-		err = ErrNotFound
-	default:
+	case "https://host.social/users/existing":
 		a.Addr = "user1@server1.social"
 		a.UserId = "user2"
 		a.GroupId = "group1"
 		a.Name = "John Doe"
 		a.Type = "Person"
 		a.Summary = "yohoho"
+	default:
+		err = ErrNotFound
 	}
 	return
 }

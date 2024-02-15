@@ -2,6 +2,8 @@ package activitypub
 
 import (
 	"context"
+	"fmt"
+	vocab "github.com/go-ap/activitypub"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"os"
@@ -28,10 +30,14 @@ func TestService_RequestFollow(t *testing.T) {
 	}
 	privKey := []byte(`TODO: put private key pem here to test`)
 	svc := NewService(http.DefaultClient, "activitypub.awakari.com", privKey)
-	err := svc.RequestFollow(
+	err := svc.SendActivity(
 		context.TODO(),
-		"mastodon.social",
-		"https://mastodon.social/users/akurilov",
+		vocab.Activity{
+			Type:    vocab.FollowType,
+			Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
+			Actor:   vocab.IRI(fmt.Sprintf("https://%s/actor", "https://activitypub.awakari.com")),
+			Object:  vocab.IRI("https://mastodon.social/users/akurilov"),
+		},
 		"https://mastodon.social/users/akurilov/inbox",
 	)
 	assert.Nil(t, err)

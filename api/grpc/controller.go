@@ -3,8 +3,10 @@ package grpc
 import (
 	"context"
 	"errors"
+	"github.com/awakari/int-activitypub/api/http/activitypub"
 	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/service"
+	"github.com/awakari/int-activitypub/storage"
 	vocab "github.com/go-ap/activitypub"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -99,13 +101,13 @@ func encodeActor(src model.Actor) (dst *Actor) {
 func encodeError(src error) (dst error) {
 	switch {
 	case src == nil:
-	case errors.Is(src, service.ErrConflict):
+	case errors.Is(src, storage.ErrConflict):
 		dst = status.Error(codes.AlreadyExists, src.Error())
-	case errors.Is(src, service.ErrNotFound):
+	case errors.Is(src, storage.ErrNotFound):
 		dst = status.Error(codes.NotFound, src.Error())
-	case errors.Is(src, service.ErrInternal):
+	case errors.Is(src, storage.ErrInternal), errors.Is(src, activitypub.ErrActivitySend):
 		dst = status.Error(codes.Internal, src.Error())
-	case errors.Is(src, service.ErrInvalid):
+	case errors.Is(src, service.ErrInvalid), errors.Is(src, storage.ErrInternal):
 		dst = status.Error(codes.InvalidArgument, src.Error())
 	case errors.Is(src, context.DeadlineExceeded):
 		dst = status.Error(codes.DeadlineExceeded, src.Error())

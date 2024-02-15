@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	apiHttp "github.com/awakari/int-activitypub/api/http"
 	vocab "github.com/go-ap/activitypub"
@@ -11,18 +12,19 @@ import (
 	"golang.org/x/crypto/ssh"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 )
 
 type Service interface {
 	ResolveActorLink(ctx context.Context, host, name string) (self vocab.IRI, err error)
-	RequestFollow(ctx context.Context, host string, addr vocab.IRI, inbox vocab.IRI) (err error)
 	FetchActor(ctx context.Context, self vocab.IRI) (a vocab.Actor, err error)
+	SendActivity(ctx context.Context, a vocab.Activity, inbox vocab.IRI) (err error)
 }
 
 type service struct {
 	clientHttp *http.Client
-	hostSelf   string
+	userAgent  string
 	privKey    []byte
 }
 
@@ -40,10 +42,14 @@ var headersToSign = []string{
 	"digest",
 }
 
-func NewService(clientHttp *http.Client, hostSelf string, privKey []byte) Service {
+var ErrActorWebFinger = errors.New("failed to get the webfinger data for actor")
+var ErrActorFetch = errors.New("failed to get the actor")
+var ErrActivitySend = errors.New("failed to send activity")
+
+func NewService(clientHttp *http.Client, userAgent string, privKey []byte) Service {
 	return service{
 		clientHttp: clientHttp,
-		hostSelf:   hostSelf,
+		userAgent:  userAgent,
 		privKey:    privKey,
 	}
 }
@@ -54,7 +60,7 @@ func (svc service) ResolveActorLink(ctx context.Context, host, name string) (sel
 	var resp *http.Response
 	if err == nil {
 		req.Header.Add("Accept", "application/jrd+json")
-		req.Header.Add("User-Agent", svc.hostSelf)
+		req.Header.Add("User-Agent", svc.userAgent)
 		resp, err = svc.clientHttp.Do(req)
 	}
 	var data []byte
@@ -73,6 +79,10 @@ func (svc service) ResolveActorLink(ctx context.Context, host, name string) (sel
 			}
 		}
 	}
+	//
+	if err != nil {
+		err = fmt.Errorf("%w %s@%s: %s", ErrActorWebFinger, name, host, err)
+	}
 	return
 }
 
@@ -82,7 +92,7 @@ func (svc service) FetchActor(ctx context.Context, addr vocab.IRI) (actor vocab.
 	var resp *http.Response
 	if err == nil {
 		req.Header.Add("Accept", "application/activity+json")
-		req.Header.Add("User-Agent", svc.hostSelf)
+		req.Header.Add("User-Agent", svc.userAgent)
 		resp, err = svc.clientHttp.Do(req)
 	}
 	var data []byte
@@ -92,33 +102,38 @@ func (svc service) FetchActor(ctx context.Context, addr vocab.IRI) (actor vocab.
 	if err == nil {
 		err = json.Unmarshal(data, &actor)
 	}
+	//
+	if err != nil {
+		err = fmt.Errorf("%w %s: %s", ErrActorFetch, addr, err)
+	}
 	return
 }
 
-func (svc service) RequestFollow(ctx context.Context, host string, addr, inbox vocab.IRI) (err error) {
+func (svc service) SendActivity(ctx context.Context, a vocab.Activity, inbox vocab.IRI) (err error) {
 	//
-	follow := vocab.Activity{
-		Type:    vocab.FollowType,
-		Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
-		Actor:   vocab.IRI(fmt.Sprintf("https://%s/actor", svc.hostSelf)),
-		Object:  addr,
-	}
-	var followData []byte
-	followData, err = json.Marshal(follow)
-	//
+	var d []byte
+	d, err = json.Marshal(a)
 	var req *http.Request
 	if err == nil {
-		req, err = http.NewRequestWithContext(ctx, http.MethodPost, string(inbox), bytes.NewReader(followData))
+		req, err = http.NewRequestWithContext(ctx, http.MethodPost, string(inbox), bytes.NewReader(d))
 	}
-	req.Header.Set("Content-Type", "application/ld+json; profile=\"http://www.w3.org/ns/activitystreams\"")
-	req.Header.Add("Accept-Charset", "utf-8")
-	req.Header.Add("User-Agent", svc.hostSelf)
-	req.Header.Set("Host", host)
-	now := time.Now().UTC()
-	req.Header.Set("Date", now.Format(http.TimeFormat))
+	var inboxUrl *url.URL
+	if err == nil {
+		inboxUrl, err = inbox.URL()
+	}
+	if err == nil {
+		req.Header.Set("Host", inboxUrl.Host)
+		req.Header.Set("Content-Type", "application/ld+json; profile=\"http://www.w3.org/ns/activitystreams\"")
+		req.Header.Add("Accept-Charset", "utf-8")
+		req.Header.Add("User-Agent", svc.userAgent)
+		now := time.Now().UTC()
+		req.Header.Set("Date", now.Format(http.TimeFormat))
+	}
 	//
 	var signer httpsig.Signer
-	signer, _, err = httpsig.NewSigner(prefs, digestAlgorithm, headersToSign, httpsig.Signature, 120)
+	if err == nil {
+		signer, _, err = httpsig.NewSigner(prefs, digestAlgorithm, headersToSign, httpsig.Signature, 120)
+	}
 	var privKey any
 	if err == nil {
 		privKey, err = ssh.ParseRawPrivateKey(svc.privKey)
@@ -127,7 +142,7 @@ func (svc service) RequestFollow(ctx context.Context, host string, addr, inbox v
 		}
 	}
 	if err == nil {
-		err = signer.SignRequest(privKey, fmt.Sprintf("https://%s/actor#main-key", svc.hostSelf), req, followData)
+		err = signer.SignRequest(privKey, fmt.Sprintf("https://%s/actor#main-key", svc.userAgent), req, d)
 		if err != nil {
 			err = fmt.Errorf("failed to sign the follow request: %w", err)
 		}
@@ -145,5 +160,8 @@ func (svc service) RequestFollow(ctx context.Context, host string, addr, inbox v
 		}
 	}
 	//
+	if err != nil {
+		err = fmt.Errorf("%w: %s", ErrActivitySend, err)
+	}
 	return
 }

@@ -53,7 +53,7 @@ func main() {
 	svcActivityPub := activitypub.NewService(clientHttp, cfg.Api.Http.Host, []byte(cfg.Api.Key.Private))
 	svcActivityPub = activitypub.NewServiceLogging(svcActivityPub, log)
 	//
-	svc := service.NewService(stor, svcActivityPub)
+	svc := service.NewService(stor, svcActivityPub, cfg.Api.Http.Host)
 	svc = service.NewLogging(svc, log)
 	//
 	log.Info(fmt.Sprintf("starting to listen the gRPC API @ port #%d...", cfg.Api.Port))

@@ -48,29 +48,17 @@ func TestServiceClient_Create(t *testing.T) {
 				Addr: "user1@server1.social",
 			},
 		},
-		"fail": {
-			req: &CreateRequest{
-				Addr: "fail",
-			},
-			err: status.Error(codes.Internal, "internal failure"),
-		},
-		"missing": {
-			req: &CreateRequest{
-				Addr: "missing",
-			},
-			err: status.Error(codes.NotFound, "not found"),
-		},
 		"invalid": {
 			req: &CreateRequest{
 				Addr: "invalid",
 			},
 			err: status.Error(codes.InvalidArgument, "invalid argument"),
 		},
-		"conflict": {
+		"activitypub_fail": {
 			req: &CreateRequest{
-				Addr: "conflict",
+				Addr: "activitypub_fail",
 			},
-			err: status.Error(codes.AlreadyExists, "already exists"),
+			err: status.Error(codes.Internal, "failed to send activity"),
 		},
 	}
 	//
@@ -200,6 +188,12 @@ func TestServiceClient_Delete(t *testing.T) {
 				Url: "fail",
 			},
 			err: status.Error(codes.Internal, "internal failure"),
+		},
+		"fail to send activity": {
+			req: &DeleteRequest{
+				Url: "activitypub_fail",
+			},
+			err: status.Error(codes.Internal, "failed to send activity"),
 		},
 		"missing": {
 			req: &DeleteRequest{
