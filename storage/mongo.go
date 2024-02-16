@@ -71,17 +71,22 @@ var projRead = bson.D{
 		Value: 1,
 	},
 }
-
-var sortGetBatchAsc = bson.D{
+var sortListAsc = bson.D{
 	{
 		Key:   attrActorId,
 		Value: 1,
 	},
 }
-var sortGetBatchDesc = bson.D{
+var sortListDesc = bson.D{
 	{
 		Key:   attrActorId,
 		Value: -1,
+	},
+}
+var projList = bson.D{
+	{
+		Key:   attrActorId,
+		Value: 1,
 	},
 }
 var indices = []mongo.IndexModel{
@@ -180,11 +185,21 @@ func (sm storageMongo) Update(ctx context.Context, src model.Source) (err error)
 	q := bson.M{
 		attrActorId: src.ActorId,
 	}
+	u := bson.M{
+		"$set": bson.M{
+			attrAccepted: src.Accepted,
+			attrName:     src.Name,
+			attrType:     src.Type,
+			attrSummary:  src.Summary,
+		},
+	}
 	var result *mongo.UpdateResult
-	result, err = sm.coll.UpdateOne(ctx, q, optsRead)
+	result, err = sm.coll.UpdateOne(ctx, q, u)
 	switch err {
 	case nil:
-		// TODO check
+		if result.MatchedCount < 1 {
+			err = fmt.Errorf("%w: %s", ErrNotFound, src.ActorId)
+		}
 	default:
 		err = decodeError(err, src.ActorId)
 	}
@@ -192,13 +207,85 @@ func (sm storageMongo) Update(ctx context.Context, src model.Source) (err error)
 }
 
 func (sm storageMongo) Delete(ctx context.Context, srcId, groupId, userId string) (err error) {
-	//TODO implement me
-	panic("implement me")
+	q := bson.M{
+		attrActorId: srcId,
+		attrGroupId: groupId,
+		attrUserId:  userId,
+	}
+	var result *mongo.DeleteResult
+	result, err = sm.coll.DeleteOne(ctx, q)
+	switch err {
+	case nil:
+		if result.DeletedCount < 1 {
+			err = fmt.Errorf("%w: srcId=%s, groupId=%s, userId=%s", ErrNotFound, srcId, groupId, userId)
+		}
+	default:
+		err = decodeError(err, srcId)
+	}
+	return
 }
 
 func (sm storageMongo) List(ctx context.Context, filter model.Filter, limit uint32, cursor string, order model.Order) (page []string, err error) {
-	//TODO implement me
-	panic("implement me")
+	q := bson.M{}
+	if filter.UserId != "" {
+		q[attrGroupId] = filter.GroupId
+		q[attrUserId] = filter.UserId
+	}
+	optsList := options.
+		Find().
+		SetLimit(int64(limit)).
+		SetShowRecordID(false).
+		SetProjection(projList)
+	var clauseCursor bson.M
+	switch order {
+	case model.OrderDesc:
+		clauseCursor = bson.M{
+			"$lt": cursor,
+		}
+		optsList = optsList.SetSort(sortListDesc)
+	default:
+		clauseCursor = bson.M{
+			"$gt": cursor,
+		}
+		optsList = optsList.SetSort(sortListAsc)
+	}
+	q["$and"] = []bson.M{
+		{
+			attrActorId: clauseCursor,
+		},
+		{
+			"$or": []bson.M{
+				{
+					attrActorId: bson.M{
+						"$regex": filter.Pattern,
+					},
+				},
+				{
+					attrName: bson.M{
+						"$regex": filter.Pattern,
+					},
+				},
+				{
+					attrSummary: bson.M{
+						"$regex": filter.Pattern,
+					},
+				},
+			},
+		},
+	}
+	var cur *mongo.Cursor
+	cur, err = sm.coll.Find(ctx, q, optsList)
+	if err == nil {
+		for cur.Next(ctx) {
+			var rec recSrc
+			err = errors.Join(err, cur.Decode(&rec))
+			if err == nil {
+				page = append(page, rec.ActorId)
+			}
+		}
+	}
+	err = decodeError(err, "")
+	return
 }
 
 func decodeError(src error, recId string) (dst error) {
