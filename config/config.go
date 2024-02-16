@@ -39,6 +39,10 @@ type DbConfig struct {
 			Shard bool   `envconfig:"DB_TABLE_SHARD_FOLLOWERS" default:"true"`
 		}
 		Following struct {
+			Cache struct {
+				Size int           `envconfig:"DB_TABLE_FOLLOWING_CACHE_SIZE" default:"1024" required:"true"`
+				Ttl  time.Duration `envconfig:"DB_TABLE_FOLLOWING_CACHE_TTL" default:"1m" required:"true"`
+			}
 			Name  string `envconfig:"DB_TABLE_NAME_FOLLOWING" default:"following" required:"true"`
 			Shard bool   `envconfig:"DB_TABLE_SHARD_FOLLOWING" default:"true"`
 		}

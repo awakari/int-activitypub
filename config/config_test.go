@@ -15,9 +15,13 @@ func TestConfig(t *testing.T) {
 	os.Setenv("LOG_LEVEL", "4")
 	os.Setenv("API_KEY_PUBLIC", "xxx")
 	os.Setenv("API_KEY_PRIVATE", "yyy")
+	os.Setenv("DB_TABLE_FOLLOWING_CACHE_SIZE", "1234567")
+	os.Setenv("DB_TABLE_FOLLOWING_CACHE_TTL", "89s")
 	cfg, err := NewConfigFromEnv()
 	assert.Nil(t, err)
 	assert.Equal(t, 23*time.Hour, cfg.Api.Writer.Backoff)
 	assert.Equal(t, "writer:56789", cfg.Api.Writer.Uri)
 	assert.Equal(t, slog.LevelWarn, slog.Level(cfg.Log.Level))
+	assert.Equal(t, 1234567, cfg.Db.Table.Following.Cache.Size)
+	assert.Equal(t, time.Second*89, cfg.Db.Table.Following.Cache.Ttl)
 }

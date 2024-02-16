@@ -113,6 +113,10 @@ db:
       name: "mongodb"
       key: "mongodb-root-password"
   table:
+    cache:
+      following:
+        size: 1024
+        ttl: "1m"
     # Database table name to use.
     name:
       followers: followers

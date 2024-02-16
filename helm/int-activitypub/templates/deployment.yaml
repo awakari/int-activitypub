@@ -64,6 +64,10 @@ spec:
               value: {{ .Values.db.table.name.followers }}
             - name: DB_TABLE_SHARD_FOLLOWERS
               value: "{{ .Values.db.table.shard.followers }}"
+            - name: DB_TABLE_FOLLOWING_CACHE_SIZE
+              value: "{{ .Values.db.table.cache.following.size }}"
+            - name: DB_TABLE_FOLLOWING_CACHE_TTL
+              value: "{{ .Values.db.table.cache.following.ttl }}"
             - name: DB_TABLE_NAME_FOLLOWING
               value: {{ .Values.db.table.name.following }}
             - name: DB_TABLE_SHARD_FOLLOWING

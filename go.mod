@@ -6,6 +6,7 @@ require (
 	github.com/awakari/client-sdk-go v1.0.9
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-ap/activitypub v0.0.0-20240211124657-820024a66b78
+	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/stretchr/testify v1.8.4
 	github.com/superseriousbusiness/httpsig v1.2.0-SSB

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/awakari/client-sdk-go/api"
 	apiGrpc "github.com/awakari/int-activitypub/api/grpc"
@@ -31,11 +32,11 @@ func main() {
 	log.Info("starting the update for the feeds")
 	//
 	var stor storage.Storage
-	//stor, err = storage.NewStorage(context.TODO(), cfg.Db)
-	stor = storage.NewStorageMock()
+	stor, err = storage.NewStorage(context.TODO(), cfg.Db)
 	if err != nil {
 		panic(fmt.Sprintf("failed to initialize the storage: %s", err))
 	}
+	stor = storage.NewLocalCache(stor, cfg.Db.Table.Following.Cache.Size, cfg.Db.Table.Following.Cache.Ttl)
 	defer stor.Close()
 	//
 	var clientAwk api.Client
