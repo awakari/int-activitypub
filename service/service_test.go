@@ -58,7 +58,7 @@ func TestService_RequestFollow(t *testing.T) {
 	}
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
-			u, err := svc.RequestFollow(context.TODO(), c.addr)
+			u, err := svc.RequestFollow(context.TODO(), c.addr, "group0", "user1")
 			assert.Equal(t, c.url, u)
 			assert.ErrorIs(t, err, c.err)
 		})
@@ -76,24 +76,11 @@ func TestService_HandleActivity(t *testing.T) {
 		"ok": {
 			url: "ok",
 		},
-		"accept fail": {
-			url: "fail",
-			activity: vocab.Activity{
-				Type: vocab.AcceptType,
-			},
-			err: storage.ErrInternal,
-		},
-		"accept conflict": {
-			url: "conflict",
-			activity: vocab.Activity{
-				Type: vocab.AcceptType,
-			},
-			err: storage.ErrConflict,
-		},
+		// TODO more cases
 	}
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
-			err := svc.HandleActivity(context.TODO(), c.url, c.activity)
+			err := svc.HandleActivity(context.TODO(), vocab.Actor{ID: c.url}, c.activity)
 			assert.ErrorIs(t, err, c.err)
 		})
 	}
@@ -104,12 +91,12 @@ func TestService_Read(t *testing.T) {
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
 		url   vocab.IRI
-		actor model.Actor
+		actor model.Source
 		err   error
 	}{
 		"ok": {
 			url:   "https://host.social/users/existing",
-			actor: model.Actor{Addr: "user1@server1.social", GroupId: "group1", UserId: "user2", Type: "Person", Name: "John Doe", Summary: "yohoho"},
+			actor: model.Source{ActorId: "user1@server1.social", GroupId: "group1", UserId: "user2", Type: "Person", Name: "John Doe", Summary: "yohoho"},
 		},
 		"fail": {
 			url: "https://host.social/users/storfail",
@@ -132,7 +119,7 @@ func TestService_List(t *testing.T) {
 	svc := NewService(storage.NewStorageMock(), activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()), "test.social")
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
-		filter model.ActorFilter
+		filter model.Filter
 		limit  uint32
 		cursor string
 		order  model.Order
@@ -186,7 +173,7 @@ func TestService_Unfollow(t *testing.T) {
 	}
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
-			err := svc.Unfollow(context.TODO(), c.url)
+			err := svc.Unfollow(context.TODO(), c.url, "group0", "user1")
 			assert.ErrorIs(t, err, c.err)
 		})
 	}

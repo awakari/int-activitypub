@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/awakari/int-activitypub/api/http/activitypub"
@@ -12,11 +13,11 @@ import (
 )
 
 type Service interface {
-	RequestFollow(ctx context.Context, addr string) (url vocab.IRI, err error)
-	HandleActivity(ctx context.Context, url vocab.IRI, activity vocab.Activity) (err error)
-	Read(ctx context.Context, url vocab.IRI) (a model.Actor, err error)
-	List(ctx context.Context, filter model.ActorFilter, limit uint32, cursor string, order model.Order) (page []string, err error)
-	Unfollow(ctx context.Context, url vocab.IRI) (err error)
+	RequestFollow(ctx context.Context, addr, groupId, userId string) (url vocab.IRI, err error)
+	HandleActivity(ctx context.Context, actor vocab.Actor, activity vocab.Activity) (err error)
+	Read(ctx context.Context, url vocab.IRI) (src model.Source, err error)
+	List(ctx context.Context, filter model.Filter, limit uint32, cursor string, order model.Order) (page []string, err error)
+	Unfollow(ctx context.Context, url vocab.IRI, groupId, userId string) (err error)
 }
 
 var ErrInvalid = errors.New("invalid argument")
@@ -37,7 +38,7 @@ func NewService(stor storage.Storage, svcActivityPub activitypub.Service, hostSe
 	}
 }
 
-func (svc service) RequestFollow(ctx context.Context, addr string) (url vocab.IRI, err error) {
+func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId string) (url vocab.IRI, err error) {
 	acct := strings.SplitN(addr, acctSep, 3)
 	if len(acct) != 2 {
 		err = fmt.Errorf("%w address to follow: %s, should be <name>@<host>", ErrInvalid, addr)
@@ -80,30 +81,47 @@ func (svc service) RequestFollow(ctx context.Context, addr string) (url vocab.IR
 		}
 		err = svc.svcActivityPub.SendActivity(ctx, activity, actor.Inbox.GetLink())
 	}
-	return
-}
-
-func (svc service) HandleActivity(ctx context.Context, url vocab.IRI, activity vocab.Activity) (err error) {
-	switch activity.Type {
-	case vocab.AcceptType:
-		err = svc.stor.Create(ctx, url.String())
-	default:
-		// TODO convert to event and submit it
+	if err == nil {
+		src := model.Source{
+			ActorId: actor.ID.String(),
+			GroupId: groupId,
+			UserId:  userId,
+			Type:    string(actor.Type),
+			Name:    actor.Name.String(),
+			Summary: actor.Summary.String(),
+		}
+		err = svc.stor.Create(ctx, src)
 	}
 	return
 }
 
-func (svc service) Read(ctx context.Context, url vocab.IRI) (a model.Actor, err error) {
+func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activity vocab.Activity) (err error) {
+	switch activity.Type {
+	case vocab.AcceptType:
+		var src model.Source
+		src, err = svc.stor.Read(ctx, actor.ID.String())
+		if err == nil {
+			src.Accepted = true
+			err = svc.stor.Update(ctx, src)
+		}
+	default:
+		d, _ := json.MarshalIndent(activity, "", "  ")
+		fmt.Printf("TODO convert to event:\n%s\n", string(d))
+	}
+	return
+}
+
+func (svc service) Read(ctx context.Context, url vocab.IRI) (a model.Source, err error) {
 	a, err = svc.stor.Read(ctx, url.String())
 	return
 }
 
-func (svc service) List(ctx context.Context, filter model.ActorFilter, limit uint32, cursor string, order model.Order) (page []string, err error) {
+func (svc service) List(ctx context.Context, filter model.Filter, limit uint32, cursor string, order model.Order) (page []string, err error) {
 	page, err = svc.stor.List(ctx, filter, limit, cursor, order)
 	return
 }
 
-func (svc service) Unfollow(ctx context.Context, url vocab.IRI) (err error) {
+func (svc service) Unfollow(ctx context.Context, url vocab.IRI, groupId, userId string) (err error) {
 	var actor vocab.Actor
 	if err == nil {
 		actor, err = svc.svcActivityPub.FetchActor(ctx, url)
@@ -126,7 +144,7 @@ func (svc service) Unfollow(ctx context.Context, url vocab.IRI) (err error) {
 		err = svc.svcActivityPub.SendActivity(ctx, activity, actor.Inbox.GetLink())
 	}
 	if err == nil {
-		err = svc.stor.Delete(ctx, url.String())
+		err = svc.stor.Delete(ctx, url.String(), groupId, userId)
 	}
 	return
 }

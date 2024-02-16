@@ -1,6 +1,6 @@
 package model
 
-type ActorFilter struct {
+type Filter struct {
 	GroupId string
 	UserId  string
 	Pattern string

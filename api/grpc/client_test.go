@@ -90,8 +90,8 @@ func TestServiceClient_Read(t *testing.T) {
 				Url: "user1@server1.social",
 			},
 			resp: &ReadResponse{
-				Actor: &Actor{
-					Addr:    "user1@server1.social",
+				Src: &Source{
+					ActorId: "user1@server1.social",
 					GroupId: "group1",
 					UserId:  "user2",
 					Type:    "Person",

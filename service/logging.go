@@ -20,33 +20,33 @@ func NewLogging(svc Service, log *slog.Logger) Service {
 	}
 }
 
-func (l logging) RequestFollow(ctx context.Context, addr string) (url vocab.IRI, err error) {
-	url, err = l.svc.RequestFollow(ctx, addr)
-	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.SendActivity(addr=%s): %s, %s", addr, url, err))
+func (l logging) RequestFollow(ctx context.Context, addr, groupId, userId string) (url vocab.IRI, err error) {
+	url, err = l.svc.RequestFollow(ctx, addr, groupId, userId)
+	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.SendActivity(addr=%s, groupId=%s, userId=%s): %s, %s", addr, groupId, userId, url, err))
 	return
 }
 
-func (l logging) HandleActivity(ctx context.Context, url vocab.IRI, activity vocab.Activity) (err error) {
-	err = l.svc.HandleActivity(ctx, url, activity)
-	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.HandleActivity(url=%s, activity.Type=%s): %s", url, activity.Type, err))
+func (l logging) HandleActivity(ctx context.Context, actor vocab.Actor, activity vocab.Activity) (err error) {
+	err = l.svc.HandleActivity(ctx, actor, activity)
+	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.HandleActivity(actor.Id=%s, activity.Type=%s): %s", actor.ID, activity.Type, err))
 	return
 }
 
-func (l logging) Read(ctx context.Context, url vocab.IRI) (a model.Actor, err error) {
+func (l logging) Read(ctx context.Context, url vocab.IRI) (a model.Source, err error) {
 	a, err = l.svc.Read(ctx, url)
 	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.Read(url=%s): %+v, %s", url, a, err))
 	return
 }
 
-func (l logging) List(ctx context.Context, filter model.ActorFilter, limit uint32, cursor string, order model.Order) (page []string, err error) {
+func (l logging) List(ctx context.Context, filter model.Filter, limit uint32, cursor string, order model.Order) (page []string, err error) {
 	page, err = l.svc.List(ctx, filter, limit, cursor, order)
 	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.List(filter=%+v, limit=%d, cursor=%s, order=%s): %d, %s", filter, limit, cursor, order, len(page), err))
 	return
 }
 
-func (l logging) Unfollow(ctx context.Context, url vocab.IRI) (err error) {
-	err = l.svc.Unfollow(ctx, url)
-	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.Unfollow(url=%s): %s", url, err))
+func (l logging) Unfollow(ctx context.Context, url vocab.IRI, groupId, userId string) (err error) {
+	err = l.svc.Unfollow(ctx, url, groupId, userId)
+	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.Unfollow(url=%s, groupId=%s, userId=%s): %s", url, groupId, userId, err))
 	return
 }
 

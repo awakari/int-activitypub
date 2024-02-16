@@ -37,7 +37,7 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 		ctx.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	err = h.svc.HandleActivity(ctx, actor.ID, activity)
+	err = h.svc.HandleActivity(ctx, actor, activity)
 	if err != nil {
 		ctx.String(http.StatusInternalServerError, err.Error())
 		return

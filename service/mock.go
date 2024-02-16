@@ -15,7 +15,7 @@ func NewServiceMock() Service {
 	return mock{}
 }
 
-func (m mock) RequestFollow(ctx context.Context, addr string) (url vocab.IRI, err error) {
+func (m mock) RequestFollow(ctx context.Context, addr, groupId, userId string) (url vocab.IRI, err error) {
 	url = vocab.IRI(addr)
 	switch addr {
 	case "activitypub_fail":
@@ -30,24 +30,24 @@ func (m mock) RequestFollow(ctx context.Context, addr string) (url vocab.IRI, er
 	return
 }
 
-func (m mock) HandleActivity(ctx context.Context, url vocab.IRI, activity vocab.Activity) (err error) {
-	switch url {
-	case "storage_fail":
+func (m mock) HandleActivity(ctx context.Context, actor vocab.Actor, activity vocab.Activity) (err error) {
+	switch actor.ID {
+	case "fail":
 		err = storage.ErrInternal
-	case "conflict":
-		err = storage.ErrConflict
+	case "missing":
+		err = storage.ErrNotFound
 	}
 	return
 }
 
-func (m mock) Read(ctx context.Context, url vocab.IRI) (a model.Actor, err error) {
+func (m mock) Read(ctx context.Context, url vocab.IRI) (a model.Source, err error) {
 	switch url {
 	case "fail":
 		err = storage.ErrInternal
 	case "missing":
 		err = storage.ErrNotFound
 	default:
-		a.Addr = "user1@server1.social"
+		a.ActorId = "user1@server1.social"
 		a.UserId = "user2"
 		a.GroupId = "group1"
 		a.Name = "John Doe"
@@ -57,7 +57,7 @@ func (m mock) Read(ctx context.Context, url vocab.IRI) (a model.Actor, err error
 	return
 }
 
-func (m mock) List(ctx context.Context, filter model.ActorFilter, limit uint32, cursor string, order model.Order) (page []string, err error) {
+func (m mock) List(ctx context.Context, filter model.Filter, limit uint32, cursor string, order model.Order) (page []string, err error) {
 	switch cursor {
 	case "fail":
 		err = storage.ErrInternal
@@ -70,7 +70,7 @@ func (m mock) List(ctx context.Context, filter model.ActorFilter, limit uint32, 
 	return
 }
 
-func (m mock) Unfollow(ctx context.Context, url vocab.IRI) (err error) {
+func (m mock) Unfollow(ctx context.Context, url vocab.IRI, groupId, userId string) (err error) {
 	switch url {
 	case "fail":
 		err = storage.ErrInternal

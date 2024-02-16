@@ -25,7 +25,7 @@ func NewController(svc service.Service) ServiceServer {
 func (c controller) Create(ctx context.Context, req *CreateRequest) (resp *CreateResponse, err error) {
 	resp = &CreateResponse{}
 	var url vocab.IRI
-	url, err = c.svc.RequestFollow(ctx, req.Addr)
+	url, err = c.svc.RequestFollow(ctx, req.Addr, req.GroupId, req.UserId)
 	switch err {
 	case nil:
 		resp.Url = url.String()
@@ -37,10 +37,10 @@ func (c controller) Create(ctx context.Context, req *CreateRequest) (resp *Creat
 
 func (c controller) Read(ctx context.Context, req *ReadRequest) (resp *ReadResponse, err error) {
 	resp = &ReadResponse{}
-	a, err := c.svc.Read(ctx, vocab.IRI(req.Url))
+	src, err := c.svc.Read(ctx, vocab.IRI(req.Url))
 	switch err {
 	case nil:
-		resp.Actor = encodeActor(a)
+		resp.Src = encodeSource(src)
 	default:
 		err = encodeError(err)
 	}
@@ -49,7 +49,7 @@ func (c controller) Read(ctx context.Context, req *ReadRequest) (resp *ReadRespo
 
 func (c controller) Delete(ctx context.Context, req *DeleteRequest) (resp *DeleteResponse, err error) {
 	resp = &DeleteResponse{}
-	err = c.svc.Unfollow(ctx, vocab.IRI(req.Url))
+	err = c.svc.Unfollow(ctx, vocab.IRI(req.Url), req.GroupId, req.UserId)
 	switch err {
 	case nil:
 	default:
@@ -60,7 +60,7 @@ func (c controller) Delete(ctx context.Context, req *DeleteRequest) (resp *Delet
 
 func (c controller) ListUrls(ctx context.Context, req *ListUrlsRequest) (resp *ListUrlsResponse, err error) {
 	resp = &ListUrlsResponse{}
-	var filter model.ActorFilter
+	var filter model.Filter
 	reqFilter := req.Filter
 	if reqFilter != nil {
 		filter.Pattern = reqFilter.Pattern
@@ -86,14 +86,15 @@ func (c controller) ListUrls(ctx context.Context, req *ListUrlsRequest) (resp *L
 	return
 }
 
-func encodeActor(src model.Actor) (dst *Actor) {
-	dst = &Actor{
-		Addr:    src.Addr,
-		GroupId: src.GroupId,
-		UserId:  src.UserId,
-		Type:    src.Type,
-		Name:    src.Name,
-		Summary: src.Summary,
+func encodeSource(src model.Source) (dst *Source) {
+	dst = &Source{
+		ActorId:  src.ActorId,
+		GroupId:  src.GroupId,
+		UserId:   src.UserId,
+		Type:     src.Type,
+		Name:     src.Name,
+		Summary:  src.Summary,
+		Accepted: src.Accepted,
 	}
 	return
 }

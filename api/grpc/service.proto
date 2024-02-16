@@ -22,6 +22,8 @@ service Service {
 message CreateRequest {
   // WebFinger address, e.g. "Mastodon@mastodon.social"
   string addr = 1;
+  string groupId = 2;
+  string userId = 3;
 }
 
 message CreateResponse {
@@ -34,11 +36,13 @@ message ReadRequest {
 }
 
 message ReadResponse {
-  Actor actor = 1;
+  Source src = 1;
 }
 
 message DeleteRequest {
   string url = 1;
+  string groupId = 2;
+  string userId = 3;
 }
 
 message DeleteResponse {
@@ -60,13 +64,14 @@ message ListUrlsResponse {
   repeated string page = 1;
 }
 
-message Actor {
-  string addr = 1;
+message Source {
+  string actorId = 1;
   string groupId = 2;
   string userId = 3;
   string type = 4;
   string name = 5;
   string summary = 6;
+  bool accepted = 7;
 }
 
 message Filter {
