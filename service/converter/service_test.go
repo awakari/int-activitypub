@@ -8,11 +8,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"log/slog"
 	"testing"
 )
 
 func TestService_Convert(t *testing.T) {
 	svc := NewService()
+	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
 		actor vocab.Actor
 		in    string

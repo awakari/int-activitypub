@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/awakari/client-sdk-go/api"
 	"github.com/awakari/int-activitypub/api/http/activitypub"
 	"github.com/awakari/int-activitypub/model"
+	"github.com/awakari/int-activitypub/service/converter"
 	"github.com/awakari/int-activitypub/storage"
+	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	vocab "github.com/go-ap/activitypub"
 	"strings"
 )
@@ -23,18 +25,23 @@ type Service interface {
 var ErrInvalid = errors.New("invalid argument")
 
 type service struct {
-	stor           storage.Storage
-	svcActivityPub activitypub.Service
-	hostSelf       string
+	stor      storage.Storage
+	ap        activitypub.Service
+	hostSelf  string
+	conv      converter.Service
+	clientAwk api.Client
 }
 
 const acctSep = "@"
 
-func NewService(stor storage.Storage, svcActivityPub activitypub.Service, hostSelf string) Service {
+func NewService(
+	stor storage.Storage,
+	ap activitypub.Service, hostSelf string, clientAwk api.Client, conv converter.Service) Service {
 	return service{
-		stor:           stor,
-		svcActivityPub: svcActivityPub,
-		hostSelf:       hostSelf,
+		stor:      stor,
+		ap:        ap,
+		hostSelf:  hostSelf,
+		clientAwk: clientAwk,
 	}
 }
 
@@ -51,7 +58,7 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId stri
 		}
 	}
 	if err == nil {
-		url, err = svc.svcActivityPub.ResolveActorLink(ctx, host, name)
+		url, err = svc.ap.ResolveActorLink(ctx, host, name)
 		if err != nil {
 			err = fmt.Errorf("%w: failed to resolve the actor %s@%s, cause: %s", ErrInvalid, name, host, err)
 		}
@@ -67,7 +74,7 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId stri
 	}
 	var actor vocab.Actor
 	if err == nil {
-		actor, err = svc.svcActivityPub.FetchActor(ctx, url)
+		actor, err = svc.ap.FetchActor(ctx, url)
 		if err != nil {
 			err = fmt.Errorf("%w: failed to fetch actor: %s, cause: %s", ErrInvalid, url, err)
 		}
@@ -79,7 +86,7 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId stri
 			Actor:   vocab.IRI(fmt.Sprintf("https://%s/actor", svc.hostSelf)),
 			Object:  vocab.IRI(addr),
 		}
-		err = svc.svcActivityPub.SendActivity(ctx, activity, actor.Inbox.GetLink())
+		err = svc.ap.SendActivity(ctx, activity, actor.Inbox.GetLink())
 	}
 	if err == nil {
 		src := model.Source{
@@ -96,17 +103,20 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId stri
 }
 
 func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activity vocab.Activity) (err error) {
-	switch activity.Type {
-	case vocab.AcceptType:
-		var src model.Source
-		src, err = svc.stor.Read(ctx, actor.ID.String())
-		if err == nil {
+	var src model.Source
+	src, err = svc.stor.Read(ctx, actor.ID.String())
+	if err == nil {
+		switch activity.Type {
+		case vocab.AcceptType:
 			src.Accepted = true
 			err = svc.stor.Update(ctx, src)
+		default:
+			var evt *pb.CloudEvent
+			evt, _ = svc.conv.Convert(ctx, actor, activity)
+			if evt != nil {
+				svc.clientAwk.Open
+			}
 		}
-	default:
-		d, _ := json.MarshalIndent(activity, "", "  ")
-		fmt.Printf("TODO convert to event:\n%s\n", string(d))
 	}
 	return
 }
@@ -124,7 +134,7 @@ func (svc service) List(ctx context.Context, filter model.Filter, limit uint32, 
 func (svc service) Unfollow(ctx context.Context, url vocab.IRI, groupId, userId string) (err error) {
 	var actor vocab.Actor
 	if err == nil {
-		actor, err = svc.svcActivityPub.FetchActor(ctx, url)
+		actor, err = svc.ap.FetchActor(ctx, url)
 		if err != nil {
 			err = fmt.Errorf("%w: failed to fetch actor: %s, cause: %s", ErrInvalid, url, err)
 		}
@@ -141,7 +151,7 @@ func (svc service) Unfollow(ctx context.Context, url vocab.IRI, groupId, userId 
 				Object: url,
 			},
 		}
-		err = svc.svcActivityPub.SendActivity(ctx, activity, actor.Inbox.GetLink())
+		err = svc.ap.SendActivity(ctx, activity, actor.Inbox.GetLink())
 	}
 	if err == nil {
 		err = svc.stor.Delete(ctx, url.String(), groupId, userId)

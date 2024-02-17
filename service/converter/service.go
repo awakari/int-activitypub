@@ -145,6 +145,19 @@ func (svc service) convertObject(obj *vocab.Object, evt *pb.CloudEvent) (err err
 	if cc := obj.CC; cc != nil && len(cc) > 0 {
 		err = errors.Join(err, convertAsCollection(cc, evt, CeKeyCc))
 	}
+	if obj.Content != nil {
+		txt := evt.GetTextData()
+		switch txt {
+		case "":
+			evt.Data = &pb.CloudEvent_TextData{
+				TextData: obj.Content.String(),
+			}
+		default:
+			evt.Data = &pb.CloudEvent_TextData{
+				TextData: fmt.Sprintf("%s\n\n%s", obj.Content, txt),
+			}
+		}
+	}
 	if obj.Duration > 0 {
 		evt.Attributes[CeKeyDuration] = &pb.CloudEventAttributeValue{
 			Attr: &pb.CloudEventAttributeValue_CeInteger{
@@ -204,19 +217,7 @@ func (svc service) convertObject(obj *vocab.Object, evt *pb.CloudEvent) (err err
 			},
 		}
 	}
-	if obj.Content != nil {
-		txt := evt.GetTextData()
-		switch txt {
-		case "":
-			evt.Data = &pb.CloudEvent_TextData{
-				TextData: obj.Content.String(),
-			}
-		default:
-			evt.Data = &pb.CloudEvent_TextData{
-				TextData: fmt.Sprintf("%s\n\n%s", obj.Content, txt),
-			}
-		}
-	}
+	//
 	return
 }
 
@@ -239,6 +240,19 @@ func (svc service) convertActivityAsObject(obj vocab.Activity, evt *pb.CloudEven
 	}
 	if cc := obj.CC; cc != nil && len(cc) > 0 {
 		err = errors.Join(err, convertAsCollection(cc, evt, CeKeyCc))
+	}
+	if obj.Content != nil {
+		txt := evt.GetTextData()
+		switch txt {
+		case "":
+			evt.Data = &pb.CloudEvent_TextData{
+				TextData: obj.Content.String(),
+			}
+		default:
+			evt.Data = &pb.CloudEvent_TextData{
+				TextData: fmt.Sprintf("%s\n\n%s", obj.Content, txt),
+			}
+		}
 	}
 	if obj.Duration > 0 {
 		evt.Attributes[CeKeyDuration] = &pb.CloudEventAttributeValue{
@@ -298,19 +312,6 @@ func (svc service) convertActivityAsObject(obj vocab.Activity, evt *pb.CloudEven
 			Attr: &pb.CloudEventAttributeValue_CeTimestamp{
 				CeTimestamp: timestamppb.New(obj.Updated),
 			},
-		}
-	}
-	if obj.Content != nil {
-		txt := evt.GetTextData()
-		switch txt {
-		case "":
-			evt.Data = &pb.CloudEvent_TextData{
-				TextData: obj.Content.String(),
-			}
-		default:
-			evt.Data = &pb.CloudEvent_TextData{
-				TextData: fmt.Sprintf("%s\n\n%s", obj.Content, txt),
-			}
 		}
 	}
 	return
