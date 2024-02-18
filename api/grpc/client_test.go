@@ -104,13 +104,13 @@ func TestServiceClient_Read(t *testing.T) {
 			req: &ReadRequest{
 				Url: "fail",
 			},
-			err: status.Error(codes.Internal, "internal failure"),
+			err: status.Error(codes.Internal, "source storage internal failure"),
 		},
 		"missing": {
 			req: &ReadRequest{
 				Url: "missing",
 			},
-			err: status.Error(codes.NotFound, "not found"),
+			err: status.Error(codes.NotFound, "source not registered"),
 		},
 	}
 	//
@@ -152,7 +152,7 @@ func TestServiceClient_ListUrls(t *testing.T) {
 			req: &ListUrlsRequest{
 				Cursor: "fail",
 			},
-			err: status.Error(codes.Internal, "internal failure"),
+			err: status.Error(codes.Internal, "source storage internal failure"),
 		},
 	}
 	//
@@ -187,7 +187,7 @@ func TestServiceClient_Delete(t *testing.T) {
 			req: &DeleteRequest{
 				Url: "fail",
 			},
-			err: status.Error(codes.Internal, "internal failure"),
+			err: status.Error(codes.Internal, "source storage internal failure"),
 		},
 		"fail to send activity": {
 			req: &DeleteRequest{
@@ -199,7 +199,7 @@ func TestServiceClient_Delete(t *testing.T) {
 			req: &DeleteRequest{
 				Url: "missing",
 			},
-			err: status.Error(codes.NotFound, "not found"),
+			err: status.Error(codes.NotFound, "source not registered"),
 		},
 		"invalid": {
 			req: &DeleteRequest{

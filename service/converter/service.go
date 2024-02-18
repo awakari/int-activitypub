@@ -50,15 +50,6 @@ func NewService() Service {
 }
 
 func (svc service) Convert(ctx context.Context, actor vocab.Actor, activity vocab.Activity) (evt *pb.CloudEvent, err error) {
-	t := activity.Type
-	if t == "" || t == vocab.DeleteType && activity.Actor == activity.Object {
-		return // skip self delete activities w/o an error
-	}
-	evt, err = svc.convertActivity(actor, activity)
-	return
-}
-
-func (svc service) convertActivity(actor vocab.Actor, activity vocab.Activity) (evt *pb.CloudEvent, err error) {
 	//
 	evt = &pb.CloudEvent{
 		Id:          uuid.NewString(),

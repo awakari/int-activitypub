@@ -39,6 +39,11 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 		ctx.String(http.StatusBadRequest, err.Error())
 		return
 	}
+	t := activity.Type
+	if t == "" || t == vocab.DeleteType && activity.Actor == activity.Object {
+		ctx.String(http.StatusOK, err.Error())
+		return // skip self delete activities w/o an error
+	}
 	err = h.svc.HandleActivity(ctx, actor, activity)
 	switch {
 	case errors.Is(err, storage.ErrNotFound), errors.Is(err, service.ErrInvalid):
