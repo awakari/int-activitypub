@@ -5,9 +5,11 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"github.com/awakari/int-activitypub/api/http/activitypub"
 	"github.com/awakari/int-activitypub/service"
+	"github.com/awakari/int-activitypub/storage"
 	"github.com/gin-gonic/gin"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/superseriousbusiness/httpsig"
@@ -38,7 +40,11 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 		return
 	}
 	err = h.svc.HandleActivity(ctx, actor, activity)
-	if err != nil {
+	switch {
+	case errors.Is(err, storage.ErrNotFound), errors.Is(err, service.ErrInvalid):
+		ctx.String(http.StatusBadRequest, err.Error())
+		return
+	case err != nil:
 		ctx.String(http.StatusInternalServerError, err.Error())
 		return
 	}

@@ -16,6 +16,6 @@ type Storage interface {
 	List(ctx context.Context, filter model.Filter, limit uint32, cursor string, order model.Order) (page []string, err error)
 }
 
-var ErrInternal = errors.New("internal failure")
-var ErrConflict = errors.New("already exists")
-var ErrNotFound = errors.New("not found")
+var ErrInternal = errors.New("source storage internal failure")
+var ErrConflict = errors.New("source already registered")
+var ErrNotFound = errors.New("source not registered")
