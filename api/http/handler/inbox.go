@@ -32,17 +32,11 @@ func NewInboxHandler(svcActivityPub activitypub.Service, svc service.Service) Ha
 }
 
 func (h inboxHandler) Handle(ctx *gin.Context) {
-	//
 	activity, actor, err := h.verify(ctx)
 	if err != nil {
 		fmt.Printf("Inbox request verification failed: %s\n", err)
 		ctx.String(http.StatusBadRequest, err.Error())
 		return
-	}
-	t := activity.Type
-	if t == "" || t == vocab.DeleteType && activity.Actor == activity.Object {
-		ctx.String(http.StatusOK, err.Error())
-		return // skip self delete activities w/o an error
 	}
 	err = h.svc.HandleActivity(ctx, actor, activity)
 	switch {
@@ -53,12 +47,12 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 		ctx.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	//
 	ctx.Status(http.StatusOK)
 	return
 }
 
 func (h inboxHandler) verify(ctx *gin.Context) (activity vocab.Activity, actor vocab.Actor, err error) {
+	//
 	req := ctx.Request
 	var data []byte
 	if err == nil {
@@ -67,6 +61,14 @@ func (h inboxHandler) verify(ctx *gin.Context) (activity vocab.Activity, actor v
 	if err == nil {
 		err = json.Unmarshal(data, &activity)
 	}
+	//
+	if err == nil {
+		t := activity.Type
+		if t == "" || t == vocab.DeleteType && activity.Actor == activity.Object {
+			err = errors.New("self delete activities are not accepted")
+		}
+	}
+	//
 	if err == nil {
 		actor, err = h.svcActivityPub.FetchActor(ctx, activity.Actor.GetLink())
 	}
