@@ -22,7 +22,12 @@ func NewLogging(svc Service, log *slog.Logger) Service {
 
 func (l logging) Convert(ctx context.Context, actor vocab.Actor, activity vocab.Activity) (evt *pb.CloudEvent, err error) {
 	evt, err = l.svc.Convert(ctx, actor, activity)
-	l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.Convert(actor=%s, activity=%s): %s, %s", actor.ID, activity.ID, evt.Id, err))
+	switch evt {
+	case nil:
+		l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.Convert(actor=%s, activity=%s): <nil>, %s", actor.ID, activity.ID, err))
+	default:
+		l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.Convert(actor=%s, activity=%s): %s, %s", actor.ID, activity.ID, evt.Id, err))
+	}
 	return
 }
 

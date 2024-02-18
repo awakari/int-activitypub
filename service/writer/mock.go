@@ -17,5 +17,9 @@ func (m mock) Close() error {
 }
 
 func (m mock) Write(ctx context.Context, evt *pb.CloudEvent, groupId, userId string) (err error) {
+	switch userId {
+	case "fail":
+		err = ErrWrite
+	}
 	return
 }

@@ -18,3 +18,5 @@ grpcurl \
   localhost:50051 \
   awakari.int.activitypub.Service/Create
 ```
+
+TODO conversion schema

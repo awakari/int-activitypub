@@ -19,7 +19,7 @@ func TestService_RequestFollow(t *testing.T) {
 		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
 		"test.social",
 		converter.NewLogging(converter.NewService(), slog.Default()),
-		writer.NewMock(),
+		writer.NewLogging(writer.NewMock(), slog.Default()),
 	)
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
@@ -74,7 +74,13 @@ func TestService_RequestFollow(t *testing.T) {
 }
 
 func TestService_HandleActivity(t *testing.T) {
-	svc := NewService(storage.NewStorageMock(), activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()), "test.social")
+	svc := NewService(
+		storage.NewStorageMock(),
+		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
+		"test.social",
+		converter.NewLogging(converter.NewService(), slog.Default()),
+		writer.NewLogging(writer.NewMock(), slog.Default()),
+	)
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
 		url      vocab.IRI
@@ -82,7 +88,7 @@ func TestService_HandleActivity(t *testing.T) {
 		err      error
 	}{
 		"ok": {
-			url: "ok",
+			url: "https://host.social/users/existing",
 		},
 		// TODO more cases
 	}
@@ -95,7 +101,13 @@ func TestService_HandleActivity(t *testing.T) {
 }
 
 func TestService_Read(t *testing.T) {
-	svc := NewService(storage.NewStorageMock(), activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()), "test.social")
+	svc := NewService(
+		storage.NewStorageMock(),
+		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
+		"test.social",
+		converter.NewLogging(converter.NewService(), slog.Default()),
+		writer.NewLogging(writer.NewMock(), slog.Default()),
+	)
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
 		url   vocab.IRI
@@ -124,7 +136,13 @@ func TestService_Read(t *testing.T) {
 }
 
 func TestService_List(t *testing.T) {
-	svc := NewService(storage.NewStorageMock(), activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()), "test.social")
+	svc := NewService(
+		storage.NewStorageMock(),
+		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
+		"test.social",
+		converter.NewLogging(converter.NewService(), slog.Default()),
+		writer.NewLogging(writer.NewMock(), slog.Default()),
+	)
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
 		filter model.Filter
@@ -155,7 +173,13 @@ func TestService_List(t *testing.T) {
 }
 
 func TestService_Unfollow(t *testing.T) {
-	svc := NewService(storage.NewStorageMock(), activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()), "test.social")
+	svc := NewService(
+		storage.NewStorageMock(),
+		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
+		"test.social",
+		converter.NewLogging(converter.NewService(), slog.Default()),
+		writer.NewLogging(writer.NewMock(), slog.Default()),
+	)
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
 		url vocab.IRI

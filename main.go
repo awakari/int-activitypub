@@ -10,6 +10,8 @@ import (
 	"github.com/awakari/int-activitypub/api/http/handler"
 	"github.com/awakari/int-activitypub/config"
 	"github.com/awakari/int-activitypub/service"
+	"github.com/awakari/int-activitypub/service/converter"
+	"github.com/awakari/int-activitypub/service/writer"
 	"github.com/awakari/int-activitypub/storage"
 	"github.com/gin-gonic/gin"
 	vocab "github.com/go-ap/activitypub"
@@ -54,7 +56,13 @@ func main() {
 	svcActivityPub := activitypub.NewService(clientHttp, cfg.Api.Http.Host, []byte(cfg.Api.Key.Private))
 	svcActivityPub = activitypub.NewServiceLogging(svcActivityPub, log)
 	//
-	svc := service.NewService(stor, svcActivityPub, cfg.Api.Http.Host)
+	svcConv := converter.NewService()
+	svcConv = converter.NewLogging(svcConv, log)
+	//
+	svcWriter := writer.NewService(clientAwk, cfg.Api.Writer.Backoff)
+	svcWriter = writer.NewLogging(svcWriter, log)
+	//
+	svc := service.NewService(stor, svcActivityPub, cfg.Api.Http.Host, svcConv, svcWriter)
 	svc = service.NewLogging(svc, log)
 	//
 	log.Info(fmt.Sprintf("starting to listen the gRPC API @ port #%d...", cfg.Api.Port))

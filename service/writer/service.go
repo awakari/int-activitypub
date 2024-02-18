@@ -24,27 +24,29 @@ type Service interface {
 }
 
 type service struct {
-	cache     *expirable.LRU[string, model.Writer[*pb.CloudEvent]]
-	cacheLock *sync.Mutex
-	clientAwk api.Client
+	cache            *expirable.LRU[string, model.Writer[*pb.CloudEvent]]
+	cacheLock        *sync.Mutex
+	clientAwk        api.Client
+	backoffTimeLimit time.Duration
 }
 
 const accSep = ":"
 const backoffInitDelay = 100 * time.Millisecond
-const backoffTimeLimit = 10 * time.Second
 const cacheWriterSize = 1024
 const cacheWriterTtl = 24 * time.Hour
 
+var ErrWrite = errors.New("failed to write event")
 var errNoAck = errors.New("event is not accepted")
 
-func NewService(clientAwk api.Client) Service {
+func NewService(clientAwk api.Client, backoffTimeLimit time.Duration) Service {
 	funcEvict := func(_ string, w model.Writer[*pb.CloudEvent]) {
 		_ = w.Close()
 	}
 	return service{
-		cache:     expirable.NewLRU[string, model.Writer[*pb.CloudEvent]](cacheWriterSize, funcEvict, cacheWriterTtl),
-		cacheLock: &sync.Mutex{},
-		clientAwk: clientAwk,
+		cache:            expirable.NewLRU[string, model.Writer[*pb.CloudEvent]](cacheWriterSize, funcEvict, cacheWriterTtl),
+		cacheLock:        &sync.Mutex{},
+		clientAwk:        clientAwk,
+		backoffTimeLimit: backoffTimeLimit,
 	}
 }
 
@@ -64,9 +66,12 @@ func (svc service) Close() (err error) {
 func (svc service) Write(ctx context.Context, evt *pb.CloudEvent, groupId, userId string) (err error) {
 	err = svc.getWriterAndPublish(ctx, evt, groupId, userId)
 	if err != nil {
-		err = retryBackoff(func() error {
+		err = svc.retryBackoff(func() error {
 			return svc.getWriterAndPublish(ctx, evt, groupId, userId)
 		})
+	}
+	if err != nil {
+		err = fmt.Errorf("%w id: %s, cause: %s", ErrWrite, evt.Id, err)
 	}
 	return
 }
@@ -128,7 +133,7 @@ func (svc service) publish(w model.Writer[*pb.CloudEvent], evt *pb.CloudEvent) (
 		case errors.Is(err, resolver.ErrInternal):
 			// avoid retrying this and above cases before reopening the writer
 		default:
-			err = retryBackoff(func() error {
+			err = svc.retryBackoff(func() error {
 				return svc.tryPublish(w, evt)
 			})
 		}
@@ -145,15 +150,15 @@ func (svc service) tryPublish(w model.Writer[*pb.CloudEvent], evt *pb.CloudEvent
 	return
 }
 
-func writerKey(groupId, userId string) (k string) {
-	k = fmt.Sprintf("%s%s%s", groupId, accSep, userId)
+func (svc service) retryBackoff(op func() error) (err error) {
+	b := backoff.NewExponentialBackOff()
+	b.InitialInterval = backoffInitDelay
+	b.MaxElapsedTime = svc.backoffTimeLimit
+	err = backoff.Retry(op, b)
 	return
 }
 
-func retryBackoff(op func() error) (err error) {
-	b := backoff.NewExponentialBackOff()
-	b.InitialInterval = backoffInitDelay
-	b.MaxElapsedTime = backoffTimeLimit
-	err = backoff.Retry(op, b)
+func writerKey(groupId, userId string) (k string) {
+	k = fmt.Sprintf("%s%s%s", groupId, accSep, userId)
 	return
 }
