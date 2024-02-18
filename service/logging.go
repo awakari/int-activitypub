@@ -22,7 +22,7 @@ func NewLogging(svc Service, log *slog.Logger) Service {
 
 func (l logging) RequestFollow(ctx context.Context, addr, groupId, userId string) (url vocab.IRI, err error) {
 	url, err = l.svc.RequestFollow(ctx, addr, groupId, userId)
-	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.SendActivity(addr=%s, groupId=%s, userId=%s): %s, %s", addr, groupId, userId, url, err))
+	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.RequestFollow(addr=%s, groupId=%s, userId=%s): %s, %s", addr, groupId, userId, url, err))
 	return
 }
 
