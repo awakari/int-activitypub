@@ -119,11 +119,13 @@ func main() {
 	}
 	hwf := handler.NewWebFingerHandler(wf)
 	hi := handler.NewInboxHandler(svcActivityPub, svc)
+	hFollowing := handler.NewFollowingHandler(stor)
 	//
 	r := gin.Default()
 	r.GET("/.well-known/webfinger", hwf.Handle)
 	r.GET("/actor", ha.Handle)
 	r.POST("/inbox", hi.Handle)
+	r.GET("/following", hFollowing.Handle)
 	log.Info(fmt.Sprintf("starting to listen the HTTP API @ port #%d...", cfg.Api.Http.Port))
 	err = r.Run(fmt.Sprintf(":%d", cfg.Api.Http.Port))
 	if err != nil {
