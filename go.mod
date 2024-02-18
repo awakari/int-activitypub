@@ -4,6 +4,7 @@ go 1.22
 
 require (
 	github.com/awakari/client-sdk-go v1.0.9
+	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/cloudevents/sdk-go/binding/format/protobuf/v2 v2.14.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-ap/activitypub v0.0.0-20240211124657-820024a66b78

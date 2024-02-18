@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/awakari/int-activitypub/api/http/activitypub"
 	"github.com/awakari/int-activitypub/model"
+	"github.com/awakari/int-activitypub/service/converter"
+	"github.com/awakari/int-activitypub/service/writer"
 	"github.com/awakari/int-activitypub/storage"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/stretchr/testify/assert"
@@ -12,7 +14,13 @@ import (
 )
 
 func TestService_RequestFollow(t *testing.T) {
-	svc := NewService(storage.NewStorageMock(), activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()), "test.social")
+	svc := NewService(
+		storage.NewStorageMock(),
+		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
+		"test.social",
+		converter.NewLogging(converter.NewService(), slog.Default()),
+		writer.NewMock(),
+	)
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
 		addr string

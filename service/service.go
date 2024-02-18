@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/awakari/client-sdk-go/api"
 	"github.com/awakari/int-activitypub/api/http/activitypub"
 	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/service/converter"
+	"github.com/awakari/int-activitypub/service/writer"
 	"github.com/awakari/int-activitypub/storage"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	vocab "github.com/go-ap/activitypub"
@@ -25,23 +25,28 @@ type Service interface {
 var ErrInvalid = errors.New("invalid argument")
 
 type service struct {
-	stor      storage.Storage
-	ap        activitypub.Service
-	hostSelf  string
-	conv      converter.Service
-	clientAwk api.Client
+	stor     storage.Storage
+	ap       activitypub.Service
+	hostSelf string
+	conv     converter.Service
+	w        writer.Service
 }
 
 const acctSep = "@"
 
 func NewService(
 	stor storage.Storage,
-	ap activitypub.Service, hostSelf string, clientAwk api.Client, conv converter.Service) Service {
+	ap activitypub.Service,
+	hostSelf string,
+	conv converter.Service,
+	w writer.Service,
+) Service {
 	return service{
-		stor:      stor,
-		ap:        ap,
-		hostSelf:  hostSelf,
-		clientAwk: clientAwk,
+		stor:     stor,
+		ap:       ap,
+		hostSelf: hostSelf,
+		conv:     conv,
+		w:        w,
 	}
 }
 
@@ -113,8 +118,8 @@ func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activi
 		default:
 			var evt *pb.CloudEvent
 			evt, _ = svc.conv.Convert(ctx, actor, activity)
-			if evt != nil {
-				svc.clientAwk.Open
+			if evt != nil && evt.Data != nil {
+				err = svc.w.Write(ctx, evt, src.GroupId, src.UserId)
 			}
 		}
 	}
