@@ -24,50 +24,31 @@ func TestService_RequestFollow(t *testing.T) {
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
 		addr string
-		url  vocab.IRI
 		err  error
 	}{
 		"ok": {
 			addr: "johndoe@host.social",
-			url:  "https://host.social/users/johndoe",
-		},
-		"invalid src addr1": {
-			addr: "johndoe",
-			err:  ErrInvalid,
-		},
-		"invalid src addr2": {
-			addr: "@host.social",
-			err:  ErrInvalid,
-		},
-		"fail resolve webfinger": {
-			addr: "fail@host.social",
-			err:  ErrInvalid,
 		},
 		"fail to fetch actor": {
-			addr: "johndoe@fail.social",
-			url:  "https://fail.social/users/johndoe",
+			addr: "https://fail.social/users/johndoe",
 			err:  ErrInvalid,
 		},
 		"fail to send activity": {
-			addr: "johndoe@host.fail",
-			url:  "https://host.fail/users/johndoe",
+			addr: "https://host.fail/users/johndoe",
 			err:  activitypub.ErrActivitySend,
 		},
 		"conflict": {
-			addr: "existing@host.social",
-			url:  "https://host.social/users/existing",
+			addr: "https://host.social/users/existing",
 			err:  storage.ErrConflict,
 		},
 		"storage fails": {
-			addr: "storfail@host.social",
-			url:  "https://host.social/users/storfail",
+			addr: "https://host.social/users/storfail",
 			err:  storage.ErrInternal,
 		},
 	}
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
-			u, err := svc.RequestFollow(context.TODO(), c.addr, "group0", "user1")
-			assert.Equal(t, c.url, u)
+			err := svc.RequestFollow(context.TODO(), c.addr, "group0", "user1")
 			assert.ErrorIs(t, err, c.err)
 		})
 	}

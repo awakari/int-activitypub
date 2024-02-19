@@ -11,11 +11,10 @@ import (
 	"github.com/awakari/int-activitypub/storage"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	vocab "github.com/go-ap/activitypub"
-	"strings"
 )
 
 type Service interface {
-	RequestFollow(ctx context.Context, addr, groupId, userId string) (url vocab.IRI, err error)
+	RequestFollow(ctx context.Context, addr, groupId, userId string) (err error)
 	HandleActivity(ctx context.Context, actor vocab.Actor, activity vocab.Activity) (err error)
 	Read(ctx context.Context, url vocab.IRI) (src model.Source, err error)
 	List(ctx context.Context, filter model.Filter, limit uint32, cursor string, order model.Order) (page []string, err error)
@@ -50,38 +49,19 @@ func NewService(
 	}
 }
 
-func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId string) (url vocab.IRI, err error) {
-	acct := strings.SplitN(addr, acctSep, 3)
-	if len(acct) != 2 {
-		err = fmt.Errorf("%w address to follow: %s, should be <name>@<host>", ErrInvalid, addr)
-	}
-	var host, name string
-	if err == nil {
-		name, host = acct[0], acct[1]
-		if name == "" || host == "" {
-			err = fmt.Errorf("%w address to follow: %s, should be <name>@<host>", ErrInvalid, addr)
-		}
-	}
-	if err == nil {
-		url, err = svc.ap.ResolveActorLink(ctx, host, name)
-		if err != nil {
-			err = fmt.Errorf("%w: failed to resolve the actor %s@%s, cause: %s", ErrInvalid, name, host, err)
-		}
-	}
-	if err == nil {
-		_, err = svc.stor.Read(ctx, url.String())
-		switch {
-		case err == nil:
-			err = fmt.Errorf("%w: %s", storage.ErrConflict, url)
-		case errors.Is(err, storage.ErrNotFound):
-			err = nil
-		}
+func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId string) (err error) {
+	_, err = svc.stor.Read(ctx, addr)
+	switch {
+	case err == nil:
+		err = fmt.Errorf("%w: %s", storage.ErrConflict, addr)
+	case errors.Is(err, storage.ErrNotFound):
+		err = nil
 	}
 	var actor vocab.Actor
 	if err == nil {
-		actor, err = svc.ap.FetchActor(ctx, url)
+		actor, err = svc.ap.FetchActor(ctx, vocab.IRI(addr))
 		if err != nil {
-			err = fmt.Errorf("%w: failed to fetch actor: %s, cause: %s", ErrInvalid, url, err)
+			err = fmt.Errorf("%w: failed to fetch actor: %s, cause: %s", ErrInvalid, addr, err)
 		}
 	}
 	if err == nil {
@@ -91,7 +71,7 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId stri
 			Actor:   vocab.IRI(fmt.Sprintf("https://%s/actor", svc.hostSelf)),
 			Object:  vocab.IRI(addr),
 		}
-		err = svc.ap.SendActivity(ctx, activity, actor.Inbox.GetLink())
+		err = svc.ap.SendActivity(ctx, activity, actor.Inbox.GetID())
 	}
 	if err == nil {
 		src := model.Source{

@@ -24,14 +24,8 @@ func NewController(svc service.Service) ServiceServer {
 
 func (c controller) Create(ctx context.Context, req *CreateRequest) (resp *CreateResponse, err error) {
 	resp = &CreateResponse{}
-	var url vocab.IRI
-	url, err = c.svc.RequestFollow(ctx, req.Addr, req.GroupId, req.UserId)
-	switch err {
-	case nil:
-		resp.Url = url.String()
-	default:
-		err = encodeError(err)
-	}
+	err = c.svc.RequestFollow(ctx, req.Addr, req.GroupId, req.UserId)
+	err = encodeError(err)
 	return
 }
 

@@ -74,7 +74,7 @@ func main() {
 	//
 	a := vocab.Actor{
 		ID:   vocab.ID(fmt.Sprintf("https://%s/actor", cfg.Api.Http.Host)),
-		Type: vocab.ServiceType,
+		Type: vocab.PersonType,
 		Name: vocab.DefaultNaturalLanguageValue("awakari"),
 		Context: vocab.IRIs{
 			"https://www.w3.org/ns/activitystreams",
@@ -104,6 +104,12 @@ func main() {
 			ID:           vocab.ID(fmt.Sprintf("https://%s/actor#main-key", cfg.Api.Http.Host)),
 			Owner:        vocab.IRI(fmt.Sprintf("https://%s/actor", cfg.Api.Http.Host)),
 			PublicKeyPem: cfg.Api.Key.Public,
+		},
+		Attachment: vocab.ItemCollection{
+			vocab.Page{
+				ID:  vocab.ID("https://awakari.com"),
+				URL: vocab.IRI("https://awakari.com"),
+			},
 		},
 	}
 	ha := handler.NewActorHandler(a)

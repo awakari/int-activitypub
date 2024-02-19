@@ -20,15 +20,13 @@ service Service {
 }
 
 message CreateRequest {
-  // WebFinger address, e.g. "Mastodon@mastodon.social"
+  // Actor address, e.g. "https://mastodon.social/users/Mastodon"
   string addr = 1;
   string groupId = 2;
   string userId = 3;
 }
 
 message CreateResponse {
-  // The resolved actor URI, e.g. "https://mastodon.social/users/Mastodon"
-  string url = 1;
 }
 
 message ReadRequest {

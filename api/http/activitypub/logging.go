@@ -19,15 +19,9 @@ func NewServiceLogging(svc Service, log *slog.Logger) Service {
 	}
 }
 
-func (l logging) ResolveActorLink(ctx context.Context, host, name string) (self vocab.IRI, err error) {
-	self, err = l.svc.ResolveActorLink(ctx, host, name)
-	l.log.Log(ctx, logLevel(err), fmt.Sprintf("http.ResolveActorLink(host=%s, name=%s): %s, %s", host, name, self, err))
-	return
-}
-
 func (l logging) FetchActor(ctx context.Context, addr vocab.IRI) (actor vocab.Actor, err error) {
 	actor, err = l.svc.FetchActor(ctx, addr)
-	l.log.Log(ctx, logLevel(err), fmt.Sprintf("http.FetchActor(addr=%s): %+v, %s", addr, actor, err))
+	l.log.Log(ctx, logLevel(err), fmt.Sprintf("http.FetchActor(addr=%s): {Id;%+v, Inbox:%+v}, %s", addr, actor.ID, actor.Inbox, err))
 	return
 }
 

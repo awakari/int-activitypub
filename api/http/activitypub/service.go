@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	apiHttp "github.com/awakari/int-activitypub/api/http"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/superseriousbusiness/httpsig"
 	"golang.org/x/crypto/ssh"
@@ -17,7 +16,6 @@ import (
 )
 
 type Service interface {
-	ResolveActorLink(ctx context.Context, host, name string) (self vocab.IRI, err error)
 	FetchActor(ctx context.Context, self vocab.IRI) (a vocab.Actor, err error)
 	SendActivity(ctx context.Context, a vocab.Activity, inbox vocab.IRI) (err error)
 }
@@ -28,7 +26,6 @@ type service struct {
 	privKey    []byte
 }
 
-const fmtWebFinger = "https://%s/.well-known/webfinger?resource=acct:%s@%s"
 const limitRespBodyLen = 65_536
 
 var prefs = []httpsig.Algorithm{
@@ -54,50 +51,35 @@ func NewService(clientHttp *http.Client, userAgent string, privKey []byte) Servi
 	}
 }
 
-func (svc service) ResolveActorLink(ctx context.Context, host, name string) (self vocab.IRI, err error) {
-	var req *http.Request
-	req, err = http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf(fmtWebFinger, host, name, host), nil)
-	var resp *http.Response
-	if err == nil {
-		req.Header.Add("Accept", "application/jrd+json")
-		req.Header.Add("User-Agent", svc.userAgent)
-		resp, err = svc.clientHttp.Do(req)
-	}
-	var data []byte
-	if err == nil {
-		data, err = io.ReadAll(io.LimitReader(resp.Body, limitRespBodyLen))
-	}
-	var wf apiHttp.WebFinger
-	if err == nil {
-		err = json.Unmarshal(data, &wf)
-	}
-	if err == nil {
-		for _, l := range wf.Links {
-			if l.Rel == "self" {
-				self = vocab.IRI(l.Href)
-				break
-			}
-		}
-	}
-	//
-	if err != nil {
-		err = fmt.Errorf("%w %s@%s: %s", ErrActorWebFinger, name, host, err)
-	}
-	return
-}
-
 func (svc service) FetchActor(ctx context.Context, addr vocab.IRI) (actor vocab.Actor, err error) {
+	//
 	var req *http.Request
 	req, err = http.NewRequestWithContext(ctx, http.MethodGet, string(addr), nil)
 	var resp *http.Response
+	var reqUrl *url.URL
 	if err == nil {
+		reqUrl, err = addr.URL()
+	}
+	if err == nil {
+		req.Header.Set("Host", reqUrl.Host)
 		req.Header.Add("Accept", "application/activity+json")
+		req.Header.Add("Accept-Charset", "utf-8")
 		req.Header.Add("User-Agent", svc.userAgent)
+		now := time.Now().UTC()
+		req.Header.Set("Date", now.Format(http.TimeFormat))
+	}
+	//
+	err = svc.signRequest(req, []byte{})
+	//
+	if err == nil {
 		resp, err = svc.clientHttp.Do(req)
 	}
 	var data []byte
 	if err == nil {
 		data, err = io.ReadAll(io.LimitReader(resp.Body, limitRespBodyLen))
+	}
+	if err == nil && resp.StatusCode > 299 {
+		err = fmt.Errorf("%w %s: response status %d, message: %s", ErrActorFetch, addr, resp.StatusCode, string(data))
 	}
 	if err == nil {
 		err = json.Unmarshal(data, &actor)
@@ -130,23 +112,7 @@ func (svc service) SendActivity(ctx context.Context, a vocab.Activity, inbox voc
 		req.Header.Set("Date", now.Format(http.TimeFormat))
 	}
 	//
-	var signer httpsig.Signer
-	if err == nil {
-		signer, _, err = httpsig.NewSigner(prefs, digestAlgorithm, headersToSign, httpsig.Signature, 120)
-	}
-	var privKey any
-	if err == nil {
-		privKey, err = ssh.ParseRawPrivateKey(svc.privKey)
-		if err != nil {
-			err = fmt.Errorf("failed to parse the private key: %w", err)
-		}
-	}
-	if err == nil {
-		err = signer.SignRequest(privKey, fmt.Sprintf("https://%s/actor#main-key", svc.userAgent), req, d)
-		if err != nil {
-			err = fmt.Errorf("failed to sign the follow request: %w", err)
-		}
-	}
+	err = svc.signRequest(req, d)
 	//
 	var resp *http.Response
 	if err == nil {
@@ -162,6 +128,27 @@ func (svc service) SendActivity(ctx context.Context, a vocab.Activity, inbox voc
 	//
 	if err != nil {
 		err = fmt.Errorf("%w: %s", ErrActivitySend, err)
+	}
+	return
+}
+
+func (svc service) signRequest(req *http.Request, data []byte) (err error) {
+	var signer httpsig.Signer
+	if err == nil {
+		signer, _, err = httpsig.NewSigner(prefs, digestAlgorithm, headersToSign, httpsig.Signature, 120)
+	}
+	var privKey any
+	if err == nil {
+		privKey, err = ssh.ParseRawPrivateKey(svc.privKey)
+		if err != nil {
+			err = fmt.Errorf("failed to parse the private key: %w", err)
+		}
+	}
+	if err == nil {
+		err = signer.SignRequest(privKey, fmt.Sprintf("https://%s/actor#main-key", svc.userAgent), req, data)
+		if err != nil {
+			err = fmt.Errorf("failed to sign the follow request: %w", err)
+		}
 	}
 	return
 }

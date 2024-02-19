@@ -15,8 +15,7 @@ func NewServiceMock() Service {
 	return mock{}
 }
 
-func (m mock) RequestFollow(ctx context.Context, addr, groupId, userId string) (url vocab.IRI, err error) {
-	url = vocab.IRI(addr)
+func (m mock) RequestFollow(ctx context.Context, addr, groupId, userId string) (err error) {
 	switch addr {
 	case "activitypub_fail":
 		err = activitypub.ErrActivitySend
