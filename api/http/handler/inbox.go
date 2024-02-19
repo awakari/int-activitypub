@@ -64,7 +64,7 @@ func (h inboxHandler) verify(ctx *gin.Context) (activity vocab.Activity, actor v
 	//
 	if err == nil {
 		t := activity.Type
-		if t == "" || t == vocab.DeleteType && activity.Actor == activity.Object {
+		if t == "" || t == vocab.DeleteType && activity.Actor.GetID() == activity.Object.GetID() {
 			err = errors.New("self delete activities are not accepted")
 		}
 	}
