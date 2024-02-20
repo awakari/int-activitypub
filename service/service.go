@@ -14,7 +14,7 @@ import (
 )
 
 type Service interface {
-	RequestFollow(ctx context.Context, addr, groupId, userId string) (err error)
+	RequestFollow(ctx context.Context, addr, groupId, userId string) (url string, err error)
 	HandleActivity(ctx context.Context, actor vocab.Actor, activity vocab.Activity) (err error)
 	Read(ctx context.Context, url vocab.IRI) (src model.Source, err error)
 	List(ctx context.Context, filter model.Filter, limit uint32, cursor string, order model.Order) (page []string, err error)
@@ -49,7 +49,7 @@ func NewService(
 	}
 }
 
-func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId string) (err error) {
+func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId string) (url string, err error) {
 	_, err = svc.stor.Read(ctx, addr)
 	switch {
 	case err == nil:
@@ -83,6 +83,9 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId stri
 			Summary: actor.Summary.String(),
 		}
 		err = svc.stor.Create(ctx, src)
+		if err == nil {
+			url = src.ActorId
+		}
 	}
 	return
 }

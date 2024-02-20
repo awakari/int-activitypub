@@ -20,13 +20,15 @@ service Service {
 }
 
 message CreateRequest {
-  // Actor address, e.g. "https://mastodon.social/users/Mastodon"
+  // Actor address, e.g. "https://mastodon.social/@Mastodon"
   string addr = 1;
   string groupId = 2;
   string userId = 3;
 }
 
 message CreateResponse {
+  // Actor URL, e.g. "https://mastodon.social/users/Mastodon"
+  string url = 1;
 }
 
 message ReadRequest {

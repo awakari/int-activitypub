@@ -24,10 +24,12 @@ func TestService_RequestFollow(t *testing.T) {
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
 		addr string
+		url  string
 		err  error
 	}{
 		"ok": {
 			addr: "johndoe@host.social",
+			url:  "johndoe@host.social",
 		},
 		"fail to fetch actor": {
 			addr: "https://fail.social/users/johndoe",
@@ -48,7 +50,8 @@ func TestService_RequestFollow(t *testing.T) {
 	}
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
-			err := svc.RequestFollow(context.TODO(), c.addr, "group0", "user1")
+			u, err := svc.RequestFollow(context.TODO(), c.addr, "group0", "user1")
+			assert.Equal(t, c.url, u)
 			assert.ErrorIs(t, err, c.err)
 		})
 	}

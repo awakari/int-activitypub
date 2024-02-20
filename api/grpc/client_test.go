@@ -64,7 +64,10 @@ func TestServiceClient_Create(t *testing.T) {
 	//
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
-			_, err := client.Create(context.TODO(), c.req)
+			resp, err := client.Create(context.TODO(), c.req)
+			if c.err == nil {
+				assert.Equal(t, c.req.Addr, resp.Url)
+			}
 			assert.ErrorIs(t, err, c.err)
 		})
 	}
