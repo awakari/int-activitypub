@@ -39,7 +39,6 @@ var headersToSign = []string{
 	"digest",
 }
 
-var ErrActorWebFinger = errors.New("failed to get the webfinger data for actor")
 var ErrActorFetch = errors.New("failed to get the actor")
 var ErrActivitySend = errors.New("failed to send activity")
 

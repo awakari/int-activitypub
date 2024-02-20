@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	"github.com/awakari/int-activitypub/api/http/activitypub"
 	"github.com/awakari/int-activitypub/model"
+	"github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/storage"
 	vocab "github.com/go-ap/activitypub"
 )

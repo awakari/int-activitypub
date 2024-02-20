@@ -97,17 +97,20 @@ func (svc service) Convert(ctx context.Context, actor vocab.Actor, activity voca
 			},
 		}
 		obj := activity.Object
-		switch {
-		case obj.IsLink():
-			evt.Attributes[CeKeyObjectUrl] = &pb.CloudEventAttributeValue{
-				Attr: &pb.CloudEventAttributeValue_CeUri{
-					CeUri: obj.GetLink().String(),
-				},
-			}
-		case obj.IsObject():
-			err = svc.convertObject(obj.(*vocab.Object), evt)
+		switch objT := obj.(type) {
+		case *vocab.Object:
+			err = svc.convertObject(objT, evt)
 		default:
-			err = fmt.Errorf("%w activity object, unexpected type: %s", ErrFail, reflect.TypeOf(obj))
+			switch obj.IsLink() {
+			case true:
+				evt.Attributes[CeKeyObjectUrl] = &pb.CloudEventAttributeValue{
+					Attr: &pb.CloudEventAttributeValue_CeUri{
+						CeUri: obj.GetLink().String(),
+					},
+				}
+			default:
+				err = fmt.Errorf("%w activity object, unexpected type: %s", ErrFail, reflect.TypeOf(obj))
+			}
 		}
 	default:
 		err = svc.convertActivityAsObject(activity, evt)

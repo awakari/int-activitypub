@@ -6,10 +6,10 @@ import (
 	"github.com/awakari/client-sdk-go/api"
 	apiGrpc "github.com/awakari/int-activitypub/api/grpc"
 	apiHttp "github.com/awakari/int-activitypub/api/http"
-	"github.com/awakari/int-activitypub/api/http/activitypub"
 	"github.com/awakari/int-activitypub/api/http/handler"
 	"github.com/awakari/int-activitypub/config"
 	"github.com/awakari/int-activitypub/service"
+	activitypub2 "github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/service/converter"
 	"github.com/awakari/int-activitypub/service/writer"
 	"github.com/awakari/int-activitypub/storage"
@@ -53,8 +53,8 @@ func main() {
 	log.Info("initialized the Awakari API client")
 	//
 	clientHttp := &http.Client{}
-	svcActivityPub := activitypub.NewService(clientHttp, cfg.Api.Http.Host, []byte(cfg.Api.Key.Private))
-	svcActivityPub = activitypub.NewServiceLogging(svcActivityPub, log)
+	svcActivityPub := activitypub2.NewService(clientHttp, cfg.Api.Http.Host, []byte(cfg.Api.Key.Private))
+	svcActivityPub = activitypub2.NewServiceLogging(svcActivityPub, log)
 	//
 	svcConv := converter.NewService()
 	svcConv = converter.NewLogging(svcConv, log)
@@ -76,9 +76,9 @@ func main() {
 		ID:   vocab.ID(fmt.Sprintf("https://%s/actor", cfg.Api.Http.Host)),
 		Type: vocab.PersonType,
 		Name: vocab.DefaultNaturalLanguageValue("awakari"),
-		Context: vocab.IRIs{
-			"https://www.w3.org/ns/activitystreams",
-			"https://w3id.org/security/v1",
+		Context: vocab.ItemCollection{
+			vocab.IRI("https://www.w3.org/ns/activitystreams"),
+			vocab.IRI("https://w3id.org/security/v1"),
 		},
 		Icon: vocab.Image{
 			MediaType: "image/png",

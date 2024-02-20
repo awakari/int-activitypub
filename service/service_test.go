@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	"github.com/awakari/int-activitypub/api/http/activitypub"
 	"github.com/awakari/int-activitypub/model"
+	activitypub2 "github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/service/converter"
 	"github.com/awakari/int-activitypub/service/writer"
 	"github.com/awakari/int-activitypub/storage"
@@ -16,7 +16,7 @@ import (
 func TestService_RequestFollow(t *testing.T) {
 	svc := NewService(
 		storage.NewStorageMock(),
-		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
+		activitypub2.NewServiceLogging(activitypub2.NewServiceMock(), slog.Default()),
 		"test.social",
 		converter.NewLogging(converter.NewService(), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
@@ -35,7 +35,7 @@ func TestService_RequestFollow(t *testing.T) {
 		},
 		"fail to send activity": {
 			addr: "https://host.fail/users/johndoe",
-			err:  activitypub.ErrActivitySend,
+			err:  activitypub2.ErrActivitySend,
 		},
 		"conflict": {
 			addr: "https://host.social/users/existing",
@@ -57,7 +57,7 @@ func TestService_RequestFollow(t *testing.T) {
 func TestService_HandleActivity(t *testing.T) {
 	svc := NewService(
 		storage.NewStorageMock(),
-		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
+		activitypub2.NewServiceLogging(activitypub2.NewServiceMock(), slog.Default()),
 		"test.social",
 		converter.NewLogging(converter.NewService(), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
@@ -84,7 +84,7 @@ func TestService_HandleActivity(t *testing.T) {
 func TestService_Read(t *testing.T) {
 	svc := NewService(
 		storage.NewStorageMock(),
-		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
+		activitypub2.NewServiceLogging(activitypub2.NewServiceMock(), slog.Default()),
 		"test.social",
 		converter.NewLogging(converter.NewService(), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
@@ -119,7 +119,7 @@ func TestService_Read(t *testing.T) {
 func TestService_List(t *testing.T) {
 	svc := NewService(
 		storage.NewStorageMock(),
-		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
+		activitypub2.NewServiceLogging(activitypub2.NewServiceMock(), slog.Default()),
 		"test.social",
 		converter.NewLogging(converter.NewService(), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
@@ -156,7 +156,7 @@ func TestService_List(t *testing.T) {
 func TestService_Unfollow(t *testing.T) {
 	svc := NewService(
 		storage.NewStorageMock(),
-		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
+		activitypub2.NewServiceLogging(activitypub2.NewServiceMock(), slog.Default()),
 		"test.social",
 		converter.NewLogging(converter.NewService(), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
@@ -173,7 +173,7 @@ func TestService_Unfollow(t *testing.T) {
 		},
 		"fails to send activity": {
 			url: "https://host.fail/users/johndoe",
-			err: activitypub.ErrActivitySend,
+			err: activitypub2.ErrActivitySend,
 		},
 		"missing": {
 			url: "missing",

@@ -7,8 +7,8 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"github.com/awakari/int-activitypub/api/http/activitypub"
 	"github.com/awakari/int-activitypub/service"
+	"github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/storage"
 	"github.com/gin-gonic/gin"
 	vocab "github.com/go-ap/activitypub"
@@ -32,12 +32,43 @@ func NewInboxHandler(svcActivityPub activitypub.Service, svc service.Service) Ha
 }
 
 func (h inboxHandler) Handle(ctx *gin.Context) {
-	activity, actor, err := h.verify(ctx)
+
+	req := ctx.Request
+	data, err := io.ReadAll(io.LimitReader(req.Body, limitReqBodyLen))
+	if err != nil {
+		fmt.Printf("Inbox request read failure: %s\n", err)
+		ctx.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	var activity vocab.Activity
+	err = json.Unmarshal(data, &activity)
+	if err != nil {
+		fmt.Printf("Inbox request unmarshal failure: %s\n", err)
+		ctx.String(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	t := activity.Type
+	if t == "" || t == vocab.DeleteType && activity.Actor.GetID() == activity.Object.GetID() {
+		ctx.Status(http.StatusOK)
+		return
+	}
+
+	var actor vocab.Actor
+	actor, err = h.svcActivityPub.FetchActor(ctx, activity.Actor.GetLink())
+	if err != nil {
+		ctx.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	err = h.verify(ctx, data, actor)
 	if err != nil {
 		fmt.Printf("Inbox request verification failed: %s\n", err)
 		ctx.String(http.StatusBadRequest, err.Error())
 		return
 	}
+
 	err = h.svc.HandleActivity(ctx, actor, activity)
 	switch {
 	case errors.Is(err, storage.ErrNotFound), errors.Is(err, service.ErrInvalid):
@@ -47,34 +78,15 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 		ctx.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+
 	ctx.Status(http.StatusOK)
 	return
 }
 
-func (h inboxHandler) verify(ctx *gin.Context) (activity vocab.Activity, actor vocab.Actor, err error) {
-	//
-	req := ctx.Request
-	var data []byte
-	if err == nil {
-		data, err = io.ReadAll(io.LimitReader(req.Body, limitReqBodyLen))
-	}
-	if err == nil {
-		err = json.Unmarshal(data, &activity)
-	}
-	//
-	if err == nil {
-		t := activity.Type
-		if t == "" || t == vocab.DeleteType && activity.Actor.GetID() == activity.Object.GetID() {
-			err = errors.New("self delete activities are not accepted")
-		}
-	}
-	//
-	if err == nil {
-		actor, err = h.svcActivityPub.FetchActor(ctx, activity.Actor.GetLink())
-	}
+func (h inboxHandler) verify(ctx *gin.Context, data []byte, actor vocab.Actor) (err error) {
 	var verifier httpsig.Verifier
 	if err == nil {
-		verifier, err = httpsig.NewVerifier(req)
+		verifier, err = httpsig.NewVerifier(ctx.Request)
 	}
 	if err == nil {
 		pubKeyId := verifier.KeyId()
