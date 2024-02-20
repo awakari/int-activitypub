@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -50,10 +52,21 @@ func TestActor_marshalJsonAndFixContext(t *testing.T) {
 			},
 		},
 	}
-	txt := marshalJsonAndFixContext(a)
+	data, err := json.Marshal(a)
+	require.Nil(t, err)
+	raw := map[string]any{}
+	err = json.Unmarshal(data, &raw)
+	ctx, ctxFound := raw["context"]
+	require.Nil(t, err)
+	assert.NotNil(t, ctx)
+	assert.True(t, ctxFound)
+	delete(raw, "context")
+	raw["@context"] = ctx
+	data, err = json.Marshal(raw)
+	assert.Nil(t, err)
 	assert.Equal(
 		t,
-		`{"id":"https://host.social/actor","type":"Person","name":"awakari","summary":"Awakari ActivityPub Bot","attachment":{"id":"https://awakari.com","url":"https://awakari.com"},"@context":["https://www.w3.org/ns/activitystreams","https://w3id.org/security/v1"],"icon":{"type":"Image","mediaType":"image/png","url":"https://awakari.com/logo-color-64.png"},"image":{"type":"Image","mediaType":"image/svg+xml","url":"https://awakari.com/logo-color.svg"},"url":"https://awakari.com","inbox":"https://host.social/inbox","outbox":"https://host.social/outbox","following":"https://host.social/following","followers":"https://host.social/followers","preferredUsername":"awakari","endpoints":{"sharedInbox":"https://host.social/inbox"},"publicKey":{"id":"https://host.social/actor#main-key","owner":"https://host.social/actor"}}`,
-		txt,
+		`{"@context":["https://www.w3.org/ns/activitystreams","https://w3id.org/security/v1"],"attachment":{"id":"https://awakari.com","url":"https://awakari.com"},"endpoints":{"sharedInbox":"https://host.social/inbox"},"followers":"https://host.social/followers","following":"https://host.social/following","icon":{"mediaType":"image/png","type":"Image","url":"https://awakari.com/logo-color-64.png"},"id":"https://host.social/actor","image":{"mediaType":"image/svg+xml","type":"Image","url":"https://awakari.com/logo-color.svg"},"inbox":"https://host.social/inbox","name":"awakari","outbox":"https://host.social/outbox","preferredUsername":"awakari","publicKey":{"id":"https://host.social/actor#main-key","owner":"https://host.social/actor"},"summary":"Awakari ActivityPub Bot","type":"Person","url":"https://awakari.com"}`,
+		string(data),
 	)
 }
