@@ -129,7 +129,7 @@ func (svc service) FetchActor(ctx context.Context, addr vocab.IRI) (actor vocab.
 func (svc service) SendActivity(ctx context.Context, a vocab.Activity, inbox vocab.IRI) (err error) {
 	//
 	var d []byte
-	d, err = json.Marshal(a)
+	d, err = json.Marshal(apiHttp.FixContext(a))
 	var req *http.Request
 	if err == nil {
 		req, err = http.NewRequestWithContext(ctx, http.MethodPost, string(inbox), bytes.NewReader(d))

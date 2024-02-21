@@ -1,17 +1,16 @@
-package handler
+package http
 
 import (
 	"encoding/json"
 	"fmt"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 const host = "host.social"
 
-func TestActor_marshalJsonAndFixContext(t *testing.T) {
+func Test_FixContext(t *testing.T) {
 	a := vocab.Actor{
 		ID: vocab.ID(fmt.Sprintf("https://%s/actor", host)),
 		Context: vocab.ItemCollection{
@@ -52,17 +51,8 @@ func TestActor_marshalJsonAndFixContext(t *testing.T) {
 			},
 		},
 	}
-	data, err := json.Marshal(a)
-	require.Nil(t, err)
-	raw := map[string]any{}
-	err = json.Unmarshal(data, &raw)
-	ctx, ctxFound := raw["context"]
-	require.Nil(t, err)
-	assert.NotNil(t, ctx)
-	assert.True(t, ctxFound)
-	delete(raw, "context")
-	raw["@context"] = ctx
-	data, err = json.Marshal(raw)
+	m := FixContext(a)
+	data, err := json.Marshal(m)
 	assert.Nil(t, err)
 	assert.Equal(
 		t,
