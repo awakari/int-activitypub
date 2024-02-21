@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	apiHttp "github.com/awakari/int-activitypub/api/http"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/superseriousbusiness/httpsig"
 	"golang.org/x/crypto/ssh"
@@ -16,6 +17,7 @@ import (
 )
 
 type Service interface {
+	ResolveActorLink(ctx context.Context, host, name string) (self vocab.IRI, err error)
 	FetchActor(ctx context.Context, self vocab.IRI) (a vocab.Actor, err error)
 	SendActivity(ctx context.Context, a vocab.Activity, inbox vocab.IRI) (err error)
 }
@@ -26,6 +28,7 @@ type service struct {
 	privKey    []byte
 }
 
+const fmtWebFinger = "https://%s/.well-known/webfinger?resource=acct:%s@%s"
 const limitRespBodyLen = 65_536
 
 var prefs = []httpsig.Algorithm{
@@ -39,6 +42,7 @@ var headersToSign = []string{
 	"digest",
 }
 
+var ErrActorWebFinger = errors.New("failed to get the webfinger data for actor")
 var ErrActorFetch = errors.New("failed to get the actor")
 var ErrActivitySend = errors.New("failed to send activity")
 
@@ -48,6 +52,38 @@ func NewService(clientHttp *http.Client, userAgent string, privKey []byte) Servi
 		userAgent:  userAgent,
 		privKey:    privKey,
 	}
+}
+
+func (svc service) ResolveActorLink(ctx context.Context, host, name string) (self vocab.IRI, err error) {
+	var req *http.Request
+	req, err = http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf(fmtWebFinger, host, name, host), nil)
+	var resp *http.Response
+	if err == nil {
+		req.Header.Add("Accept", "application/json")
+		req.Header.Add("User-Agent", svc.userAgent)
+		resp, err = svc.clientHttp.Do(req)
+	}
+	var data []byte
+	if err == nil {
+		data, err = io.ReadAll(io.LimitReader(resp.Body, limitRespBodyLen))
+	}
+	var wf apiHttp.WebFinger
+	if err == nil {
+		err = json.Unmarshal(data, &wf)
+	}
+	if err == nil {
+		for _, l := range wf.Links {
+			if l.Rel == "self" {
+				self = vocab.IRI(l.Href)
+				break
+			}
+		}
+	}
+	//
+	if err != nil {
+		err = fmt.Errorf("%w %s@%s: %s", ErrActorWebFinger, name, host, err)
+	}
+	return
 }
 
 func (svc service) FetchActor(ctx context.Context, addr vocab.IRI) (actor vocab.Actor, err error) {

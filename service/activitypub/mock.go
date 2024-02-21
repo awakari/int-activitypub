@@ -13,6 +13,16 @@ func NewServiceMock() Service {
 	return mock{}
 }
 
+func (m mock) ResolveActorLink(ctx context.Context, host, name string) (self vocab.IRI, err error) {
+	switch name {
+	case "fail":
+		err = ErrActorWebFinger
+	default:
+		self = vocab.IRI(fmt.Sprintf("https://%s/users/%s", host, name))
+	}
+	return
+}
+
 func (m mock) FetchActor(ctx context.Context, self vocab.IRI) (a vocab.Actor, err error) {
 	switch self {
 	case "https://fail.social/users/johndoe":

@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"github.com/awakari/int-activitypub/model"
-	activitypub2 "github.com/awakari/int-activitypub/service/activitypub"
+	"github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/service/converter"
 	"github.com/awakari/int-activitypub/service/writer"
 	"github.com/awakari/int-activitypub/storage"
@@ -16,7 +16,7 @@ import (
 func TestService_RequestFollow(t *testing.T) {
 	svc := NewService(
 		storage.NewStorageMock(),
-		activitypub2.NewServiceLogging(activitypub2.NewServiceMock(), slog.Default()),
+		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
 		"test.social",
 		converter.NewLogging(converter.NewService(), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
@@ -29,22 +29,34 @@ func TestService_RequestFollow(t *testing.T) {
 	}{
 		"ok": {
 			addr: "johndoe@host.social",
-			url:  "johndoe@host.social",
+			url:  "https://host.social/users/johndoe",
+		},
+		"invalid src addr": {
+			addr: "@host.social",
+			err:  ErrInvalid,
+		},
+		"fail resolve webfinger": {
+			addr: "fail@host.social",
+			err:  activitypub.ErrActorWebFinger,
 		},
 		"fail to fetch actor": {
 			addr: "https://fail.social/users/johndoe",
+			url:  "https://fail.social/users/johndoe",
 			err:  ErrInvalid,
 		},
 		"fail to send activity": {
 			addr: "https://host.fail/users/johndoe",
-			err:  activitypub2.ErrActivitySend,
+			url:  "https://host.fail/users/johndoe",
+			err:  activitypub.ErrActivitySend,
 		},
 		"conflict": {
-			addr: "https://host.social/users/existing",
+			addr: "conflict",
+			url:  "conflict",
 			err:  storage.ErrConflict,
 		},
 		"storage fails": {
-			addr: "https://host.social/users/storfail",
+			addr: "fail",
+			url:  "fail",
 			err:  storage.ErrInternal,
 		},
 	}
@@ -60,7 +72,7 @@ func TestService_RequestFollow(t *testing.T) {
 func TestService_HandleActivity(t *testing.T) {
 	svc := NewService(
 		storage.NewStorageMock(),
-		activitypub2.NewServiceLogging(activitypub2.NewServiceMock(), slog.Default()),
+		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
 		"test.social",
 		converter.NewLogging(converter.NewService(), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
@@ -87,7 +99,7 @@ func TestService_HandleActivity(t *testing.T) {
 func TestService_Read(t *testing.T) {
 	svc := NewService(
 		storage.NewStorageMock(),
-		activitypub2.NewServiceLogging(activitypub2.NewServiceMock(), slog.Default()),
+		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
 		"test.social",
 		converter.NewLogging(converter.NewService(), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
@@ -122,7 +134,7 @@ func TestService_Read(t *testing.T) {
 func TestService_List(t *testing.T) {
 	svc := NewService(
 		storage.NewStorageMock(),
-		activitypub2.NewServiceLogging(activitypub2.NewServiceMock(), slog.Default()),
+		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
 		"test.social",
 		converter.NewLogging(converter.NewService(), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
@@ -159,7 +171,7 @@ func TestService_List(t *testing.T) {
 func TestService_Unfollow(t *testing.T) {
 	svc := NewService(
 		storage.NewStorageMock(),
-		activitypub2.NewServiceLogging(activitypub2.NewServiceMock(), slog.Default()),
+		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
 		"test.social",
 		converter.NewLogging(converter.NewService(), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
@@ -176,7 +188,7 @@ func TestService_Unfollow(t *testing.T) {
 		},
 		"fails to send activity": {
 			url: "https://host.fail/users/johndoe",
-			err: activitypub2.ErrActivitySend,
+			err: activitypub.ErrActivitySend,
 		},
 		"missing": {
 			url: "missing",

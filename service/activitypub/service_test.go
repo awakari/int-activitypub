@@ -10,6 +10,16 @@ import (
 	"testing"
 )
 
+func TestService_ResolveActor(t *testing.T) {
+	if os.Getenv("CI") == "true" {
+		t.Skip()
+	}
+	svc := NewService(http.DefaultClient, "activitypub.awakari.com", []byte{})
+	self, err := svc.ResolveActorLink(context.TODO(), "mastodon.social", "akurilov")
+	assert.Equal(t, "https://mastodon.social/users/akurilov", self.String())
+	assert.Nil(t, err)
+}
+
 func TestService_FetchActor(t *testing.T) {
 	if os.Getenv("CI") == "true" {
 		t.Skip()

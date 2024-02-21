@@ -11,6 +11,8 @@ import (
 	"github.com/awakari/int-activitypub/storage"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	vocab "github.com/go-ap/activitypub"
+	"net/url"
+	"strings"
 )
 
 type Service interface {
@@ -49,19 +51,37 @@ func NewService(
 	}
 }
 
-func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId string) (url string, err error) {
-	_, err = svc.stor.Read(ctx, addr)
-	switch {
-	case err == nil:
-		err = fmt.Errorf("%w: %s", storage.ErrConflict, addr)
-	case errors.Is(err, storage.ErrNotFound):
-		err = nil
+func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId string) (addrResolved string, err error) {
+	//
+	var addrParsed *url.URL
+	addrParsed, err = url.Parse(addr)
+	if err == nil {
+		switch {
+		case addrParsed.Scheme == "" && strings.Contains(addr, acctSep):
+			if len(addr) > 0 && strings.HasPrefix(addr, acctSep) {
+				addr = addr[1:]
+			}
+			acct := strings.SplitN(addr, acctSep, 3)
+			if len(acct) == 2 {
+				name, host := acct[0], acct[1]
+				var actorSelfLink vocab.IRI
+				actorSelfLink, err = svc.ap.ResolveActorLink(ctx, host, name)
+				if err == nil {
+					addrResolved = actorSelfLink.String()
+				}
+			} else {
+				err = fmt.Errorf("%w: invalid WebFinger handle: %s", ErrInvalid, addr)
+			}
+		default:
+			addrResolved = addr
+		}
 	}
+	//
 	var actor vocab.Actor
 	if err == nil {
-		actor, err = svc.ap.FetchActor(ctx, vocab.IRI(addr))
+		actor, err = svc.ap.FetchActor(ctx, vocab.IRI(addrResolved))
 		if err != nil {
-			err = fmt.Errorf("%w: failed to fetch actor: %s, cause: %s", ErrInvalid, addr, err)
+			err = fmt.Errorf("%w: failed to fetch actor: %s, cause: %s", ErrInvalid, addrResolved, err)
 		}
 	}
 	if err == nil {
@@ -69,7 +89,7 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId stri
 			Type:    vocab.FollowType,
 			Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
 			Actor:   vocab.IRI(fmt.Sprintf("https://%s/actor", svc.hostSelf)),
-			Object:  vocab.IRI(addr),
+			Object:  vocab.IRI(addrResolved),
 		}
 		err = svc.ap.SendActivity(ctx, activity, actor.Inbox.GetID())
 	}
@@ -84,7 +104,7 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId stri
 		}
 		err = svc.stor.Create(ctx, src)
 		if err == nil {
-			url = src.ActorId
+			addrResolved = src.ActorId
 		}
 	}
 	return
