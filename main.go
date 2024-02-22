@@ -18,6 +18,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 )
 
 func main() {
@@ -142,12 +143,48 @@ func main() {
 	}
 	hwf := handler.NewWebFingerHandler(wf)
 	hi := handler.NewInboxHandler(svcActivityPub, svc)
+	ho := handler.NewOutboxHandler(vocab.OrderedCollectionPage{
+		ID:      vocab.IRI(fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host)),
+		Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
+		OrderedItems: vocab.ItemCollection{
+			vocab.Article{
+				ID:        "https://awakari.com/articles/why-not-rss.html",
+				URL:       vocab.IRI("https://awakari.com/articles/why-not-rss.html"),
+				Name:      vocab.DefaultNaturalLanguageValue("Why Not RSS?"),
+				Summary:   vocab.DefaultNaturalLanguageValue("Today many of us want to get updates timely from the services they use: news, shops, jobs, etc. But visiting every service every minute is wasting of the time. One can increase the update period and do it daily. Unfortunately, this means the important update is not early enough. Even worse, the important update may be gone already and lost."),
+				Published: time.Date(2024, 1, 8, 0, 0, 0, 0, time.UTC),
+			},
+			vocab.Article{
+				ID:        "https://awakari.com/articles/spacetime-search.html",
+				URL:       vocab.IRI("https://awakari.com/articles/spacetime-search.html"),
+				Name:      vocab.DefaultNaturalLanguageValue("On Search In Space And Tie"),
+				Summary:   vocab.DefaultNaturalLanguageValue("The role of a chance in our life is great. It's always about finding a relevant opportunity. Whether it's a dream job, car, home or a partner."),
+				Published: time.Date(2024, 1, 13, 0, 0, 0, 0, time.UTC),
+			},
+			vocab.Article{
+				ID:        "https://awakari.com/articles/beyond-rss.html",
+				URL:       vocab.IRI("https://awakari.com/articles/beyond-rss.html"),
+				Name:      vocab.DefaultNaturalLanguageValue("Beyond RSS"),
+				Summary:   vocab.DefaultNaturalLanguageValue("The idea of the Awakari service is to filter important events from unlimited number of various sources. This article is about the ways it uses to extract a structured data from the Internet beyond RSS feeds and Telegram channels."),
+				Published: time.Date(2024, 2, 9, 0, 0, 0, 0, time.UTC),
+			},
+			vocab.Article{
+				ID:        "https://awakari.com/articles/awakari-goes-social/index.html",
+				URL:       vocab.IRI("https://awakari.com/articles/awakari-goes-social/index.html"),
+				Name:      vocab.DefaultNaturalLanguageValue("Beyond RSS"),
+				Summary:   vocab.DefaultNaturalLanguageValue("Today more and more services support ActivityPub to exchange activities in the decentralized world also known as Fediverse. The applications are not limited to social networks and blogs. There are also image, music, video sharing services and more.\n\n   By treating these activities as source events Awakari brings the whole new dimension to the Fediverse world. With Awakari, one can track any activity matching own criteria from unlimited number of publishers and services in addition to the existing source types like RSS and Telegram."),
+				Published: time.Date(2024, 2, 22, 0, 0, 0, 0, time.UTC),
+			},
+		},
+		TotalItems: 4,
+	})
 	hFollowing := handler.NewFollowingHandler(stor)
 	//
 	r := gin.Default()
 	r.GET("/.well-known/webfinger", hwf.Handle)
 	r.GET("/actor", ha.Handle)
 	r.POST("/inbox", hi.Handle)
+	r.GET("/outbox", ho.Handle)
 	r.GET("/following", hFollowing.Handle)
 	log.Info(fmt.Sprintf("starting to listen the HTTP API @ port #%d...", cfg.Api.Http.Port))
 	err = r.Run(fmt.Sprintf(":%d", cfg.Api.Http.Port))
