@@ -44,8 +44,8 @@ Notes:
 | [Misskey](https://den.raccoon.quest/)                         | ✅ OK                                                                 | ?        |
 | [BookWyrm](https://bookwyrm.social)                           | ✅ OK                                                                 | ?        |
 | [Friendica](https://venera.social)                            | ✅ OK                                                                 | ?        |
-| [Hubzilla](https://zotum.net)                                 | ✅ OK                                                                 | ?        |
-| [Funkwhale](https://funkwhale.our-space.xyz)                  | ❌ status 500                                                         | ❌ N/A    |          
+| [Hubzilla](https://libera.site)                               | ✅ OK                                                                 | ✅ OK    |
+| [Funkwhale](https://funkwhale.our-space.xyz)                  | ❌ status 500                                                         | ❌ N/A   |          
 
 # Other
 
