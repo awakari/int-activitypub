@@ -5,11 +5,73 @@ import (
 	vocab "github.com/go-ap/activitypub"
 )
 
+var contextExtMastodon = map[string]any{
+	"manuallyApprovesFollowers": "as:manuallyApprovesFollowers",
+	"toot":                      "http://joinmastodon.org/ns#",
+	"featured": map[string]any{
+		"@id":   "toot:featured",
+		"@type": "@id",
+	},
+	"featuredTags": map[string]any{
+		"@id":   "toot:featuredTags",
+		"@type": "@id",
+	},
+	"alsoKnownAs": map[string]any{
+		"@id":   "as:alsoKnownAs",
+		"@type": "@id",
+	},
+	"movedTo": map[string]any{
+		"@id":   "as:movedTo",
+		"@type": "@id",
+	},
+	"schema":           "http://schema.org#",
+	"PropertyValue":    "schema:PropertyValue",
+	"value":            "schema:value",
+	"discoverable":     "toot:discoverable",
+	"Device":           "toot:Device",
+	"Ed25519Signature": "toot:Ed25519Signature",
+	"Ed25519Key":       "toot:Ed25519Key",
+	"Curve25519Key":    "toot:Curve25519Key",
+	"EncryptedMessage": "toot:EncryptedMessage",
+	"publicKeyBase64":  "toot:publicKeyBase64",
+	"deviceId":         "toot:deviceId",
+	"claim": map[string]any{
+		"@type": "@id",
+		"@id":   "toot:claim",
+	},
+	"fingerprintKey": map[string]any{
+		"@type": "@id",
+		"@id":   "toot:fingerprintKey",
+	},
+	"identityKey": map[string]any{
+		"@type": "@id",
+		"@id":   "toot:identityKey",
+	},
+	"devices": map[string]any{
+		"@type": "@id",
+		"@id":   "toot:devices",
+	},
+	"messageFranking": "toot:messageFranking",
+	"messageType":     "toot:messageType",
+	"cipherText":      "toot:cipherText",
+	"suspended":       "toot:suspended",
+	"memorial":        "toot:memorial",
+	"indexable":       "toot:indexable",
+	"focalPoint": map[string]any{
+		"@container": "@list",
+		"@id":        "toot:focalPoint",
+	},
+}
+
 func FixContext(obj vocab.ActivityObject) (m map[string]any) {
 	d, _ := json.Marshal(obj)
 	m = make(map[string]any)
 	_ = json.Unmarshal(d, &m)
 	c, ok := m["context"]
+	switch obj.(type) {
+	case vocab.Actor:
+		c = append(c.([]any), contextExtMastodon)
+	}
 	if ok {
 		m["@context"] = c
 		delete(m, "context")
