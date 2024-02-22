@@ -43,7 +43,7 @@ Notes:
 | [Pleroma](https://stereophonic.space)                         | ❌ status 500, "Internal server error"                                | ❌ N/A    |         |
 | [Misskey](https://den.raccoon.quest/)                         | ✅ OK                                                                 | ?        |
 | [BookWyrm](https://bookwyrm.social)                           | ✅ OK                                                                 | ?        |
-| [Friendica](https://venera.social)                            | ✅ OK                                                                 | ?        |
+| [Friendica](https://venera.social)                            | ✅ OK                                                                 | ✅ OK    |
 | [Hubzilla](https://libera.site)                               | ✅ OK                                                                 | ✅ OK    |
 | [Funkwhale](https://funkwhale.our-space.xyz)                  | ❌ status 500                                                         | ❌ N/A   |          
 
