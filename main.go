@@ -72,7 +72,7 @@ func main() {
 		}
 	}()
 	//
-	a := vocab.Actor{
+	actor := vocab.Actor{
 		ID:   vocab.ID(fmt.Sprintf("https://%s/actor", cfg.Api.Http.Host)),
 		Type: vocab.PersonType,
 		Name: vocab.DefaultNaturalLanguageValue("awakari"),
@@ -107,12 +107,29 @@ func main() {
 		},
 		Attachment: vocab.ItemCollection{
 			vocab.Page{
-				ID:  vocab.ID("https://awakari.com"),
-				URL: vocab.IRI("https://awakari.com"),
+				Name: vocab.DefaultNaturalLanguageValue("Home"),
+				ID:   vocab.ID("https://awakari.com"),
+				URL:  vocab.IRI("https://awakari.com"),
+			},
+			vocab.Page{
+				Name: vocab.DefaultNaturalLanguageValue("GitHub"),
+				ID:   vocab.ID("https://github.com/awakari"),
+				URL:  vocab.IRI("https://githun.com/awakari"),
+			},
+			vocab.Page{
+				Name: vocab.DefaultNaturalLanguageValue("Telegram Bot"),
+				ID:   vocab.ID("https://t.me/AwakariBot"),
+				URL:  vocab.IRI("https://t.me/AwakariBot"),
 			},
 		},
 	}
-	ha := handler.NewActorHandler(a)
+	actorExtraAttrs := map[string]any{
+		"manuallyApprovesFollowers": false,
+		"discoverable":              true,
+		"indexable":                 true,
+		"memorial":                  false,
+	}
+	ha := handler.NewActorHandler(actor, actorExtraAttrs)
 	wf := apiHttp.WebFinger{
 		Subject: fmt.Sprintf("acct:awakari@%s", cfg.Api.Http.Host),
 		Links: []apiHttp.WebFingerLink{

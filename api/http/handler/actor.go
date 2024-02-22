@@ -11,9 +11,13 @@ type actorHandler struct {
 	a map[string]any
 }
 
-func NewActorHandler(a vocab.Actor) (h Handler) {
+func NewActorHandler(a vocab.Actor, extraAttrs map[string]any) (h Handler) {
+	aFixed := apiHttp.FixContext(a)
+	for k, v := range extraAttrs {
+		aFixed[k] = v
+	}
 	h = actorHandler{
-		a: apiHttp.FixContext(a),
+		a: aFixed,
 	}
 	return
 }
