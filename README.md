@@ -1,6 +1,8 @@
+ActivityPub source implementation for Awakari.
+
 # Conversion Schema
 
-## Activity
+Specific (non as is) attribute conversions:
 
 | Source Activity Attribute   | Destination CloudEvent Attribute | Notes                                                          |
 |-----------------------------|----------------------------------|----------------------------------------------------------------|
@@ -15,14 +17,16 @@
 | object.attachment.id        | attachment                       | only if attachment is link                                     |
 | object.attachment.url       | attachment                       | only if attachment is object                                   |
 | object.attachment.mediaType | attachmenttype                   | only if attachment is object                                   |
+| object.content              | `<text data>`                    | Prepends the existing text data (if any) with a line separator |
 | object.inReplyTo            | inreplyto                        |
 | object.location             | latitude                         |
 | object.location             | longitude                        |
 | object.startTime            | starts                           |
+| object.summary              | `<text data>`                    | Prepends the existing text data (if any) with a line separator |
 
 Notes:
 
-* All other attributes are been converted as is, e.g. "duration" -> "duration"
+* All other attributes (not mentioned in the table above) are been converted as is, e.g. "duration" -> "duration"
 
 * Activity attribute may be an "object" without an activity type (verb, e.g. "Create"). 
   Then it's also been converted as "object" in addition to the activity fields.
