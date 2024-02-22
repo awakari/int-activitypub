@@ -2,7 +2,7 @@ ActivityPub source implementation for Awakari.
 
 # Conversion Schema
 
-Specific (non as is) attribute conversions:
+Specific (non "as is") attribute conversions:
 
 | Source Activity Attribute   | Destination CloudEvent Attribute | Notes                                                          |
 |-----------------------------|----------------------------------|----------------------------------------------------------------|
@@ -40,12 +40,12 @@ Notes:
 | [Kbin](https://kbin.socail)                                   | ✅ OK                                                                 | ?        |
 | [Pixelfed](https://pixelfed.ru)                               | ✅ OK                                                                 | ?        |
 | PeerTube                                                      | ❌ status: 400, "incorrect activity"                                  | ❌ N/A    |
-| [Pleroma](https://stereophonic.space)                         | ❌ status 500, message: {"errors":{"detail":"Internal server error"}} | ❌ N/A    |         |
+| [Pleroma](https://stereophonic.space)                         | ❌ status 500, "Internal server error"                                | ❌ N/A    |         |
 | [Misskey](https://den.raccoon.quest/)                         | ✅ OK                                                                 | ?        |
 | [BookWyrm](https://bookwyrm.social)                           | ✅ OK                                                                 | ?        |
-| [Friendica](https://venera.social)                            | ✅ OK                                                                 | ?        |
-| [Hubzilla](https://zotum.net)                                 | ✅ OK                                                                 | ?        |
-| [Funkwhale](https://funkwhale.our-space.xyz)                  | ❌ status 500                                                         | ❌ N/A    |          
+| [Friendica](https://venera.social)                            | ✅ OK                                                                 | ✅ OK    |
+| [Hubzilla](https://libera.site)                               | ✅ OK                                                                 | ✅ OK    |
+| [Funkwhale](https://funkwhale.our-space.xyz)                  | ❌ status 500                                                         | ❌ N/A   |          
 
 # Other
 
