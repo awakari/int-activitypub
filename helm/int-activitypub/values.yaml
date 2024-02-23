@@ -130,3 +130,7 @@ db:
 log:
   # https://pkg.go.dev/golang.org/x/exp/slog#Level
   level: -4
+secret:
+  backup:
+    image: "scratch"
+    schedule: "0 0 * * *" # daily at midnight (UTC)
