@@ -132,5 +132,5 @@ log:
   level: -4
 secret:
   backup:
-    image: "scratch"
+    image: "alpine:3.19"
     schedule: "0 0 * * *" # daily at midnight (UTC)
