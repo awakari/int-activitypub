@@ -130,7 +130,10 @@ db:
 log:
   # https://pkg.go.dev/golang.org/x/exp/slog#Level
   level: -4
-secret:
+secrets:
   backup:
     image: "alpine:3.19"
     schedule: "0 0 * * *" # daily at midnight (UTC)
+  restore:
+    image: "alpine:3.19"
+    schedule: "0 0 31 2 *" # never, manually only

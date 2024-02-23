@@ -88,10 +88,6 @@ spec:
                 secretKeyRef:
                   name: "{{ include "int-activitypub.fullname" . }}-keys"
                   key: private
-          volumeMounts:
-            - name: "{{ include "int-activitypub.fullname" . }}-backup"
-              mountPath: /var/backup
-              readOnly: true
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -111,10 +107,6 @@ spec:
               port: {{ .Values.service.port }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-      volumes:
-        - name: "{{ include "int-activitypub.fullname" . }}-backup"
-          persistentVolumeClaim:
-            claimName: "{{ include "int-activitypub.fullname" . }}-backup"
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
