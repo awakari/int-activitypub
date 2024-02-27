@@ -356,7 +356,7 @@ func convertAttachment(att vocab.Item, evt *pb.CloudEvent) (err error) {
 			},
 		}
 	case att.IsCollection():
-		attColl := att.(*vocab.ItemCollection)
+		attColl := att.(vocab.ItemCollection)
 		if attColl.Count() > 0 {
 			err = convertAttachment(attColl.First(), evt)
 		}
