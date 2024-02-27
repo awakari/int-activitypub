@@ -112,7 +112,8 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId stri
 
 func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activity vocab.Activity) (err error) {
 	var src model.Source
-	src, err = svc.stor.Read(ctx, actor.ID.String())
+	srcId := actor.ID.String()
+	src, err = svc.stor.Read(ctx, srcId)
 	if err == nil {
 		switch activity.Type {
 		case vocab.AcceptType:
@@ -122,6 +123,10 @@ func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activi
 			var evt *pb.CloudEvent
 			evt, _ = svc.conv.Convert(ctx, actor, activity)
 			if evt != nil && evt.Data != nil {
+				userId := src.UserId
+				if userId == "" {
+					userId = srcId
+				}
 				err = svc.w.Write(ctx, evt, src.GroupId, src.UserId)
 			}
 		}

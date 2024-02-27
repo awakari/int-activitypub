@@ -355,6 +355,11 @@ func convertAttachment(att vocab.Item, evt *pb.CloudEvent) (err error) {
 				CeString: string(attObj.MediaType),
 			},
 		}
+	case att.IsCollection():
+		attColl := att.(*vocab.ItemCollection)
+		if attColl.Count() > 0 {
+			err = convertAttachment(attColl.First(), evt)
+		}
 	default:
 		err = fmt.Errorf("%w attachment, unexpected type: %s", ErrFail, reflect.TypeOf(att))
 	}
