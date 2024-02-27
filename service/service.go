@@ -127,7 +127,7 @@ func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activi
 				if userId == "" {
 					userId = srcId
 				}
-				err = svc.w.Write(ctx, evt, src.GroupId, src.UserId)
+				err = svc.w.Write(ctx, evt, src.GroupId, userId)
 			}
 		}
 	}
