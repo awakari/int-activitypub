@@ -22,7 +22,7 @@ type service struct {
 const CeType = "com.awakari.activitypub.v1"
 const CeSpecVersion = "1.0"
 const CeKeyAction = "action"
-const CeKeyAttachment = "attachment"
+const CeKeyAttachmentUrl = "attachmenturl"
 const CeKeyAttachmentType = "attachmenttype"
 const CeKeyAudience = "audience"
 const CeKeyCategories = "categories"
@@ -30,7 +30,7 @@ const CeKeyCc = "cc"
 const CeKeyDuration = "duration"
 const CeKeyEnds = "ends"
 const CeKeyIcon = "icon"
-const CeKeyImage = "image"
+const CeKeyImageUrl = "imageurl"
 const CeKeyInReplyTo = "inreplyto"
 const CeKeyLatitude = "latitude"
 const CeKeyLongitude = "longitude"
@@ -170,7 +170,7 @@ func (svc service) convertObject(obj *vocab.Object, evt *pb.CloudEvent) (err err
 		err = errors.Join(err, convertAsLink(ico, evt, CeKeyIcon))
 	}
 	if img := obj.Image; img != nil {
-		err = errors.Join(err, convertAsLink(img, evt, CeKeyImage))
+		err = errors.Join(err, convertAsLink(img, evt, CeKeyImageUrl))
 	}
 	if inReplyTo := obj.InReplyTo; inReplyTo != nil {
 		err = errors.Join(err, convertInReplyTo(inReplyTo, evt))
@@ -266,7 +266,7 @@ func (svc service) convertActivityAsObject(obj vocab.Activity, evt *pb.CloudEven
 		err = errors.Join(err, convertAsLink(ico, evt, CeKeyIcon))
 	}
 	if img := obj.Image; img != nil {
-		err = errors.Join(err, convertAsLink(img, evt, CeKeyImage))
+		err = errors.Join(err, convertAsLink(img, evt, CeKeyImageUrl))
 	}
 	if inReplyTo := obj.InReplyTo; inReplyTo != nil {
 		err = errors.Join(err, convertInReplyTo(inReplyTo, evt))
@@ -338,14 +338,14 @@ func convertAsCollection(cc vocab.ItemCollection, evt *pb.CloudEvent, key string
 func convertAttachment(att vocab.Item, evt *pb.CloudEvent) (err error) {
 	switch {
 	case att.IsLink():
-		evt.Attributes[CeKeyAttachment] = &pb.CloudEventAttributeValue{
+		evt.Attributes[CeKeyAttachmentUrl] = &pb.CloudEventAttributeValue{
 			Attr: &pb.CloudEventAttributeValue_CeUri{
 				CeUri: att.GetLink().String(),
 			},
 		}
 	case att.IsObject():
 		attObj := att.(*vocab.Object)
-		evt.Attributes[CeKeyAttachment] = &pb.CloudEventAttributeValue{
+		evt.Attributes[CeKeyAttachmentUrl] = &pb.CloudEventAttributeValue{
 			Attr: &pb.CloudEventAttributeValue_CeUri{
 				CeUri: attObj.URL.GetLink().String(),
 			},

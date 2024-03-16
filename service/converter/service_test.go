@@ -79,7 +79,7 @@ func TestService_Convert(t *testing.T) {
 							CeString: "Create",
 						},
 					},
-					"attachment": {
+					"attachmenturl": {
 						Attr: &pb.CloudEventAttributeValue_CeUri{
 							CeUri: "https://files.mastodon.social/media_attachments/files/111/941/781/316/804/883/original/86df8fb1c70309c7.png",
 						},
