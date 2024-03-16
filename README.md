@@ -1,4 +1,13 @@
-ActivityPub source implementation for Awakari.
+# About
+
+ActivityPub source implementation for Awakari. Actually, just another Activitypub server that follows specified publishers.
+
+Awakari is a service consuming live updates from various sources and filters these for a user.
+It doesn't index nor store any publishers content.
+The purpose is only to notify user in real time and provide a link to the source (e.g. post). 
+If you don't want Awakari to follow you, just find it in a list of your followers and block.
+
+TODO sources blacklist
 
 # Conversion Schema
 
