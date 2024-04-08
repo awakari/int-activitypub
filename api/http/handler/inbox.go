@@ -98,7 +98,7 @@ func (h inboxHandler) verify(ctx *gin.Context, data []byte, actor vocab.Actor) (
 	if err == nil {
 		pubKeyDer, _ = pem.Decode([]byte(actor.PublicKey.PublicKeyPem))
 		if pubKeyDer == nil {
-			err = fmt.Errorf("failed to decode author public key PEM: %s", actor.PublicKey.PublicKeyPem)
+			err = fmt.Errorf("failed to decode actor public key PEM: %s", actor.PublicKey.PublicKeyPem)
 		}
 	}
 	var pubKey crypto.PublicKey
