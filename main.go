@@ -11,6 +11,7 @@ import (
 	"github.com/awakari/int-activitypub/service"
 	activitypub2 "github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/service/converter"
+	"github.com/awakari/int-activitypub/service/mastodon"
 	"github.com/awakari/int-activitypub/service/writer"
 	"github.com/awakari/int-activitypub/storage"
 	"github.com/gin-gonic/gin"
@@ -66,9 +67,12 @@ func main() {
 	svc := service.NewService(stor, svcActivityPub, cfg.Api.Http.Host, svcConv, svcWriter)
 	svc = service.NewLogging(svc, log)
 	//
+	search := mastodon.NewService(clientHttp, cfg.Api.Http.Host, cfg.Search.Mastodon)
+	search = mastodon.NewServiceLogging(search, log)
+	//
 	log.Info(fmt.Sprintf("starting to listen the gRPC API @ port #%d...", cfg.Api.Port))
 	go func() {
-		if err = apiGrpc.Serve(cfg.Api.Port, svc); err != nil {
+		if err = apiGrpc.Serve(cfg.Api.Port, svc, search); err != nil {
 			panic(err)
 		}
 	}()

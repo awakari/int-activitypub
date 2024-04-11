@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/awakari/int-activitypub/service"
+	"github.com/awakari/int-activitypub/service/mastodon"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -22,8 +23,10 @@ var log = slog.Default()
 func TestMain(m *testing.M) {
 	svc := service.NewServiceMock()
 	svc = service.NewLogging(svc, log)
+	search := mastodon.NewServiceMock()
+	search = mastodon.NewServiceLogging(search, log)
 	go func() {
-		err := Serve(port, svc)
+		err := Serve(port, svc, search)
 		if err != nil {
 			log.Error("", err)
 		}
@@ -212,6 +215,34 @@ func TestServiceClient_Delete(t *testing.T) {
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
 			_, err := client.Delete(context.TODO(), c.req)
+			assert.ErrorIs(t, err, c.err)
+		})
+	}
+}
+
+func TestServiceClient_SearchAndAdd(t *testing.T) {
+	//
+	addr := fmt.Sprintf("localhost:%d", port)
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	require.Nil(t, err)
+	client := NewServiceClient(conn)
+	//
+	cases := map[string]struct {
+		req *SearchAndAddRequest
+		n   uint32
+		err error
+	}{
+		"ok": {
+			req: &SearchAndAddRequest{
+				Q: "ok",
+			},
+			n: 42,
+		},
+	}
+	//
+	for k, c := range cases {
+		t.Run(k, func(t *testing.T) {
+			_, err := client.SearchAndAdd(context.TODO(), c.req)
 			assert.ErrorIs(t, err, c.err)
 		})
 	}

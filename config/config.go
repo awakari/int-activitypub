@@ -26,6 +26,9 @@ type Config struct {
 	Log struct {
 		Level int `envconfig:"LOG_LEVEL" default:"-4" required:"true"`
 	}
+	Search struct {
+		Mastodon MastodonConfig
+	}
 }
 
 type DbConfig struct {
@@ -50,6 +53,15 @@ type DbConfig struct {
 	Tls struct {
 		Enabled  bool `envconfig:"DB_TLS_ENABLED" default:"false" required:"true"`
 		Insecure bool `envconfig:"DB_TLS_INSECURE" default:"false" required:"true"`
+	}
+}
+
+type MastodonConfig struct {
+	Endpoint string `envconfig:"SEARCH_MASTODON_ENDPOINT" default:"https://mastodon.social/api/v2/search" required:"true"`
+	Client   struct {
+		Key    string `envconfig:"SEARCH_MASTODON_CLIENT_KEY" required:"true"`
+		Secret string `envconfig:"SEARCH_MASTODON_CLIENT_SECRET" required:"true"`
+		Token  string `envconfig:"SEARCH_MASTODON_CLIENT_TOKEN" required:"true"`
 	}
 }
 

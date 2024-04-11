@@ -88,6 +88,23 @@ spec:
                 secretKeyRef:
                   name: "{{ include "int-activitypub.fullname" . }}-keys"
                   key: private
+            - name: SEARCH_MASTODON_ENDPOINT
+              value: "{{ .Values.search.mastodon.endpoint }}"
+            - name: SEARCH_MASTODON_CLIENT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ include "int-activitypub.fullname" . }}-search-client-mastodon"
+                  key: key
+            - name: SEARCH_MASTODON_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ include "int-activitypub.fullname" . }}-search-client-mastodon"
+                  key: secret
+            - name: SEARCH_MASTODON_CLIENT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ include "int-activitypub.fullname" . }}-search-client-mastodon"
+                  key: token
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

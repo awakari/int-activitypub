@@ -17,6 +17,8 @@ service Service {
 
   // List actors
   rpc ListUrls(ListUrlsRequest) returns (ListUrlsResponse);
+
+  rpc SearchAndAdd(SearchAndAddRequest) returns (SearchAndAddResponse);
 }
 
 message CreateRequest {
@@ -78,4 +80,14 @@ message Filter {
   string groupId = 1;
   string userId = 2;
   string pattern = 3;
+}
+
+message SearchAndAddRequest {
+  string q = 1;
+  uint32 limit = 2;
+  string subId = 3;
+}
+
+message SearchAndAddResponse {
+  uint32 n = 1;
 }

@@ -7,7 +7,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cloudevents/sdk-go/binding/format/protobuf/v2 v2.15.2
 	github.com/gin-gonic/gin v1.9.1
-	github.com/go-ap/activitypub v0.0.0-20240327073638-93645bda3b18
+	github.com/go-ap/activitypub v0.0.0-20240408091739-ba76b44c2594
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/kelseyhightower/envconfig v1.4.0
@@ -15,7 +15,7 @@ require (
 	github.com/superseriousbusiness/httpsig v1.2.0-SSB
 	go.mongodb.org/mongo-driver v1.14.0
 	golang.org/x/crypto v0.22.0
-	google.golang.org/grpc v1.63.0
+	google.golang.org/grpc v1.63.2
 	google.golang.org/protobuf v1.33.0
 )
 
