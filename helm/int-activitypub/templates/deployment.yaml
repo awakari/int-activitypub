@@ -105,6 +105,8 @@ spec:
                 secretKeyRef:
                   name: "{{ include "int-activitypub.fullname" . }}-search-client-mastodon"
                   key: token
+            - name: DB_TABLE_RETENTION_PERIOD_FOLLOWING
+              value: "{{ .Values.db.table.retention.following }}"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

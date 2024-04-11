@@ -64,6 +64,7 @@ func TestStorageMongo_Create(t *testing.T) {
 		Type:    "type0",
 		Name:    "name0",
 		Summary: "summary0",
+		Created: time.Date(2024, 4, 11, 16, 39, 35, 0, time.UTC),
 	})
 	require.Nil(t, err)
 	//
@@ -117,6 +118,7 @@ func TestStorageMongo_Read(t *testing.T) {
 		Type:    "type0",
 		Name:    "name0",
 		Summary: "summary0",
+		Created: time.Date(2024, 4, 11, 16, 39, 35, 0, time.UTC),
 	})
 	require.Nil(t, err)
 	//
@@ -134,6 +136,7 @@ func TestStorageMongo_Read(t *testing.T) {
 				Type:    "type0",
 				Name:    "name0",
 				Summary: "summary0",
+				Created: time.Date(2024, 4, 11, 16, 39, 35, 0, time.UTC),
 			},
 		},
 		"missing": {

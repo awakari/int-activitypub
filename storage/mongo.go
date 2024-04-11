@@ -10,16 +10,19 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"time"
 )
 
 type recSrc struct {
-	ActorId  string `bson:"actorId"`
-	GroupId  string `bson:"groupId"`
-	UserId   string `bson:"userId"`
-	Type     string `bson:"type"`
-	Name     string `bson:"name"`
-	Summary  string `bson:"summary"`
-	Accepted bool   `bson:"accepted"`
+	ActorId  string    `bson:"actorId"`
+	GroupId  string    `bson:"groupId"`
+	UserId   string    `bson:"userId"`
+	Type     string    `bson:"type"`
+	Name     string    `bson:"name"`
+	Summary  string    `bson:"summary"`
+	Accepted bool      `bson:"accepted"`
+	Last     time.Time `bson:"last"`
+	Created  time.Time `bson:"created"`
 }
 
 const attrActorId = "actorId"
@@ -29,6 +32,8 @@ const attrType = "type"
 const attrName = "name"
 const attrSummary = "summary"
 const attrAccepted = "accepted"
+const attrLast = "last"
+const attrCreated = "created"
 
 type storageMongo struct {
 	conn *mongo.Client
@@ -70,6 +75,14 @@ var projRead = bson.D{
 		Key:   attrAccepted,
 		Value: 1,
 	},
+	{
+		Key:   attrLast,
+		Value: 1,
+	},
+	{
+		Key:   attrCreated,
+		Value: 1,
+	},
 }
 var sortListAsc = bson.D{
 	{
@@ -87,19 +100,6 @@ var projList = bson.D{
 	{
 		Key:   attrActorId,
 		Value: 1,
-	},
-}
-var indices = []mongo.IndexModel{
-	{
-		Keys: bson.D{
-			{
-				Key:   attrActorId,
-				Value: 1,
-			},
-		},
-		Options: options.
-			Index().
-			SetUnique(true),
 	},
 }
 
@@ -127,7 +127,7 @@ func NewStorage(ctx context.Context, cfgDb config.DbConfig) (s Storage, err erro
 		sm.conn = conn
 		sm.db = db
 		sm.coll = coll
-		_, err = sm.ensureIndices(ctx)
+		_, err = sm.ensureIndices(ctx, cfgDb.Table.Following.RetentionPeriod)
 	}
 	if err == nil {
 		s = sm
@@ -135,8 +135,32 @@ func NewStorage(ctx context.Context, cfgDb config.DbConfig) (s Storage, err erro
 	return
 }
 
-func (sm storageMongo) ensureIndices(ctx context.Context) ([]string, error) {
-	return sm.coll.Indexes().CreateMany(ctx, indices)
+func (sm storageMongo) ensureIndices(ctx context.Context, retentionPeriod time.Duration) ([]string, error) {
+	return sm.coll.Indexes().CreateMany(ctx, []mongo.IndexModel{
+		{
+			Keys: bson.D{
+				{
+					Key:   attrActorId,
+					Value: 1,
+				},
+			},
+			Options: options.
+				Index().
+				SetUnique(true),
+		},
+		{
+			Keys: bson.D{
+				{
+					Key:   attrLast,
+					Value: 1,
+				},
+			},
+			Options: options.
+				Index().
+				SetExpireAfterSeconds(int32(retentionPeriod / time.Second)).
+				SetUnique(false),
+		},
+	})
 }
 
 func (sm storageMongo) Close() error {
@@ -151,6 +175,7 @@ func (sm storageMongo) Create(ctx context.Context, src model.Source) (err error)
 		Type:    src.Type,
 		Name:    src.Name,
 		Summary: src.Summary,
+		Created: src.Created,
 	}
 	_, err = sm.coll.InsertOne(ctx, rec)
 	err = decodeError(err, src.ActorId)
@@ -176,6 +201,8 @@ func (sm storageMongo) Read(ctx context.Context, srcId string) (a model.Source, 
 		a.Name = rec.Name
 		a.Summary = rec.Summary
 		a.Accepted = rec.Accepted
+		a.Last = rec.Last
+		a.Created = rec.Created
 	}
 	err = decodeError(err, srcId)
 	return
@@ -191,6 +218,7 @@ func (sm storageMongo) Update(ctx context.Context, src model.Source) (err error)
 			attrName:     src.Name,
 			attrType:     src.Type,
 			attrSummary:  src.Summary,
+			attrLast:     src.Last,
 		},
 	}
 	var result *mongo.UpdateResult

@@ -121,6 +121,8 @@ db:
     name:
       followers: followers
       following: following
+    retention:
+      following: "720h"
     shard:
       followers: true
       following: true

@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type Source struct {
 	ActorId  string
 	GroupId  string
@@ -8,4 +10,6 @@ type Source struct {
 	Name     string
 	Summary  string
 	Accepted bool
+	Last     time.Time
+	Created  time.Time
 }

@@ -13,6 +13,7 @@ import (
 	vocab "github.com/go-ap/activitypub"
 	"net/url"
 	"strings"
+	"time"
 )
 
 type Service interface {
@@ -34,6 +35,7 @@ type service struct {
 }
 
 const acctSep = "@"
+const lastUpdateThreshold = 1 * time.Hour
 
 func NewService(
 	stor storage.Storage,
@@ -101,6 +103,7 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId stri
 			Type:    string(actor.Type),
 			Name:    actor.Name.String(),
 			Summary: actor.Summary.String(),
+			Created: time.Now().UTC(),
 		}
 		err = svc.stor.Create(ctx, src)
 		if err == nil {
@@ -123,6 +126,12 @@ func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activi
 			var evt *pb.CloudEvent
 			evt, _ = svc.conv.Convert(ctx, actor, activity)
 			if evt != nil && evt.Data != nil {
+				t := time.Now().UTC()
+				// don't update the storage on every activity but only when difference is higher than the threshold
+				if src.Last.Add(lastUpdateThreshold).Before(t) {
+					src.Last = time.Now().UTC()
+					err = svc.stor.Update(ctx, src)
+				}
 				userId := src.UserId
 				if userId == "" {
 					userId = srcId

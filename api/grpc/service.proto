@@ -4,6 +4,8 @@ package awakari.int.activitypub;
 
 option go_package = "./api/grpc";
 
+import "google/protobuf/timestamp.proto";
+
 service Service {
 
   // Create means Follow the specified actor
@@ -74,6 +76,8 @@ message Source {
   string name = 5;
   string summary = 6;
   bool accepted = 7;
+  google.protobuf.Timestamp last = 8;
+  google.protobuf.Timestamp created = 9;
 }
 
 message Filter {

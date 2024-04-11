@@ -11,6 +11,7 @@ import (
 	vocab "github.com/go-ap/activitypub"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type controller struct {
@@ -98,6 +99,8 @@ func encodeSource(src model.Source) (dst *Source) {
 		Name:     src.Name,
 		Summary:  src.Summary,
 		Accepted: src.Accepted,
+		Last:     timestamppb.New(src.Last),
+		Created:  timestamppb.New(src.Created),
 	}
 	return
 }

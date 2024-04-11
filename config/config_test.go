@@ -27,4 +27,5 @@ func TestConfig(t *testing.T) {
 	assert.Equal(t, slog.LevelWarn, slog.Level(cfg.Log.Level))
 	assert.Equal(t, 1234567, cfg.Db.Table.Following.Cache.Size)
 	assert.Equal(t, time.Second*89, cfg.Db.Table.Following.Cache.Ttl)
+	assert.Equal(t, time.Hour*720, cfg.Db.Table.Following.RetentionPeriod)
 }
