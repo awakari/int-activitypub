@@ -3,12 +3,12 @@ entries:
   int-activitypub:
   - apiVersion: v2
     appVersion: latest
-    created: "2024-04-11T11:04:41.435182356Z"
+    created: "2024-04-11T16:47:02.365449901Z"
     description: A Helm chart for Awakari int-activitypub
-    digest: fccef83118e6b1859c9b0d766894530976be8e5916a4960b4d99b563f25bd02f
+    digest: bd7035095562b84d96ab1afee0935163285d52dd1781f3b2fc5b39dbefed43ec
     name: int-activitypub
     type: application
     urls:
     - int-activitypub-0.0.0.tgz
     version: 0.0.0
-generated: "2024-04-11T11:04:41.434456489Z"
+generated: "2024-04-11T16:47:02.364657286Z"
