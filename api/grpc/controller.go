@@ -85,7 +85,7 @@ func (c controller) ListUrls(ctx context.Context, req *ListUrlsRequest) (resp *L
 
 func (c controller) SearchAndAdd(ctx context.Context, req *SearchAndAddRequest) (resp *SearchAndAddResponse, err error) {
 	resp = &SearchAndAddResponse{}
-	resp.N, err = c.search.SearchAndAdd(ctx, req.Q, req.SubId, req.Limit)
+	resp.N, err = c.search.SearchAndAdd(ctx, req.SubId, req.Q, req.Limit)
 	return
 }
 
