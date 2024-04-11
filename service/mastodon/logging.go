@@ -18,9 +18,9 @@ func NewServiceLogging(svc Service, log *slog.Logger) Service {
 	}
 }
 
-func (l logging) SearchAndAdd(ctx context.Context, subId, q string, limit uint32) (n uint32, err error) {
-	n, err = l.svc.SearchAndAdd(ctx, subId, q, limit)
-	l.log.Log(ctx, logLevel(err), fmt.Sprintf("mastodon.SearchAndAdd(subId=%s, q=%s): %d, %s", subId, q, n, err))
+func (l logging) SearchAndAdd(ctx context.Context, subId, groupId, q string, limit uint32) (n uint32, err error) {
+	n, err = l.svc.SearchAndAdd(ctx, subId, groupId, q, limit)
+	l.log.Log(ctx, logLevel(err), fmt.Sprintf("mastodon.SearchAndAdd(subId=%s, groupId=%s, q=%s): %d, %s", subId, groupId, q, n, err))
 	return
 }
 

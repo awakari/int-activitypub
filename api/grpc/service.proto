@@ -86,6 +86,7 @@ message SearchAndAddRequest {
   string q = 1;
   uint32 limit = 2;
   string subId = 3;
+  string groupId = 4;
 }
 
 message SearchAndAddResponse {

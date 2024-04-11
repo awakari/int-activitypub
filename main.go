@@ -67,7 +67,7 @@ func main() {
 	svc := service.NewService(stor, svcActivityPub, cfg.Api.Http.Host, svcConv, svcWriter)
 	svc = service.NewLogging(svc, log)
 	//
-	search := mastodon.NewService(clientHttp, cfg.Api.Http.Host, cfg.Search.Mastodon)
+	search := mastodon.NewService(clientHttp, cfg.Api.Http.Host, cfg.Search.Mastodon, svc)
 	search = mastodon.NewServiceLogging(search, log)
 	//
 	log.Info(fmt.Sprintf("starting to listen the gRPC API @ port #%d...", cfg.Api.Port))
