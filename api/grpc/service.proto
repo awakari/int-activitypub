@@ -78,6 +78,8 @@ message Source {
   bool accepted = 7;
   google.protobuf.Timestamp last = 8;
   google.protobuf.Timestamp created = 9;
+  string subId = 10;
+  string term = 11;
 }
 
 message Filter {

@@ -23,6 +23,8 @@ type recSrc struct {
 	Accepted bool      `bson:"accepted"`
 	Last     time.Time `bson:"last"`
 	Created  time.Time `bson:"created"`
+	SubId    string    `bson:"subId"`
+	Term     string    `bson:"term"`
 }
 
 const attrActorId = "actorId"
@@ -34,6 +36,8 @@ const attrSummary = "summary"
 const attrAccepted = "accepted"
 const attrLast = "last"
 const attrCreated = "created"
+const attrSubId = "subId"
+const attrTerm = "term"
 
 type storageMongo struct {
 	conn *mongo.Client
@@ -81,6 +85,14 @@ var projRead = bson.D{
 	},
 	{
 		Key:   attrCreated,
+		Value: 1,
+	},
+	{
+		Key:   attrSubId,
+		Value: 1,
+	},
+	{
+		Key:   attrTerm,
 		Value: 1,
 	},
 }
@@ -176,6 +188,8 @@ func (sm storageMongo) Create(ctx context.Context, src model.Source) (err error)
 		Name:    src.Name,
 		Summary: src.Summary,
 		Created: src.Created,
+		SubId:   src.SubId,
+		Term:    src.Term,
 	}
 	_, err = sm.coll.InsertOne(ctx, rec)
 	err = decodeError(err, src.ActorId)
@@ -203,6 +217,8 @@ func (sm storageMongo) Read(ctx context.Context, srcId string) (a model.Source, 
 		a.Accepted = rec.Accepted
 		a.Last = rec.Last
 		a.Created = rec.Created
+		a.SubId = rec.SubId
+		a.Term = rec.Term
 	}
 	err = decodeError(err, srcId)
 	return

@@ -12,4 +12,6 @@ type Source struct {
 	Accepted bool
 	Last     time.Time
 	Created  time.Time
+	SubId    string
+	Term     string
 }

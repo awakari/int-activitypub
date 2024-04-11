@@ -62,7 +62,7 @@ func TestService_RequestFollow(t *testing.T) {
 	}
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
-			u, err := svc.RequestFollow(context.TODO(), c.addr, "group0", "user1")
+			u, err := svc.RequestFollow(context.TODO(), c.addr, "group0", "user1", "", "")
 			assert.Equal(t, c.url, u)
 			assert.ErrorIs(t, err, c.err)
 		})

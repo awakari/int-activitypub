@@ -77,7 +77,7 @@ func (m mastodon) searchAndAdd(ctx context.Context, subId, groupId, term string,
 		for _, s := range results.Statuses {
 			var errReqFollow error
 			if !s.Sensitive {
-				_, errReqFollow = m.svc.RequestFollow(ctx, s.Account.Uri, groupId, s.Account.Uri)
+				_, errReqFollow = m.svc.RequestFollow(ctx, s.Account.Uri, groupId, s.Account.Uri, subId, term)
 			}
 			err = errors.Join(err, errReqFollow)
 		}
