@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/awakari/int-activitypub/config"
 	"github.com/awakari/int-activitypub/service"
 	"github.com/awakari/int-activitypub/util"
@@ -26,6 +27,8 @@ type mastodon struct {
 
 const limitRespBodyLen = 1_048_576
 const minWordLen = 3
+const minFollowersCount = 10
+const minPostCount = 10
 
 func NewService(clientHttp *http.Client, userAgent string, cfgMastodon config.MastodonConfig, svc service.Service) Service {
 	return mastodon{
@@ -76,7 +79,16 @@ func (m mastodon) searchAndAdd(ctx context.Context, subId, groupId, term string,
 	if err == nil {
 		for _, s := range results.Statuses {
 			var errReqFollow error
-			if !s.Sensitive {
+			if s.Sensitive {
+				errReqFollow = fmt.Errorf("found account %s skip due to sensitive flag", s.Account.Uri)
+			}
+			if errReqFollow == nil && s.Account.FollowersCount < minFollowersCount {
+				errReqFollow = fmt.Errorf("found account %s skip due low followers count %d", s.Account.Uri, s.Account.FollowersCount)
+			}
+			if errReqFollow == nil && s.Account.StatusesCount < minPostCount {
+				errReqFollow = fmt.Errorf("found account %s skip due low post count %d", s.Account.Uri, s.Account.StatusesCount)
+			}
+			if errReqFollow == nil {
 				_, errReqFollow = m.svc.RequestFollow(ctx, s.Account.Uri, groupId, "", subId, term)
 			}
 			err = errors.Join(err, errReqFollow)
