@@ -99,10 +99,12 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 		src := model.Source{
 			ActorId: actor.ID.String(),
 			GroupId: groupId,
+			UserId:  userId,
 			Type:    string(actor.Type),
 			Name:    actor.Name.String(),
 			Summary: actor.Summary.String(),
 			Created: time.Now().UTC(),
+			Last:    time.Now().UTC(),
 			SubId:   subId,
 			Term:    term,
 		}
