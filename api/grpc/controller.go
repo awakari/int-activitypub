@@ -99,10 +99,14 @@ func encodeSource(src model.Source) (dst *Source) {
 		Name:     src.Name,
 		Summary:  src.Summary,
 		Accepted: src.Accepted,
-		Last:     timestamppb.New(src.Last),
-		Created:  timestamppb.New(src.Created),
 		SubId:    src.SubId,
 		Term:     src.Term,
+	}
+	if !src.Created.IsZero() {
+		dst.Created = timestamppb.New(src.Created)
+	}
+	if !src.Last.IsZero() {
+		dst.Last = timestamppb.New(src.Last)
 	}
 	return
 }

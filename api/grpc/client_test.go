@@ -11,11 +11,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"log/slog"
 	"os"
 	"testing"
-	"time"
 )
 
 var port uint16 = 50051
@@ -102,8 +100,6 @@ func TestServiceClient_Read(t *testing.T) {
 					Type:    "Person",
 					Name:    "John Doe",
 					Summary: "yohoho",
-					Last:    timestamppb.New(time.Time{}),
-					Created: timestamppb.New(time.Time{}),
 				},
 			},
 		},
