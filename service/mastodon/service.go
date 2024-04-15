@@ -7,15 +7,14 @@ import (
 	"fmt"
 	"github.com/awakari/int-activitypub/config"
 	"github.com/awakari/int-activitypub/service"
-	"github.com/awakari/int-activitypub/util"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
-	"strings"
 )
 
 type Service interface {
-	SearchAndAdd(ctx context.Context, subId, groupId, q string, limitPerTerm uint32) (n uint32, err error)
+	SearchAndAdd(ctx context.Context, subId, groupId, q string, limit uint32) (n uint32, err error)
 }
 
 type mastodon struct {
@@ -39,26 +38,8 @@ func NewService(clientHttp *http.Client, userAgent string, cfgMastodon config.Ma
 	}
 }
 
-func (m mastodon) SearchAndAdd(ctx context.Context, subId, groupId, q string, limitPerTerm uint32) (n uint32, err error) {
-	q = util.Sanitize(q)
-	terms := map[string]bool{}
-	for _, t := range strings.Split(q, " ") {
-		if len(t) >= minWordLen {
-			terms[t] = true
-		}
-	}
-	var tn uint32
-	var tErr error
-	for t, _ := range terms {
-		tn, tErr = m.searchAndAdd(ctx, subId, groupId, t, limitPerTerm)
-		n += tn
-		err = errors.Join(err, tErr)
-	}
-	return
-}
-
-func (m mastodon) searchAndAdd(ctx context.Context, subId, groupId, term string, limit uint32) (n uint32, err error) {
-	reqQuery := "?q=" + term + "&type=statuses&limit=" + strconv.Itoa(int(limit))
+func (m mastodon) SearchAndAdd(ctx context.Context, subId, groupId, q string, limit uint32) (n uint32, err error) {
+	reqQuery := "?q=" + url.QueryEscape(q) + "&type=statuses&limit=" + strconv.Itoa(int(limit))
 	var req *http.Request
 	req, err = http.NewRequestWithContext(ctx, http.MethodGet, m.cfg.Endpoint+reqQuery, nil)
 	var resp *http.Response
@@ -89,7 +70,7 @@ func (m mastodon) searchAndAdd(ctx context.Context, subId, groupId, term string,
 				errReqFollow = fmt.Errorf("found account %s skip due low post count %d", s.Account.Uri, s.Account.StatusesCount)
 			}
 			if errReqFollow == nil {
-				_, errReqFollow = m.svc.RequestFollow(ctx, s.Account.Uri, groupId, "", subId, term)
+				_, errReqFollow = m.svc.RequestFollow(ctx, s.Account.Uri, groupId, "", subId, q)
 			}
 			err = errors.Join(err, errReqFollow)
 		}
