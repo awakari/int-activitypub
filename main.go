@@ -88,12 +88,12 @@ func main() {
 		Icon: vocab.Image{
 			MediaType: "image/png",
 			Type:      vocab.ImageType,
-			URL:       vocab.IRI("https://awakari.com/logo-color-64.png"),
+			URL:       vocab.IRI("https://awakari.com/logo-color-256.png"),
 		},
 		Image: vocab.Image{
-			MediaType: "image/svg+xml",
+			MediaType: "image/png",
 			Type:      vocab.ImageType,
-			URL:       vocab.IRI("https://awakari.com/logo-color.svg"),
+			URL:       vocab.IRI("https://awakari.com/logo-color-1024.png"),
 		},
 		Summary:           vocab.DefaultNaturalLanguageValue("Awakari ActivityPub Bot"),
 		URL:               vocab.IRI("https://awakari.com"),
