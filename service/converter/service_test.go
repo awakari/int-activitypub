@@ -94,6 +94,11 @@ func TestService_Convert(t *testing.T) {
 							CeString: "https://mastodon.social/users/akurilov/followers",
 						},
 					},
+					"to": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "https://www.w3.org/ns/activitystreams#Public",
+						},
+					},
 					"object": {
 						Attr: &pb.CloudEventAttributeValue_CeString{
 							CeString: "Note",
@@ -152,6 +157,11 @@ func TestService_Convert(t *testing.T) {
 					"cc": {
 						Attr: &pb.CloudEventAttributeValue_CeString{
 							CeString: "https://e14n.com/evan",
+						},
+					},
+					"to": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "https://rhiaro.co.uk/followers/",
 						},
 					},
 					"object": {
@@ -243,6 +253,11 @@ func TestService_Convert(t *testing.T) {
 							},
 						},
 					},
+					"to": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "https://www.w3.org/ns/activitystreams#Public",
+						},
+					},
 				},
 				Data: &pb.CloudEvent_TextData{
 					TextData: "I just checked-in to <a href=\"https://www.openstreetmap.org/way/958999496\">John Lennon's Imagine Mosaic</a>.",
@@ -287,6 +302,11 @@ func TestService_Convert(t *testing.T) {
 							CeTimestamp: &timestamppb.Timestamp{
 								Seconds: -62135596800,
 							},
+						},
+					},
+					"to": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "https://rhiaro.co.uk/#amy https://dustycloud.org/followers https://rhiaro.co.uk/followers/",
 						},
 					},
 				},

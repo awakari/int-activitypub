@@ -41,6 +41,7 @@ const CeKeyStarts = "starts"
 const CeKeySubject = "subject"
 const CeKeySummary = "summary"
 const CeKeyTime = "time"
+const CeKeyTo = "to"
 const CeKeyUpdated = "updated"
 
 var ErrFail = errors.New("failed to convert")
@@ -204,6 +205,9 @@ func (svc service) convertObject(obj *vocab.Object, evt *pb.CloudEvent) (err err
 	if tags := obj.Tag; tags != nil && len(tags) > 0 {
 		err = errors.Join(err, convertAsCollection(tags, evt, CeKeyCategories))
 	}
+	if to := obj.To; to != nil && len(to) > 0 {
+		err = errors.Join(err, convertAsCollection(to, evt, CeKeyTo))
+	}
 	if !obj.Updated.IsZero() {
 		evt.Attributes[CeKeyUpdated] = &pb.CloudEventAttributeValue{
 			Attr: &pb.CloudEventAttributeValue_CeTimestamp{
@@ -300,6 +304,9 @@ func (svc service) convertActivityAsObject(obj vocab.Activity, evt *pb.CloudEven
 	}
 	if tags := obj.Tag; tags != nil && len(tags) > 0 {
 		err = errors.Join(err, convertAsCollection(tags, evt, CeKeyCategories))
+	}
+	if to := obj.To; to != nil && len(to) > 0 {
+		err = errors.Join(err, convertAsCollection(to, evt, CeKeyTo))
 	}
 	if !obj.Updated.IsZero() {
 		evt.Attributes[CeKeyUpdated] = &pb.CloudEventAttributeValue{
