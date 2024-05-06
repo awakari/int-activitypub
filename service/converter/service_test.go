@@ -94,6 +94,11 @@ func TestService_Convert(t *testing.T) {
 							CeString: "https://mastodon.social/users/akurilov/followers",
 						},
 					},
+					"to": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "https://www.w3.org/ns/activitystreams#Public",
+						},
+					},
 					"object": {
 						Attr: &pb.CloudEventAttributeValue_CeString{
 							CeString: "Note",
@@ -152,6 +157,11 @@ func TestService_Convert(t *testing.T) {
 					"cc": {
 						Attr: &pb.CloudEventAttributeValue_CeString{
 							CeString: "https://e14n.com/evan",
+						},
+					},
+					"to": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "https://rhiaro.co.uk/followers/",
 						},
 					},
 					"object": {
@@ -241,6 +251,11 @@ func TestService_Convert(t *testing.T) {
 							CeTimestamp: &timestamppb.Timestamp{
 								Seconds: 1708096050,
 							},
+						},
+					},
+					"to": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "https://www.w3.org/ns/activitystreams#Public",
 						},
 					},
 				},
