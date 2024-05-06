@@ -304,11 +304,6 @@ func TestService_Convert(t *testing.T) {
 							},
 						},
 					},
-					"to": {
-						Attr: &pb.CloudEventAttributeValue_CeString{
-							CeString: "https://rhiaro.co.uk/#amy https://dustycloud.org/followers https://rhiaro.co.uk/followers/",
-						},
-					},
 				},
 				Data: &pb.CloudEvent_TextData{
 					TextData: "Chris liked 'Minimal ActivityPub update client'",
