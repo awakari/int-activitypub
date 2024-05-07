@@ -44,6 +44,8 @@ const CeKeyTime = "time"
 const CeKeyTo = "to"
 const CeKeyUpdated = "updated"
 
+const asPublic = "https://www.w3.org/ns/activitystreams#Public"
+
 var ErrFail = errors.New("failed to convert")
 
 func NewService() Service {
@@ -89,6 +91,7 @@ func (svc service) Convert(ctx context.Context, actor vocab.Actor, activity voca
 		}
 	}
 	//
+	var public bool
 	t := string(activity.Type)
 	switch {
 	case activity.Object != nil:
@@ -100,7 +103,7 @@ func (svc service) Convert(ctx context.Context, actor vocab.Actor, activity voca
 		obj := activity.Object
 		switch objT := obj.(type) {
 		case *vocab.Object:
-			err = svc.convertObject(objT, evt)
+			public, err = svc.convertObject(objT, evt)
 		default:
 			switch obj.IsLink() {
 			case true:
@@ -114,13 +117,17 @@ func (svc service) Convert(ctx context.Context, actor vocab.Actor, activity voca
 			}
 		}
 	default:
-		err = svc.convertActivityAsObject(activity, evt)
+		public, err = svc.convertActivityAsObject(activity, evt)
+	}
+	// honor the privacy: discard any publication that is not explicitly public
+	if !public {
+		evt = nil
 	}
 	//
 	return
 }
 
-func (svc service) convertObject(obj *vocab.Object, evt *pb.CloudEvent) (err error) {
+func (svc service) convertObject(obj *vocab.Object, evt *pb.CloudEvent) (public bool, err error) {
 	evt.Attributes[CeKeyObject] = &pb.CloudEventAttributeValue{
 		Attr: &pb.CloudEventAttributeValue_CeString{
 			CeString: string(obj.Type),
@@ -135,10 +142,22 @@ func (svc service) convertObject(obj *vocab.Object, evt *pb.CloudEvent) (err err
 		err = convertAttachment(att, evt)
 	}
 	if aud := obj.Audience; aud != nil && len(aud) > 0 {
-		err = errors.Join(err, convertAsCollection(aud, evt, CeKeyAudience))
+		var publicAud bool
+		var errAud error
+		publicAud, errAud = convertAsCollectionDetectAsPublic(aud, evt, CeKeyAudience)
+		if publicAud {
+			public = true
+		}
+		err = errors.Join(err, errAud)
 	}
 	if cc := obj.CC; cc != nil && len(cc) > 0 {
-		err = errors.Join(err, convertAsCollection(cc, evt, CeKeyCc))
+		var publicCc bool
+		var errCc error
+		publicCc, errCc = convertAsCollectionDetectAsPublic(cc, evt, CeKeyCc)
+		if publicCc {
+			public = true
+		}
+		err = errors.Join(err, errCc)
 	}
 	if obj.Content != nil {
 		txt := evt.GetTextData()
@@ -206,7 +225,13 @@ func (svc service) convertObject(obj *vocab.Object, evt *pb.CloudEvent) (err err
 		err = errors.Join(err, convertAsCollection(tags, evt, CeKeyCategories))
 	}
 	if to := obj.To; to != nil && len(to) > 0 {
-		err = errors.Join(err, convertAsCollection(to, evt, CeKeyTo))
+		var publicTo bool
+		var errTo error
+		publicTo, errTo = convertAsCollectionDetectAsPublic(to, evt, CeKeyTo)
+		if publicTo {
+			public = true
+		}
+		err = errors.Join(err, errTo)
 	}
 	if !obj.Updated.IsZero() {
 		evt.Attributes[CeKeyUpdated] = &pb.CloudEventAttributeValue{
@@ -219,7 +244,7 @@ func (svc service) convertObject(obj *vocab.Object, evt *pb.CloudEvent) (err err
 	return
 }
 
-func (svc service) convertActivityAsObject(obj vocab.Activity, evt *pb.CloudEvent) (err error) {
+func (svc service) convertActivityAsObject(obj vocab.Activity, evt *pb.CloudEvent) (public bool, err error) {
 	evt.Attributes[CeKeyObject] = &pb.CloudEventAttributeValue{
 		Attr: &pb.CloudEventAttributeValue_CeString{
 			CeString: string(obj.Type),
@@ -234,10 +259,22 @@ func (svc service) convertActivityAsObject(obj vocab.Activity, evt *pb.CloudEven
 		err = convertAttachment(att, evt)
 	}
 	if aud := obj.Audience; aud != nil && len(aud) > 0 {
-		err = errors.Join(err, convertAsCollection(aud, evt, CeKeyAudience))
+		var publicAud bool
+		var errAud error
+		publicAud, errAud = convertAsCollectionDetectAsPublic(aud, evt, CeKeyAudience)
+		if publicAud {
+			public = true
+		}
+		err = errors.Join(err, errAud)
 	}
 	if cc := obj.CC; cc != nil && len(cc) > 0 {
-		err = errors.Join(err, convertAsCollection(cc, evt, CeKeyCc))
+		var publicCc bool
+		var errCc error
+		publicCc, errCc = convertAsCollectionDetectAsPublic(cc, evt, CeKeyCc)
+		if publicCc {
+			public = true
+		}
+		err = errors.Join(err, errCc)
 	}
 	if obj.Content != nil {
 		txt := evt.GetTextData()
@@ -306,7 +343,13 @@ func (svc service) convertActivityAsObject(obj vocab.Activity, evt *pb.CloudEven
 		err = errors.Join(err, convertAsCollection(tags, evt, CeKeyCategories))
 	}
 	if to := obj.To; to != nil && len(to) > 0 {
-		err = errors.Join(err, convertAsCollection(to, evt, CeKeyTo))
+		var publicTo bool
+		var errTo error
+		publicTo, errTo = convertAsCollectionDetectAsPublic(to, evt, CeKeyTo)
+		if publicTo {
+			public = true
+		}
+		err = errors.Join(err, errTo)
 	}
 	if !obj.Updated.IsZero() {
 		evt.Attributes[CeKeyUpdated] = &pb.CloudEventAttributeValue{
@@ -318,27 +361,35 @@ func (svc service) convertActivityAsObject(obj vocab.Activity, evt *pb.CloudEven
 	return
 }
 
-func convertAsCollection(cc vocab.ItemCollection, evt *pb.CloudEvent, key string) (err error) {
-	var ccs []string
-	for _, ccItem := range cc {
-		var ccStr string
+func convertAsCollectionDetectAsPublic(items vocab.ItemCollection, evt *pb.CloudEvent, key string) (public bool, err error) {
+	var result []string
+	for _, item := range items {
+		var itemStr string
 		switch {
-		case ccItem.IsLink():
-			ccStr = ccItem.GetLink().String()
-		case ccItem.IsObject():
-			ccStr = ccItem.(*vocab.Object).Name.String()
+		case item.IsLink():
+			itemStr = item.GetLink().String()
+		case item.IsObject():
+			itemStr = item.(*vocab.Object).Name.String()
 		default:
-			err = fmt.Errorf("%w item in the collection, unexpected type: %s", ErrFail, reflect.TypeOf(ccItem))
+			err = fmt.Errorf("%w item in the collection, unexpected type: %s", ErrFail, reflect.TypeOf(item))
 		}
-		if ccStr != "" {
-			ccs = append(ccs, ccStr)
+		if itemStr != "" {
+			result = append(result, itemStr)
+		}
+		if itemStr == asPublic {
+			public = true
 		}
 	}
 	evt.Attributes[key] = &pb.CloudEventAttributeValue{
 		Attr: &pb.CloudEventAttributeValue_CeString{
-			CeString: strings.Join(ccs, " "),
+			CeString: strings.Join(result, " "),
 		},
 	}
+	return
+}
+
+func convertAsCollection(items vocab.ItemCollection, evt *pb.CloudEvent, key string) (err error) {
+	_, err = convertAsCollectionDetectAsPublic(items, evt, key)
 	return
 }
 
