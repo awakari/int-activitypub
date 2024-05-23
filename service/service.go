@@ -4,6 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
+	"strings"
+	"time"
+
 	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/service/converter"
@@ -12,9 +16,6 @@ import (
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/google/uuid"
-	"net/url"
-	"strings"
-	"time"
 )
 
 type Service interface {
@@ -150,7 +151,7 @@ func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activi
 					Type:      vocab.NoteType,
 					Published: time.Now().UTC(),
 					Content: vocab.DefaultNaturalLanguageValue(
-						"<p>Hi " + actor.Name.String() + "!<p>" +
+						"<p>Hi " + actor.Name.String() + "!</p>" +
 							"<p>I'm a bot and my request to follow you has been accepted. " +
 							"Note that this acceptance means your explicit consent to process your public posts. " +
 							"If your server automatically accepted my follow request and you don't agree, " +
