@@ -71,6 +71,8 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 
 	err = h.svc.HandleActivity(ctx, actor, activity)
 	switch {
+	case errors.Is(err, service.ErrNoAccept):
+		ctx.String(http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, storage.ErrNotFound), errors.Is(err, service.ErrInvalid):
 		ctx.String(http.StatusBadRequest, err.Error())
 		return

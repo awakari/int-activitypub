@@ -25,6 +25,7 @@ type Service interface {
 }
 
 var ErrInvalid = errors.New("invalid argument")
+var ErrNoAccept = errors.New("follow request is not accepted yet")
 
 type service struct {
 	stor     storage.Storage
@@ -121,11 +122,27 @@ func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activi
 	srcId := actor.ID.String()
 	src, err = svc.stor.Read(ctx, srcId)
 	if err == nil {
-		switch activity.Type {
-		case vocab.AcceptType:
-			src.Accepted = true
-			err = svc.stor.Update(ctx, src)
-		default:
+		switch {
+		case activity.Type == vocab.AcceptType:
+			actorSelf := vocab.IRI(fmt.Sprintf("https://%s/actor", svc.hostSelf))
+			privacyNote := vocab.Activity{
+				Type:    vocab.CreateType,
+				Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
+				Actor:   actorSelf,
+				Object: vocab.Note{
+					Content: vocab.DefaultNaturalLanguageValue(
+						"Hi. I'm a bot and I received a follow accept from you. " +
+							"Note this means the explicit consent to process your public posts." +
+							"If you don't agree, please remove me from your followers.",
+					),
+				},
+			}
+			err = svc.ap.SendActivity(ctx, privacyNote, actor.Inbox.GetLink())
+			if err == nil {
+				src.Accepted = true
+				err = svc.stor.Update(ctx, src)
+			}
+		case src.Accepted:
 			var evt *pb.CloudEvent
 			evt, _ = svc.conv.Convert(ctx, actor, activity)
 			if evt != nil && evt.Data != nil {
@@ -141,6 +158,8 @@ func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activi
 				}
 				err = svc.w.Write(ctx, evt, src.GroupId, userId)
 			}
+		default:
+			err = fmt.Errorf("%w: actor=%+v, activity.Type=%s", ErrNoAccept, actor, activity.Type)
 		}
 	}
 	return
