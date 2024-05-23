@@ -11,6 +11,7 @@ import (
 	"github.com/awakari/int-activitypub/storage"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	vocab "github.com/go-ap/activitypub"
+	"github.com/google/uuid"
 	"net/url"
 	"strings"
 	"time"
@@ -93,6 +94,14 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 			Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
 			Actor:   vocab.IRI(fmt.Sprintf("https://%s/actor", svc.hostSelf)),
 			Object:  vocab.IRI(addrResolved),
+			Summary: vocab.DefaultNaturalLanguageValue(
+				"Hi @" + actor.PreferredUsername.String() + "! " +
+					"I'm a bot and I want to read your public posts.\n" +
+					"About: https://awakari.com\n" +
+					"Privacy: https://awakari.com/privacy.html\n" +
+					"Source: https://github.com/awakari/int-activitypub\n" +
+					"Terms: https://awakari.com/tos.html\n",
+			),
 		}
 		err = svc.ap.SendActivity(ctx, activity, actor.Inbox.GetID())
 	}
@@ -129,11 +138,29 @@ func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activi
 				Type:    vocab.CreateType,
 				Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
 				Actor:   actorSelf,
+				To: []vocab.Item{
+					actor.GetLink(),
+				},
+				AttributedTo: actor.GetLink(),
 				Object: vocab.Note{
+					ID: vocab.ID(actorSelf.String() + "/" + uuid.NewString()),
+					To: []vocab.Item{
+						actor.GetLink(),
+					},
+					Type:      vocab.NoteType,
+					Published: time.Now().UTC(),
 					Content: vocab.DefaultNaturalLanguageValue(
-						"Hi. I'm a bot and I received a follow accept from you. " +
-							"Note this means the explicit consent to process your public posts." +
-							"If you don't agree, please remove me from your followers.",
+						"<p>Hi " + actor.Name.String() + "!<p>" +
+							"<p>I'm a bot and my request to follow you has been accepted. " +
+							"Note that this acceptance means your explicit consent to process your public posts. " +
+							"If your server automatically accepted my follow request and you don't agree, " +
+							"please block me or remove me from your followers.</p>" +
+							"<p>About: <a href=\"https://awakari.com\">https://awakari.com</a><br/>" +
+							"Contact: <a href=\"mailto:awakari@awakari.com\">awakari@awakari.com</a><br/>" +
+							"<a href=\"https://t.me/donateawk/48\">Donate</a><br/>" +
+							"Privacy: <a href=\"https://awakari.com/privacy.html\">https://awakari.com/privacy.html</a><br/>" +
+							"Source: <a href=\"https://github.com/awakari/int-activitypub\">https://github.com/awakari/int-activitypub</a><br/>" +
+							"Terms: <a href=\"https://awakari.com/tos.html\">https://awakari.com/tos.html</a></p>",
 					),
 				},
 			}
