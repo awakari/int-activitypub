@@ -79,7 +79,7 @@ func main() {
 	//
 	actor := vocab.Actor{
 		ID:   vocab.ID(fmt.Sprintf("https://%s/actor", cfg.Api.Http.Host)),
-		Type: vocab.PersonType,
+		Type: vocab.ServiceType,
 		Name: vocab.DefaultNaturalLanguageValue("awakari"),
 		Context: vocab.ItemCollection{
 			vocab.IRI("https://www.w3.org/ns/activitystreams"),
