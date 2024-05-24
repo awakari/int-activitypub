@@ -80,7 +80,7 @@ func main() {
 	actor := vocab.Actor{
 		ID:   vocab.ID(fmt.Sprintf("https://%s/actor", cfg.Api.Http.Host)),
 		Type: vocab.ServiceType,
-		Name: vocab.DefaultNaturalLanguageValue("awakari"),
+		Name: vocab.DefaultNaturalLanguageValue("AwakariBot"),
 		Context: vocab.ItemCollection{
 			vocab.IRI("https://www.w3.org/ns/activitystreams"),
 			vocab.IRI("https://w3id.org/security/v1"),
@@ -101,7 +101,7 @@ func main() {
 		Outbox:            vocab.IRI(fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host)),
 		Following:         vocab.IRI(fmt.Sprintf("https://%s/following", cfg.Api.Http.Host)),
 		Followers:         vocab.IRI(fmt.Sprintf("https://%s/followers", cfg.Api.Http.Host)),
-		PreferredUsername: vocab.DefaultNaturalLanguageValue("awakari"),
+		PreferredUsername: vocab.DefaultNaturalLanguageValue("AwakariBot"),
 		Endpoints: &vocab.Endpoints{
 			SharedInbox: vocab.IRI(fmt.Sprintf("https://%s/inbox", cfg.Api.Http.Host)),
 		},
@@ -136,7 +136,7 @@ func main() {
 	}
 	ha := handler.NewActorHandler(actor, actorExtraAttrs)
 	wf := apiHttp.WebFinger{
-		Subject: fmt.Sprintf("acct:awakari@%s", cfg.Api.Http.Host),
+		Subject: fmt.Sprintf("acct:AwakariBot@%s", cfg.Api.Http.Host),
 		Links: []apiHttp.WebFingerLink{
 			{
 				Rel:  "self",
