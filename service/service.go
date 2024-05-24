@@ -89,18 +89,27 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 		}
 	}
 	if err == nil {
+		var reason string
+		switch term {
+		case "":
+			reason = "an Awakari user manually requested this"
+		default:
+			reason = "Awakari discovered your public posts matching a user query"
+		}
 		activity := vocab.Activity{
 			Type:    vocab.FollowType,
 			Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
 			Actor:   vocab.IRI(fmt.Sprintf("https://%s/actor", svc.hostSelf)),
 			Object:  vocab.IRI(addrResolved),
 			Summary: vocab.DefaultNaturalLanguageValue(
-				"Hi @" + actor.PreferredUsername.String() + "! " +
-					"I'm a bot and I want to read your public posts.\n" +
-					"About: https://awakari.com\n" +
-					"Privacy: https://awakari.com/privacy.html\n" +
-					"Source: https://github.com/awakari/int-activitypub\n" +
-					"Terms: https://awakari.com/tos.html\n",
+				"<p>Hi " + actor.Name.String() + "!</p>" +
+					"<p><a href=\"https://awakari.com\">Awakari</a> Fediverse bot requests to follow you because " +
+					reason + ".</p>" +
+					"Contact: <a href=\"mailto:awakari@awakari.com\">awakari@awakari.com</a><br/>" +
+					"Donate: <a href=\"https://t.me/donateawk/48\">https://t.me/donateawk/48</a><br/>" +
+					"Privacy: <a href=\"https://awakari.com/privacy.html\">https://awakari.com/privacy.html</a><br/>" +
+					"Source: <a href=\"https://github.com/awakari/int-activitypub\">https://github.com/awakari/int-activitypub</a><br/>" +
+					"Terms: <a href=\"https://awakari.com/tos.html\">https://awakari.com/tos.html</a></p>",
 			),
 		}
 		err = svc.ap.SendActivity(ctx, activity, actor.Inbox.GetID())
@@ -134,7 +143,14 @@ func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activi
 		switch {
 		case activity.Type == vocab.AcceptType:
 			actorSelf := vocab.IRI(fmt.Sprintf("https://%s/actor", svc.hostSelf))
-			privacyNote := vocab.Activity{
+			var reasonFollowed string
+			switch src.Term {
+			case "":
+				reasonFollowed = "an Awakari user manually requested this"
+			default:
+				reasonFollowed = "Awakari discovered your public posts matching a user query"
+			}
+			activityAccepted := vocab.Activity{
 				Type:    vocab.CreateType,
 				Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
 				Actor:   actorSelf,
@@ -150,21 +166,23 @@ func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activi
 					Type:      vocab.NoteType,
 					Published: time.Now().UTC(),
 					Content: vocab.DefaultNaturalLanguageValue(
-						"<p>Hi " + actor.Name.String() + "!<p>" +
-							"<p>I'm a bot and my request to follow you has been accepted. " +
-							"Note that this acceptance means your explicit consent to process your public posts. " +
-							"If your server automatically accepted my follow request and you don't agree, " +
-							"please block me or remove me from your followers.</p>" +
-							"<p>About: <a href=\"https://awakari.com\">https://awakari.com</a><br/>" +
+						"<p>Hi " + actor.Name.String() + "!</p>" +
+							"<p><a href=\"https://awakari.com\">Awakari</a> Fediverse bot followed you because " +
+							reasonFollowed + ". The follow request has been <b>accepted</b>. " +
+							"Note this acceptance means your <i>explicit consent</i> to process your public (only) posts. " +
+							"Some services accept the follow requests automatically on behalf of a user. " +
+							"Awakari can not distinguish automatic and manual accept requests. " +
+							"If you don't agree with the following, please remove the bot from your followers. " +
+							"Additionally, you can disable automatic follow request acceptance.</p>" +
 							"Contact: <a href=\"mailto:awakari@awakari.com\">awakari@awakari.com</a><br/>" +
-							"<a href=\"https://t.me/donateawk/48\">Donate</a><br/>" +
+							"Donate: <a href=\"https://t.me/donateawk/48\">https://t.me/donateawk/48</a><br/>" +
 							"Privacy: <a href=\"https://awakari.com/privacy.html\">https://awakari.com/privacy.html</a><br/>" +
 							"Source: <a href=\"https://github.com/awakari/int-activitypub\">https://github.com/awakari/int-activitypub</a><br/>" +
 							"Terms: <a href=\"https://awakari.com/tos.html\">https://awakari.com/tos.html</a></p>",
 					),
 				},
 			}
-			err = svc.ap.SendActivity(ctx, privacyNote, actor.Inbox.GetLink())
+			err = svc.ap.SendActivity(ctx, activityAccepted, actor.Inbox.GetLink())
 			if err == nil {
 				src.Accepted = true
 				err = svc.stor.Update(ctx, src)

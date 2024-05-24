@@ -25,7 +25,6 @@ type mastodon struct {
 }
 
 const limitRespBodyLen = 1_048_576
-const minWordLen = 3
 const minFollowersCount = 10
 const minPostCount = 10
 

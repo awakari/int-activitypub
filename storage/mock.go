@@ -37,6 +37,7 @@ func (s mock) Read(ctx context.Context, addr string) (a model.Source, err error)
 		a.Name = "John Doe"
 		a.Type = "Person"
 		a.Summary = "yohoho"
+		a.Accepted = true
 	default:
 		err = ErrNotFound
 	}

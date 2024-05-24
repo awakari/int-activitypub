@@ -112,7 +112,7 @@ func TestService_Read(t *testing.T) {
 	}{
 		"ok": {
 			url:   "https://host.social/users/existing",
-			actor: model.Source{ActorId: "user1@server1.social", GroupId: "group1", UserId: "user2", Type: "Person", Name: "John Doe", Summary: "yohoho"},
+			actor: model.Source{ActorId: "user1@server1.social", GroupId: "group1", UserId: "user2", Type: "Person", Name: "John Doe", Summary: "yohoho", Accepted: true},
 		},
 		"fail": {
 			url: "https://host.social/users/storfail",

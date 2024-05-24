@@ -141,7 +141,10 @@ func TestService_Convert(t *testing.T) {
   "name": "Minimal ActivityPub update client",
   "content": "Today I finished morph, a client for posting ActivityStreams2...",
   "attributedTo": "https://rhiaro.co.uk/#amy",
-  "to": "https://rhiaro.co.uk/followers/",
+  "to": [
+	"https://rhiaro.co.uk/followers/",
+	"https://www.w3.org/ns/activitystreams#Public"
+  ],
   "cc": "https://e14n.com/evan"
 }`,
 			out: &pb.CloudEvent{
@@ -161,7 +164,7 @@ func TestService_Convert(t *testing.T) {
 					},
 					"to": {
 						Attr: &pb.CloudEventAttributeValue_CeString{
-							CeString: "https://rhiaro.co.uk/followers/",
+							CeString: "https://rhiaro.co.uk/followers/ https://www.w3.org/ns/activitystreams#Public",
 						},
 					},
 					"object": {
@@ -183,7 +186,7 @@ func TestService_Convert(t *testing.T) {
 					},
 				},
 				Data: &pb.CloudEvent_TextData{
-					TextData: "[Today I finished morph, a client for posting ActivityStreams2...]\n\nToday I finished morph, a client for posting ActivityStreams2...",
+					TextData: "Today I finished morph, a client for posting ActivityStreams2...",
 				},
 			},
 		},
@@ -275,7 +278,8 @@ func TestService_Convert(t *testing.T) {
   "object": "https://rhiaro.co.uk/2016/05/minimal-activitypub",
   "to": ["https://rhiaro.co.uk/#amy",
          "https://dustycloud.org/followers",
-         "https://rhiaro.co.uk/followers/"],
+         "https://rhiaro.co.uk/followers/",
+		 "https://www.w3.org/ns/activitystreams#Public"],
   "cc": "https://e14n.com/evan"
 }`,
 			out: &pb.CloudEvent{
@@ -287,9 +291,24 @@ func TestService_Convert(t *testing.T) {
 							CeString: "Like",
 						},
 					},
+					"cc": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "https://e14n.com/evan",
+						},
+					},
 					"subject": {
 						Attr: &pb.CloudEventAttributeValue_CeString{
 							CeString: "[]",
+						},
+					},
+					"summary": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "Chris liked 'Minimal ActivityPub update client'",
+						},
+					},
+					"object": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "Like",
 						},
 					},
 					"objecturl": {
@@ -302,6 +321,11 @@ func TestService_Convert(t *testing.T) {
 							CeTimestamp: &timestamppb.Timestamp{
 								Seconds: -62135596800,
 							},
+						},
+					},
+					"to": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "https://rhiaro.co.uk/#amy https://dustycloud.org/followers https://rhiaro.co.uk/followers/ https://www.w3.org/ns/activitystreams#Public",
 						},
 					},
 				},
@@ -338,7 +362,8 @@ func TestService_Convert(t *testing.T) {
    "id": "http://example.org/blog/",
    "type": "OrderedCollection",
    "name": "Martin's Blog"
-  }
+  },
+  "cc": "https://www.w3.org/ns/activitystreams#Public"
 }`,
 			out: &pb.CloudEvent{
 				SpecVersion: "1.0",
@@ -349,9 +374,19 @@ func TestService_Convert(t *testing.T) {
 							CeString: "Add",
 						},
 					},
+					"cc": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "https://www.w3.org/ns/activitystreams#Public",
+						},
+					},
 					"subject": {
 						Attr: &pb.CloudEventAttributeValue_CeString{
 							CeString: "[]",
+						},
+					},
+					"summary": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "Martin added an article to his blog",
 						},
 					},
 					"object": {

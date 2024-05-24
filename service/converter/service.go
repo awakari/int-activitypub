@@ -72,29 +72,12 @@ func (svc service) Convert(ctx context.Context, actor vocab.Actor, activity voca
 			},
 		},
 	}
-	if activity.Content != nil {
-		evt.Data = &pb.CloudEvent_TextData{
-			TextData: activity.Content.String(),
-		}
-	}
-	if activity.Summary != nil {
-		txt := evt.GetTextData()
-		switch txt {
-		case "":
-			evt.Data = &pb.CloudEvent_TextData{
-				TextData: activity.Summary.String(),
-			}
-		default:
-			evt.Data = &pb.CloudEvent_TextData{
-				TextData: fmt.Sprintf("%s\n\n%s", activity.Summary, txt),
-			}
-		}
-	}
 	//
 	var public bool
+	public, err = svc.convertActivity(activity, evt)
+	var publicObj bool
 	t := string(activity.Type)
-	switch {
-	case activity.Object != nil:
+	if activity.Object != nil {
 		evt.Attributes[CeKeyAction] = &pb.CloudEventAttributeValue{
 			Attr: &pb.CloudEventAttributeValue_CeString{
 				CeString: t,
@@ -103,7 +86,7 @@ func (svc service) Convert(ctx context.Context, actor vocab.Actor, activity voca
 		obj := activity.Object
 		switch objT := obj.(type) {
 		case *vocab.Object:
-			public, err = svc.convertObject(objT, evt)
+			publicObj, err = svc.convertObject(objT, evt)
 		default:
 			switch obj.IsLink() {
 			case true:
@@ -116,14 +99,129 @@ func (svc service) Convert(ctx context.Context, actor vocab.Actor, activity voca
 				err = fmt.Errorf("%w activity object, unexpected type: %s", ErrFail, reflect.TypeOf(obj))
 			}
 		}
-	default:
-		public, err = svc.convertActivityAsObject(activity, evt)
 	}
 	// honor the privacy: discard any publication that is not explicitly public
-	if !public {
+	if !public && !publicObj {
 		evt = nil
 	}
 	//
+	return
+}
+
+func (svc service) convertActivity(a vocab.Activity, evt *pb.CloudEvent) (public bool, err error) {
+	evt.Attributes[CeKeyObject] = &pb.CloudEventAttributeValue{
+		Attr: &pb.CloudEventAttributeValue_CeString{
+			CeString: string(a.Type),
+		},
+	}
+	evt.Attributes[CeKeyObjectUrl] = &pb.CloudEventAttributeValue{
+		Attr: &pb.CloudEventAttributeValue_CeUri{
+			CeUri: a.ID.String(),
+		},
+	}
+	if att := a.Attachment; att != nil {
+		err = convertAttachment(att, evt)
+	}
+	if aud := a.Audience; aud != nil && len(aud) > 0 {
+		var publicAud bool
+		var errAud error
+		publicAud, errAud = convertAsCollectionDetectAsPublic(aud, evt, CeKeyAudience)
+		if publicAud {
+			public = true
+		}
+		err = errors.Join(err, errAud)
+	}
+	if cc := a.CC; cc != nil && len(cc) > 0 {
+		var publicCc bool
+		var errCc error
+		publicCc, errCc = convertAsCollectionDetectAsPublic(cc, evt, CeKeyCc)
+		if publicCc {
+			public = true
+		}
+		err = errors.Join(err, errCc)
+	}
+	if a.Content != nil {
+		txt := evt.GetTextData()
+		switch txt {
+		case "":
+			evt.Data = &pb.CloudEvent_TextData{
+				TextData: a.Content.String(),
+			}
+		default:
+			evt.Data = &pb.CloudEvent_TextData{
+				TextData: fmt.Sprintf("%s\n\n%s", a.Content.String(), txt),
+			}
+		}
+	}
+	if a.Duration > 0 {
+		evt.Attributes[CeKeyDuration] = &pb.CloudEventAttributeValue{
+			Attr: &pb.CloudEventAttributeValue_CeInteger{
+				CeInteger: int32(a.Duration.Seconds()),
+			},
+		}
+	}
+	if !a.EndTime.IsZero() {
+		evt.Attributes[CeKeyEnds] = &pb.CloudEventAttributeValue{
+			Attr: &pb.CloudEventAttributeValue_CeTimestamp{
+				CeTimestamp: timestamppb.New(a.EndTime),
+			},
+		}
+	}
+	if ico := a.Icon; ico != nil {
+		err = errors.Join(err, convertAsLink(ico, evt, CeKeyIcon))
+	}
+	if img := a.Image; img != nil {
+		err = errors.Join(err, convertAsLink(img, evt, CeKeyImageUrl))
+	}
+	if inReplyTo := a.InReplyTo; inReplyTo != nil {
+		err = errors.Join(err, convertInReplyTo(inReplyTo, evt))
+	}
+	if loc := a.Location; loc != nil {
+		err = errors.Join(err, convertLocation(loc, evt))
+	}
+	if preview := a.Preview; preview != nil {
+		err = errors.Join(err, convertAsLink(preview, evt, CeKeyPreview))
+	}
+	if !a.StartTime.IsZero() {
+		evt.Attributes[CeKeyStarts] = &pb.CloudEventAttributeValue{
+			Attr: &pb.CloudEventAttributeValue_CeTimestamp{
+				CeTimestamp: timestamppb.New(a.StartTime),
+			},
+		}
+	}
+	if summ := a.Summary; summ != nil && len(summ) > 0 {
+		txt := evt.GetTextData()
+		switch txt {
+		case "":
+			evt.Data = &pb.CloudEvent_TextData{
+				TextData: summ.String(),
+			}
+		default:
+			evt.Data = &pb.CloudEvent_TextData{
+				TextData: fmt.Sprintf("%s\n\n%s", summ.String(), txt),
+			}
+		}
+		err = errors.Join(err, convertAsText(summ, evt, CeKeySummary))
+	}
+	if tags := a.Tag; tags != nil && len(tags) > 0 {
+		err = errors.Join(err, convertAsCollection(tags, evt, CeKeyCategories))
+	}
+	if to := a.To; to != nil && len(to) > 0 {
+		var publicTo bool
+		var errTo error
+		publicTo, errTo = convertAsCollectionDetectAsPublic(to, evt, CeKeyTo)
+		if publicTo {
+			public = true
+		}
+		err = errors.Join(err, errTo)
+	}
+	if !a.Updated.IsZero() {
+		evt.Attributes[CeKeyUpdated] = &pb.CloudEventAttributeValue{
+			Attr: &pb.CloudEventAttributeValue_CeTimestamp{
+				CeTimestamp: timestamppb.New(a.Updated),
+			},
+		}
+	}
 	return
 }
 
@@ -168,7 +266,7 @@ func (svc service) convertObject(obj *vocab.Object, evt *pb.CloudEvent) (public 
 			}
 		default:
 			evt.Data = &pb.CloudEvent_TextData{
-				TextData: fmt.Sprintf("%s\n\n%s", obj.Content, txt),
+				TextData: fmt.Sprintf("%s\n\n%s", obj.Content.String(), txt),
 			}
 		}
 	}
@@ -217,7 +315,7 @@ func (svc service) convertObject(obj *vocab.Object, evt *pb.CloudEvent) (public 
 			}
 		default:
 			evt.Data = &pb.CloudEvent_TextData{
-				TextData: fmt.Sprintf("%s\n\n%s", summ, txt),
+				TextData: fmt.Sprintf("%s\n\n%s", summ.String(), txt),
 			}
 		}
 	}
@@ -241,123 +339,6 @@ func (svc service) convertObject(obj *vocab.Object, evt *pb.CloudEvent) (public 
 		}
 	}
 	//
-	return
-}
-
-func (svc service) convertActivityAsObject(obj vocab.Activity, evt *pb.CloudEvent) (public bool, err error) {
-	evt.Attributes[CeKeyObject] = &pb.CloudEventAttributeValue{
-		Attr: &pb.CloudEventAttributeValue_CeString{
-			CeString: string(obj.Type),
-		},
-	}
-	evt.Attributes[CeKeyObjectUrl] = &pb.CloudEventAttributeValue{
-		Attr: &pb.CloudEventAttributeValue_CeUri{
-			CeUri: obj.ID.String(),
-		},
-	}
-	if att := obj.Attachment; att != nil {
-		err = convertAttachment(att, evt)
-	}
-	if aud := obj.Audience; aud != nil && len(aud) > 0 {
-		var publicAud bool
-		var errAud error
-		publicAud, errAud = convertAsCollectionDetectAsPublic(aud, evt, CeKeyAudience)
-		if publicAud {
-			public = true
-		}
-		err = errors.Join(err, errAud)
-	}
-	if cc := obj.CC; cc != nil && len(cc) > 0 {
-		var publicCc bool
-		var errCc error
-		publicCc, errCc = convertAsCollectionDetectAsPublic(cc, evt, CeKeyCc)
-		if publicCc {
-			public = true
-		}
-		err = errors.Join(err, errCc)
-	}
-	if obj.Content != nil {
-		txt := evt.GetTextData()
-		switch txt {
-		case "":
-			evt.Data = &pb.CloudEvent_TextData{
-				TextData: obj.Content.String(),
-			}
-		default:
-			evt.Data = &pb.CloudEvent_TextData{
-				TextData: fmt.Sprintf("%s\n\n%s", obj.Content, txt),
-			}
-		}
-	}
-	if obj.Duration > 0 {
-		evt.Attributes[CeKeyDuration] = &pb.CloudEventAttributeValue{
-			Attr: &pb.CloudEventAttributeValue_CeInteger{
-				CeInteger: int32(obj.Duration.Seconds()),
-			},
-		}
-	}
-	if !obj.EndTime.IsZero() {
-		evt.Attributes[CeKeyEnds] = &pb.CloudEventAttributeValue{
-			Attr: &pb.CloudEventAttributeValue_CeTimestamp{
-				CeTimestamp: timestamppb.New(obj.EndTime),
-			},
-		}
-	}
-	if ico := obj.Icon; ico != nil {
-		err = errors.Join(err, convertAsLink(ico, evt, CeKeyIcon))
-	}
-	if img := obj.Image; img != nil {
-		err = errors.Join(err, convertAsLink(img, evt, CeKeyImageUrl))
-	}
-	if inReplyTo := obj.InReplyTo; inReplyTo != nil {
-		err = errors.Join(err, convertInReplyTo(inReplyTo, evt))
-	}
-	if loc := obj.Location; loc != nil {
-		err = errors.Join(err, convertLocation(loc, evt))
-	}
-	if preview := obj.Preview; preview != nil {
-		err = errors.Join(err, convertAsLink(preview, evt, CeKeyPreview))
-	}
-	if !obj.StartTime.IsZero() {
-		evt.Attributes[CeKeyStarts] = &pb.CloudEventAttributeValue{
-			Attr: &pb.CloudEventAttributeValue_CeTimestamp{
-				CeTimestamp: timestamppb.New(obj.StartTime),
-			},
-		}
-	}
-	if summ := obj.Summary; summ != nil && len(summ) > 0 {
-		txt := evt.GetTextData()
-		switch txt {
-		case "":
-			evt.Data = &pb.CloudEvent_TextData{
-				TextData: summ.String(),
-			}
-		default:
-			evt.Data = &pb.CloudEvent_TextData{
-				TextData: fmt.Sprintf("%s\n\n%s", summ, txt),
-			}
-		}
-		err = errors.Join(err, convertAsText(summ, evt, CeKeySummary))
-	}
-	if tags := obj.Tag; tags != nil && len(tags) > 0 {
-		err = errors.Join(err, convertAsCollection(tags, evt, CeKeyCategories))
-	}
-	if to := obj.To; to != nil && len(to) > 0 {
-		var publicTo bool
-		var errTo error
-		publicTo, errTo = convertAsCollectionDetectAsPublic(to, evt, CeKeyTo)
-		if publicTo {
-			public = true
-		}
-		err = errors.Join(err, errTo)
-	}
-	if !obj.Updated.IsZero() {
-		evt.Attributes[CeKeyUpdated] = &pb.CloudEventAttributeValue{
-			Attr: &pb.CloudEventAttributeValue_CeTimestamp{
-				CeTimestamp: timestamppb.New(obj.Updated),
-			},
-		}
-	}
 	return
 }
 
@@ -434,10 +415,12 @@ func convertAsLink(item vocab.Item, evt *pb.CloudEvent, key string) (err error) 
 }
 
 func convertAsText(item vocab.NaturalLanguageValues, evt *pb.CloudEvent, key string) (err error) {
-	evt.Attributes[key] = &pb.CloudEventAttributeValue{
-		Attr: &pb.CloudEventAttributeValue_CeUri{
-			CeUri: item.String(),
-		},
+	if len(item) > 0 {
+		evt.Attributes[key] = &pb.CloudEventAttributeValue{
+			Attr: &pb.CloudEventAttributeValue_CeString{
+				CeString: item.String(),
+			},
+		}
 	}
 	return
 }
