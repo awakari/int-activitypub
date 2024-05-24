@@ -142,8 +142,11 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 				Published: time.Now().UTC(),
 				Content: vocab.DefaultNaturalLanguageValue(
 					"<p>Hi " + actor.Name.String() + "!</p>" +
-						"<p><a href=\"https://awakari.com\">Awakari</a> bot requests to follow you because " +
-						reason + ".</p>" +
+						"<p>AwakariBot requests to follow you because " + reason + ".</p>" +
+						"<p>Your acceptance means <i>explicit consent</i> to process your public (only) posts, " +
+						"like most of other Fediverse servers do. " +
+						"If you don't agree with the following, please don't accept the follow request.</p>" +
+						"About: <a href=\"https://awakari.com\">https://awakari.com</a><br/>" +
 						"Contact: <a href=\"mailto:awakari@awakari.com\">awakari@awakari.com</a><br/>" +
 						"Donate: <a href=\"https://t.me/donateawk/48\">https://t.me/donateawk/48</a><br/>" +
 						"Privacy: <a href=\"https://awakari.com/privacy.html\">https://awakari.com/privacy.html</a><br/>" +
@@ -189,16 +192,18 @@ func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activi
 					Published: time.Now().UTC(),
 					Content: vocab.DefaultNaturalLanguageValue(
 						"<p>Hi " + actor.Name.String() + "!</p>" +
-							"<p><a href=\"https://awakari.com\">Awakari</a> bot followed you because " +
-							reasonFollowed + ". The follow request has been <b>accepted</b>.</p>" +
-							"Note this acceptance means your <i>explicit consent</i> to process your public (only) posts.</p>" +
+							"<p>AwakariBot followed you because " + reasonFollowed + ". " +
+							"The follow request has been <b>accepted</b>.</p>" +
+							"<p>Note this acceptance means your <i>explicit consent</i> to process your public (only) posts, " +
+							"like most of other Fediverse servers do.</p>" +
 							"<p>If you don't agree with the following, please remove the bot from your followers. " +
 							"Additionally, you can disable automatic follow request acceptance.</p>" +
+							"About: <a href=\"https://awakari.com\">https://awakari.com</a><br/>" +
 							"Contact: <a href=\"mailto:awakari@awakari.com\">awakari@awakari.com</a><br/>" +
 							"Donate: <a href=\"https://t.me/donateawk/48\">https://t.me/donateawk/48</a><br/>" +
 							"Privacy: <a href=\"https://awakari.com/privacy.html\">https://awakari.com/privacy.html</a><br/>" +
 							"Source: <a href=\"https://github.com/awakari/int-activitypub\">https://github.com/awakari/int-activitypub</a><br/>" +
-							"Terms: <a href=\"https://awakari.com/tos.html\">https://awakari.com/tos.html</a></p>",
+							"Terms: <a href=\"https://awakari.com/tos.html\">https://awakari.com/tos.html</a>",
 					),
 				},
 			}
