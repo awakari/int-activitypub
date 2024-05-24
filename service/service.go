@@ -168,12 +168,12 @@ func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activi
 					Published: time.Now().UTC(),
 					Content: vocab.DefaultNaturalLanguageValue(
 						"<p>Hi " + actor.Name.String() + "!</p>" +
-							"<p><a href=\"https://awakari.com\">Awakari</a> Fediverse bot followed you because " +
-							reasonFollowed + ". The follow request has been <b>accepted</b>. " +
-							"Note this acceptance means your <i>explicit consent</i> to process your public (only) posts. " +
+							"<p><a href=\"https://awakari.com\">Awakari</a> bot followed you because " +
+							reasonFollowed + ". The follow request has been <b>accepted</b>.</p>" +
+							"<p>Note this acceptance means your <i>explicit consent</i> to process your public (only) posts. " +
 							"Some services accept the follow requests automatically on behalf of a user. " +
-							"Awakari can not distinguish automatic and manual accept requests. " +
-							"If you don't agree with the following, please remove the bot from your followers. " +
+							"Awakari can not distinguish automatic and manual accept requests.</p>" +
+							"<p>If you don't agree with the following, please remove the bot from your followers. " +
 							"Additionally, you can disable automatic follow request acceptance.</p>" +
 							"Contact: <a href=\"mailto:awakari@awakari.com\">awakari@awakari.com</a><br/>" +
 							"Donate: <a href=\"https://t.me/donateawk/48\">https://t.me/donateawk/48</a><br/>" +
