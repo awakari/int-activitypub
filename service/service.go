@@ -143,7 +143,7 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 				Content: vocab.DefaultNaturalLanguageValue(
 					"<p>Hi " + actor.Name.String() + "!</p>" +
 						"<p>AwakariBot requests to follow you because " + reason + ".</p>" +
-						"<p>Your acceptance means <i>explicit consent</i> to process your public (only) posts, " +
+						"<p>Your acceptance means your <i>explicit consent</i> to process your public (only) posts, " +
 						"like most of other Fediverse servers do. " +
 						"If you don't agree with the following, please don't accept the follow request.</p>" +
 						"About: <a href=\"https://awakari.com\">https://awakari.com</a><br/>" +
