@@ -148,7 +148,7 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 						"If you don't agree with the following, please don't accept the follow request.</p>" +
 						"About: <a href=\"https://awakari.com\">https://awakari.com</a><br/>" +
 						"Contact: <a href=\"mailto:awakari@awakari.com\">awakari@awakari.com</a><br/>" +
-						"Donate: <a href=\"https://t.me/donateawk/48\">https://t.me/donateawk/48</a><br/>" +
+						"Donate: <a href=\"https://awakari.com/donation.html\">https://awakari.com/donation.html</a><br/>" +
 						"Privacy: <a href=\"https://awakari.com/privacy.html\">https://awakari.com/privacy.html</a><br/>" +
 						"Source: <a href=\"https://github.com/awakari/int-activitypub\">https://github.com/awakari/int-activitypub</a><br/>" +
 						"Terms: <a href=\"https://awakari.com/tos.html\">https://awakari.com/tos.html</a></p>",
@@ -200,7 +200,7 @@ func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activi
 							"Additionally, you can disable automatic follow request acceptance.</p>" +
 							"About: <a href=\"https://awakari.com\">https://awakari.com</a><br/>" +
 							"Contact: <a href=\"mailto:awakari@awakari.com\">awakari@awakari.com</a><br/>" +
-							"Donate: <a href=\"https://t.me/donateawk/48\">https://t.me/donateawk/48</a><br/>" +
+							"Donate: <a href=\"https://awakari.com/donation.html\">https://awakari.com/donation.html</a><br/>" +
 							"Privacy: <a href=\"https://awakari.com/privacy.html\">https://awakari.com/privacy.html</a><br/>" +
 							"Source: <a href=\"https://github.com/awakari/int-activitypub\">https://github.com/awakari/int-activitypub</a><br/>" +
 							"Terms: <a href=\"https://awakari.com/tos.html\">https://awakari.com/tos.html</a>",
