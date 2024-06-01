@@ -21,7 +21,7 @@ type recSrc struct {
 	Name     string    `bson:"name"`
 	Summary  string    `bson:"summary"`
 	Accepted bool      `bson:"accepted"`
-	Last     time.Time `bson:"last"`
+	Last     time.Time `bson:"last,omitempty"`
 	Created  time.Time `bson:"created"`
 	SubId    string    `bson:"subId"`
 	Term     string    `bson:"term"`
@@ -187,6 +187,7 @@ func (sm storageMongo) Create(ctx context.Context, src model.Source) (err error)
 		Type:    src.Type,
 		Name:    src.Name,
 		Summary: src.Summary,
+		Last:    src.Created,
 		Created: src.Created,
 		SubId:   src.SubId,
 		Term:    src.Term,

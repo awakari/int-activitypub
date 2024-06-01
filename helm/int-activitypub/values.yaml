@@ -122,7 +122,7 @@ db:
       followers: followers
       following: following
     retention:
-      following: "720h"
+      following: "2160h"
     shard:
       followers: true
       following: true
