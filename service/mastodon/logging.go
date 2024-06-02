@@ -24,6 +24,13 @@ func (l logging) SearchAndAdd(ctx context.Context, subId, groupId, q string, lim
 	return
 }
 
+func (l logging) ConsumeLiveStreamPublic(ctx context.Context) (err error) {
+	l.log.Log(ctx, logLevel(err), fmt.Sprintf("mastodon.ConsumeLiveStreamPublic(): started"))
+	err = l.svc.ConsumeLiveStreamPublic(ctx)
+	l.log.Log(ctx, logLevel(err), fmt.Sprintf("mastodon.ConsumeLiveStreamPublic(): done, err=%s", err))
+	return
+}
+
 func logLevel(err error) (lvl slog.Level) {
 	switch err {
 	case nil:
