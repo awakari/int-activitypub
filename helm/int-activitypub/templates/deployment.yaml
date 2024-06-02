@@ -88,19 +88,21 @@ spec:
                 secretKeyRef:
                   name: "{{ include "int-activitypub.fullname" . }}-keys"
                   key: private
-            - name: SEARCH_MASTODON_ENDPOINT
-              value: "{{ .Values.search.mastodon.endpoint }}"
-            - name: SEARCH_MASTODON_CLIENT_KEY
+            - name: MASTODON_ENDPOINT_SEARCH
+              value: "{{ .Values.mastodon.endpoint.search }}"
+            - name: MASTODON_ENDPOINT_STREAM
+              value: "{{ .Values.mastodon.endpoint.stream }}"
+            - name: MASTODON_CLIENT_KEY
               valueFrom:
                 secretKeyRef:
                   name: "{{ include "int-activitypub.fullname" . }}-search-client-mastodon"
                   key: key
-            - name: SEARCH_MASTODON_CLIENT_SECRET
+            - name: MASTODON_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: "{{ include "int-activitypub.fullname" . }}-search-client-mastodon"
                   key: secret
-            - name: SEARCH_MASTODON_CLIENT_TOKEN
+            - name: MASTODON_CLIENT_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: "{{ include "int-activitypub.fullname" . }}-search-client-mastodon"

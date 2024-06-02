@@ -58,11 +58,14 @@ type DbConfig struct {
 }
 
 type MastodonConfig struct {
-	Endpoint string `envconfig:"SEARCH_MASTODON_ENDPOINT" default:"https://mastodon.social/api/v2/search" required:"true"`
-	Client   struct {
-		Key    string `envconfig:"SEARCH_MASTODON_CLIENT_KEY" required:"true"`
-		Secret string `envconfig:"SEARCH_MASTODON_CLIENT_SECRET" required:"true"`
-		Token  string `envconfig:"SEARCH_MASTODON_CLIENT_TOKEN" required:"true"`
+	Endpoint struct {
+		Search string `envconfig:"MASTODON_ENDPOINT_SEARCH" default:"https://mastodon.social/api/v2/search" required:"true"`
+		Stream string `envconfig:"MASTODON_ENDPOINT_STREAM" default:"https://streaming.mastodon.social/api/v1/streaming/public?remote=false&only_media=false" required:"true"`
+	}
+	Client struct {
+		Key    string `envconfig:"MASTODON_CLIENT_KEY" required:"true"`
+		Secret string `envconfig:"MASTODON_CLIENT_SECRET" required:"true"`
+		Token  string `envconfig:"MASTODON_CLIENT_TOKEN" required:"true"`
 	}
 }
 

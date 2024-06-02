@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/awakari/int-activitypub/config"
 	"github.com/awakari/int-activitypub/service"
+	"github.com/r3labs/sse/v2"
 	"io"
 	"net/http"
 	"net/url"
@@ -15,6 +16,7 @@ import (
 
 type Service interface {
 	SearchAndAdd(ctx context.Context, subId, groupId, q string, limit uint32) (n uint32, err error)
+	ConsumeLiveStreamPublic(ctx context.Context) (err error)
 }
 
 type mastodon struct {
@@ -42,7 +44,7 @@ func (m mastodon) SearchAndAdd(ctx context.Context, subId, groupId, q string, li
 	for n < limit {
 		reqQuery := "?q=" + url.QueryEscape(q) + "&type=statuses&offset=" + strconv.Itoa(offset) + "&limit=" + strconv.Itoa(int(limit))
 		var req *http.Request
-		req, err = http.NewRequestWithContext(ctx, http.MethodGet, m.cfg.Endpoint+reqQuery, nil)
+		req, err = http.NewRequestWithContext(ctx, http.MethodGet, m.cfg.Endpoint.Search+reqQuery, nil)
 		var resp *http.Response
 		if err == nil {
 			req.Header.Add("Accept", "application/json")
@@ -88,5 +90,18 @@ func (m mastodon) SearchAndAdd(ctx context.Context, subId, groupId, q string, li
 			}
 		}
 	}
+	return
+}
+
+func (m mastodon) ConsumeLiveStreamPublic(ctx context.Context) (err error) {
+	client := sse.NewClient(m.cfg.Endpoint.Stream)
+	client.Headers["Authorization"] = "Bearer " + m.cfg.Client.Token
+	client.Headers["User-Agent"] = m.userAgent
+	err = client.SubscribeWithContext(ctx, "", m.consumeLiveStreamEvent)
+	return
+}
+
+func (m mastodon) consumeLiveStreamEvent(evt *sse.Event) {
+	fmt.Println(evt.Data)
 	return
 }
