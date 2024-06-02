@@ -69,7 +69,11 @@ func main() {
 	//
 	svcMstdn := mastodon.NewService(clientHttp, cfg.Api.Http.Host, cfg.Search.Mastodon, svc, svcWriter)
 	svcMstdn = mastodon.NewServiceLogging(svcMstdn, log)
-	go svcMstdn.ConsumeLiveStreamPublic(context.Background())
+	go func() {
+		for {
+			_ = svcMstdn.ConsumeLiveStreamPublic(context.Background())
+		}
+	}()
 	//
 	log.Info(fmt.Sprintf("starting to listen the gRPC API @ port #%d...", cfg.Api.Port))
 	go func() {
