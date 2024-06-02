@@ -67,7 +67,7 @@ func main() {
 	svc := service.NewService(stor, svcActivityPub, cfg.Api.Http.Host, svcConv, svcWriter)
 	svc = service.NewLogging(svc, log)
 	//
-	svcMstdn := mastodon.NewService(clientHttp, cfg.Api.Http.Host, cfg.Search.Mastodon, svc)
+	svcMstdn := mastodon.NewService(clientHttp, cfg.Api.Http.Host, cfg.Search.Mastodon, svc, svcWriter)
 	svcMstdn = mastodon.NewServiceLogging(svcMstdn, log)
 	go svcMstdn.ConsumeLiveStreamPublic(context.Background())
 	//

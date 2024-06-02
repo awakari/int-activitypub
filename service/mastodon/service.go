@@ -7,11 +7,17 @@ import (
 	"fmt"
 	"github.com/awakari/int-activitypub/config"
 	"github.com/awakari/int-activitypub/service"
+	"github.com/awakari/int-activitypub/service/converter"
+	"github.com/awakari/int-activitypub/service/writer"
+	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
+	"github.com/google/uuid"
 	"github.com/r3labs/sse/v2"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 )
 
 type Service interface {
@@ -24,18 +30,22 @@ type mastodon struct {
 	userAgent  string
 	cfg        config.MastodonConfig
 	svc        service.Service
+	w          writer.Service
 }
 
 const limitRespBodyLen = 1_048_576
 const minFollowersCount = 10
 const minPostCount = 10
+const typeCloudEvent = "com.awakari.mastodon.v1"
+const groupIdDefault = "default"
 
-func NewService(clientHttp *http.Client, userAgent string, cfgMastodon config.MastodonConfig, svc service.Service) Service {
+func NewService(clientHttp *http.Client, userAgent string, cfgMastodon config.MastodonConfig, svc service.Service, w writer.Service) Service {
 	return mastodon{
 		clientHttp: clientHttp,
 		userAgent:  userAgent,
 		cfg:        cfgMastodon,
 		svc:        svc,
+		w:          w,
 	}
 }
 
@@ -102,6 +112,92 @@ func (m mastodon) ConsumeLiveStreamPublic(ctx context.Context) (err error) {
 }
 
 func (m mastodon) consumeLiveStreamEvent(evt *sse.Event) {
-	fmt.Println(evt.Data)
+	if "update" == string(evt.Event) {
+		var st Status
+		err := json.Unmarshal(evt.Data, &st)
+		if err != nil {
+			fmt.Printf("failed to unmarshal the live stream event data: %s\nerror: %s\n", string(evt.Data), err)
+		}
+		if st.Sensitive {
+			return
+		}
+		if st.Visibility != "public" {
+			return
+		}
+		evtAwk := m.convertStatus(st)
+		err = m.w.Write(context.TODO(), evtAwk, groupIdDefault, evtAwk.Source)
+		if err != nil {
+			fmt.Printf("failed to submit the live stream event, sse id=%s, awk id=%s, err=%s\n", string(evt.ID), evtAwk.Id, err)
+		}
+	}
+	return
+}
+
+func (m mastodon) convertStatus(st Status) (evtAwk *pb.CloudEvent) {
+	evtAwk = &pb.CloudEvent{
+		Id:          uuid.NewString(),
+		Source:      st.Account.Uri,
+		SpecVersion: converter.CeSpecVersion,
+		Type:        typeCloudEvent,
+		Attributes: map[string]*pb.CloudEventAttributeValue{
+			converter.CeKeySubject: {
+				Attr: &pb.CloudEventAttributeValue_CeString{
+					CeString: st.Account.DisplayName,
+				},
+			},
+			converter.CeKeyTime: {
+				Attr: &pb.CloudEventAttributeValue_CeTimestamp{
+					CeTimestamp: timestamppb.New(st.CreatedAt.UTC()),
+				},
+			},
+		},
+		Data: &pb.CloudEvent_TextData{
+			TextData: st.Content,
+		},
+	}
+	if st.Language != "" {
+		evtAwk.Attributes["language"] = &pb.CloudEventAttributeValue{
+			Attr: &pb.CloudEventAttributeValue_CeString{
+				CeString: st.Language,
+			},
+		}
+	}
+	if st.Url != "" {
+		evtAwk.Attributes[converter.CeKeyObjectUrl] = &pb.CloudEventAttributeValue{
+			Attr: &pb.CloudEventAttributeValue_CeUri{
+				CeUri: st.Url,
+			},
+		}
+	}
+	var cats []string
+	for _, t := range st.Tags {
+		if t.Name != "" {
+			cats = append(cats, t.Name)
+		}
+	}
+	if len(cats) > 0 {
+		evtAwk.Attributes[converter.CeKeyCategories] = &pb.CloudEventAttributeValue{
+			Attr: &pb.CloudEventAttributeValue_CeString{
+				CeString: strings.Join(cats, " "),
+			},
+		}
+	}
+	if len(st.MediaAttachments) > 0 {
+		att := st.MediaAttachments[0]
+		evtAwk.Attributes[converter.CeKeyAttachmentType] = &pb.CloudEventAttributeValue{
+			Attr: &pb.CloudEventAttributeValue_CeString{
+				CeString: att.Type,
+			},
+		}
+		u := att.PreviewUrl
+		if u == "" {
+			u = att.Url
+		}
+		evtAwk.Attributes[converter.CeKeyAttachmentUrl] = &pb.CloudEventAttributeValue{
+			Attr: &pb.CloudEventAttributeValue_CeUri{
+				CeUri: u,
+			},
+		}
+	}
 	return
 }
