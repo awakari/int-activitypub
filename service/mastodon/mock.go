@@ -13,6 +13,6 @@ func (m mock) SearchAndAdd(ctx context.Context, subId, groupId, q string, limit 
 	return 42, nil
 }
 
-func (m mock) ConsumeLiveStreamPublic(ctx context.Context) (err error) {
+func (m mock) ConsumeLiveStreamPublic() (err error) {
 	return
 }

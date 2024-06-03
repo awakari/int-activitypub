@@ -18,11 +18,12 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Service interface {
 	SearchAndAdd(ctx context.Context, subId, groupId, q string, limit uint32) (n uint32, err error)
-	ConsumeLiveStreamPublic(ctx context.Context) (err error)
+	ConsumeLiveStreamPublic() (err error)
 }
 
 type mastodon struct {
@@ -38,6 +39,7 @@ const minFollowersCount = 10
 const minPostCount = 10
 const typeCloudEvent = "com.awakari.mastodon.v1"
 const groupIdDefault = "default"
+const streamSubDurationDefault = 1 * time.Hour
 
 func NewService(clientHttp *http.Client, userAgent string, cfgMastodon config.MastodonConfig, svc service.Service, w writer.Service) Service {
 	return mastodon{
@@ -103,20 +105,41 @@ func (m mastodon) SearchAndAdd(ctx context.Context, subId, groupId, q string, li
 	return
 }
 
-func (m mastodon) ConsumeLiveStreamPublic(ctx context.Context) (err error) {
+func (m mastodon) ConsumeLiveStreamPublic() (err error) {
 	client := sse.NewClient(m.cfg.Endpoint.Stream)
 	client.Headers["Authorization"] = "Bearer " + m.cfg.Client.Token
 	client.Headers["User-Agent"] = m.userAgent
-	err = client.SubscribeWithContext(ctx, "", m.consumeLiveStreamEvent)
+	ctx, cancel := context.WithTimeout(context.Background(), streamSubDurationDefault)
+	defer cancel()
+	chSsEvts := make(chan *sse.Event)
+	err = client.SubscribeChanWithContext(ctx, "", chSsEvts)
+	if err == nil {
+		defer client.Unsubscribe(chSsEvts)
+		for {
+			select {
+			case ssEvt := <-chSsEvts:
+				m.consumeLiveStreamEvent(ssEvt)
+			case <-ctx.Done():
+				err = ctx.Err()
+			}
+			if errors.Is(err, context.DeadlineExceeded) {
+				err = nil
+				break
+			}
+			if err != nil {
+				break
+			}
+		}
+	}
 	return
 }
 
-func (m mastodon) consumeLiveStreamEvent(evt *sse.Event) {
-	if "update" == string(evt.Event) {
+func (m mastodon) consumeLiveStreamEvent(ssEvt *sse.Event) {
+	if "update" == string(ssEvt.Event) {
 		var st Status
-		err := json.Unmarshal(evt.Data, &st)
+		err := json.Unmarshal(ssEvt.Data, &st)
 		if err != nil {
-			fmt.Printf("failed to unmarshal the live stream event data: %s\nerror: %s\n", string(evt.Data), err)
+			fmt.Printf("failed to unmarshal the live stream event data: %s\nerror: %s\n", string(ssEvt.Data), err)
 		}
 		if st.Sensitive {
 			return
@@ -127,7 +150,7 @@ func (m mastodon) consumeLiveStreamEvent(evt *sse.Event) {
 		evtAwk := m.convertStatus(st)
 		err = m.w.Write(context.TODO(), evtAwk, groupIdDefault, evtAwk.Source)
 		if err != nil {
-			fmt.Printf("failed to submit the live stream event, sse id=%s, awk id=%s, err=%s\n", string(evt.ID), evtAwk.Id, err)
+			fmt.Printf("failed to submit the live stream event, sse id=%s, awk id=%s, err=%s\n", string(ssEvt.ID), evtAwk.Id, err)
 		}
 	}
 	return

@@ -71,7 +71,7 @@ func main() {
 	svcMstdn = mastodon.NewServiceLogging(svcMstdn, log)
 	go func() {
 		for {
-			_ = svcMstdn.ConsumeLiveStreamPublic(context.Background())
+			_ = svcMstdn.ConsumeLiveStreamPublic()
 		}
 	}()
 	//
