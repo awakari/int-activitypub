@@ -26,6 +26,7 @@ type Account struct {
 	Indexable      bool   `json:"indexable"`
 	Note           string `json:"note"`
 	Uri            string `json:"uri"`
+	Url            string `json:"url"`
 	FollowersCount int    `json:"followers_count"`
 	StatusesCount  int    `json:"statuses_count"`
 }

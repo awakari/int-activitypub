@@ -148,7 +148,11 @@ func (m mastodon) consumeLiveStreamEvent(ssEvt *sse.Event) {
 			return
 		}
 		evtAwk := m.convertStatus(st)
-		err = m.w.Write(context.TODO(), evtAwk, groupIdDefault, evtAwk.Source)
+		userId := st.Account.Uri
+		if userId == "" {
+			userId = st.Account.Url
+		}
+		err = m.w.Write(context.TODO(), evtAwk, groupIdDefault, userId)
 		if err != nil {
 			fmt.Printf("failed to submit the live stream event, sse id=%s, awk id=%s, err=%s\n", string(ssEvt.ID), evtAwk.Id, err)
 		}
@@ -159,7 +163,7 @@ func (m mastodon) consumeLiveStreamEvent(ssEvt *sse.Event) {
 func (m mastodon) convertStatus(st Status) (evtAwk *pb.CloudEvent) {
 	evtAwk = &pb.CloudEvent{
 		Id:          uuid.NewString(),
-		Source:      st.Account.Uri,
+		Source:      m.cfg.Endpoint.Stream,
 		SpecVersion: converter.CeSpecVersion,
 		Type:        typeCloudEvent,
 		Attributes: map[string]*pb.CloudEventAttributeValue{
