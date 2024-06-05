@@ -172,6 +172,18 @@ func (sm storageMongo) ensureIndices(ctx context.Context, retentionPeriod time.D
 				SetExpireAfterSeconds(int32(retentionPeriod / time.Second)).
 				SetUnique(false),
 		},
+		{
+			Keys: bson.D{
+				{
+					Key:   attrSubId,
+					Value: 1,
+				},
+			},
+			Options: options.
+				Index().
+				SetSparse(true).
+				SetUnique(false),
+		},
 	})
 }
 
@@ -275,6 +287,9 @@ func (sm storageMongo) List(ctx context.Context, filter model.Filter, limit uint
 	if filter.UserId != "" {
 		q[attrGroupId] = filter.GroupId
 		q[attrUserId] = filter.UserId
+	}
+	if filter.SubId != "" {
+		q[attrSubId] = filter.SubId
 	}
 	optsList := options.
 		Find().

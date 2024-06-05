@@ -86,6 +86,7 @@ message Filter {
   string groupId = 1;
   string userId = 2;
   string pattern = 3;
+  string subId = 4;
 }
 
 message SearchAndAddRequest {

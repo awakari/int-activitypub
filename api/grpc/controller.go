@@ -64,6 +64,7 @@ func (c controller) ListUrls(ctx context.Context, req *ListUrlsRequest) (resp *L
 		filter.Pattern = reqFilter.Pattern
 		filter.GroupId = reqFilter.GroupId
 		filter.UserId = reqFilter.UserId
+		filter.SubId = reqFilter.SubId
 	}
 	var order model.Order
 	switch req.Order {

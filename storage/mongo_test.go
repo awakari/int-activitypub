@@ -306,6 +306,7 @@ func TestStorageMongo_ListUrls(t *testing.T) {
 		Type:    "type0",
 		Name:    "name0",
 		Summary: "summary0",
+		SubId:   "sub0",
 	})
 	require.Nil(t, err)
 	err = s.Create(ctx, model.Source{
@@ -315,6 +316,7 @@ func TestStorageMongo_ListUrls(t *testing.T) {
 		Type:    "type0",
 		Name:    "name1",
 		Summary: "summary1",
+		SubId:   "sub1",
 	})
 	require.Nil(t, err)
 	err = s.Create(ctx, model.Source{
@@ -324,6 +326,7 @@ func TestStorageMongo_ListUrls(t *testing.T) {
 		Type:    "type0",
 		Name:    "name2",
 		Summary: "summary2",
+		SubId:   "sub1",
 	})
 	require.Nil(t, err)
 	//
@@ -384,6 +387,16 @@ func TestStorageMongo_ListUrls(t *testing.T) {
 			},
 			page: []string{
 				"actor1",
+			},
+		},
+		"w/ filter sub": {
+			limit: 10,
+			filter: model.Filter{
+				SubId: "sub1",
+			},
+			page: []string{
+				"actor1",
+				"actor2",
 			},
 		},
 	}

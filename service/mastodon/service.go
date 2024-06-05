@@ -23,7 +23,7 @@ import (
 
 type Service interface {
 	SearchAndAdd(ctx context.Context, subId, groupId, q string, limit uint32) (n uint32, err error)
-	ConsumeLiveStreamPublic() (err error)
+	ConsumeLiveStreamPublic(ctx context.Context) (err error)
 }
 
 type mastodon struct {
@@ -105,26 +105,22 @@ func (m mastodon) SearchAndAdd(ctx context.Context, subId, groupId, q string, li
 	return
 }
 
-func (m mastodon) ConsumeLiveStreamPublic() (err error) {
-	client := sse.NewClient(m.cfg.Endpoint.Stream)
-	client.Headers["Authorization"] = "Bearer " + m.cfg.Client.Token
-	client.Headers["User-Agent"] = m.userAgent
-	ctx, cancel := context.WithTimeout(context.Background(), streamSubDurationDefault)
-	defer cancel()
+func (m mastodon) ConsumeLiveStreamPublic(ctx context.Context) (err error) {
+	clientSse := sse.NewClient(m.cfg.Endpoint.Stream)
+	clientSse.Headers["Authorization"] = "Bearer " + m.cfg.Client.Token
+	clientSse.Headers["User-Agent"] = m.userAgent
 	chSsEvts := make(chan *sse.Event)
-	err = client.SubscribeChanWithContext(ctx, "", chSsEvts)
+	err = clientSse.SubscribeChanWithContext(ctx, "", chSsEvts)
 	if err == nil {
-		defer client.Unsubscribe(chSsEvts)
+		defer clientSse.Unsubscribe(chSsEvts)
 		for {
 			select {
 			case ssEvt := <-chSsEvts:
 				m.consumeLiveStreamEvent(ssEvt)
 			case <-ctx.Done():
 				err = ctx.Err()
-			}
-			if errors.Is(err, context.DeadlineExceeded) {
-				err = nil
-				break
+			case <-time.After(m.cfg.StreamTimeoutMax):
+				err = fmt.Errorf("timeout while wating for new stream status")
 			}
 			if err != nil {
 				break
