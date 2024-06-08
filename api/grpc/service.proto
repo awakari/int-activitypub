@@ -28,6 +28,8 @@ message CreateRequest {
   string addr = 1;
   string groupId = 2;
   string userId = 3;
+  string subId = 4;
+  string term = 5;
 }
 
 message CreateResponse {

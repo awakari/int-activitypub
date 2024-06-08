@@ -28,7 +28,7 @@ func NewController(svc service.Service, search mastodon.Service) ServiceServer {
 
 func (c controller) Create(ctx context.Context, req *CreateRequest) (resp *CreateResponse, err error) {
 	resp = &CreateResponse{}
-	resp.Url, err = c.svc.RequestFollow(ctx, req.Addr, req.GroupId, req.UserId, "", "")
+	resp.Url, err = c.svc.RequestFollow(ctx, req.Addr, req.GroupId, req.UserId, req.SubId, req.Term)
 	err = encodeError(err)
 	return
 }
