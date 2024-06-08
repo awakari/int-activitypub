@@ -6,7 +6,6 @@ import (
 	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/service"
 	"github.com/awakari/int-activitypub/service/activitypub"
-	"github.com/awakari/int-activitypub/service/mastodon"
 	"github.com/awakari/int-activitypub/storage"
 	vocab "github.com/go-ap/activitypub"
 	"google.golang.org/grpc/codes"
@@ -15,14 +14,12 @@ import (
 )
 
 type controller struct {
-	svc    service.Service
-	search mastodon.Service
+	svc service.Service
 }
 
-func NewController(svc service.Service, search mastodon.Service) ServiceServer {
+func NewController(svc service.Service) ServiceServer {
 	return controller{
-		svc:    svc,
-		search: search,
+		svc: svc,
 	}
 }
 
@@ -82,12 +79,6 @@ func (c controller) ListUrls(ctx context.Context, req *ListUrlsRequest) (resp *L
 	default:
 		err = encodeError(err)
 	}
-	return
-}
-
-func (c controller) SearchAndAdd(ctx context.Context, req *SearchAndAddRequest) (resp *SearchAndAddResponse, err error) {
-	resp = &SearchAndAddResponse{}
-	resp.N, err = c.search.SearchAndAdd(ctx, req.SubId, req.GroupId, req.Q, req.Limit)
 	return
 }
 

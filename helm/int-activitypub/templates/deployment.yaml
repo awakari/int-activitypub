@@ -88,25 +88,6 @@ spec:
                 secretKeyRef:
                   name: "{{ include "int-activitypub.fullname" . }}-keys"
                   key: private
-            - name: MASTODON_ENDPOINT_SEARCH
-              value: "{{ .Values.mastodon.endpoint.search }}"
-            - name: MASTODON_ENDPOINT_STREAM
-              value: "{{ .Values.mastodon.endpoint.stream }}"
-            - name: MASTODON_CLIENT_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ include "int-activitypub.fullname" . }}-search-client-mastodon"
-                  key: key
-            - name: MASTODON_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ include "int-activitypub.fullname" . }}-search-client-mastodon"
-                  key: secret
-            - name: MASTODON_CLIENT_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ include "int-activitypub.fullname" . }}-search-client-mastodon"
-                  key: token
             - name: DB_TABLE_RETENTION_PERIOD_FOLLOWING
               value: "{{ .Values.db.table.retention.following }}"
           securityContext:

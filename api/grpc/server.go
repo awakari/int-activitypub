@@ -3,7 +3,6 @@ package grpc
 import (
 	"fmt"
 	"github.com/awakari/int-activitypub/service"
-	"github.com/awakari/int-activitypub/service/mastodon"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
@@ -11,9 +10,9 @@ import (
 	"net"
 )
 
-func Serve(port uint16, svc service.Service, search mastodon.Service) (err error) {
+func Serve(port uint16, svc service.Service) (err error) {
 	srv := grpc.NewServer()
-	c := NewController(svc, search)
+	c := NewController(svc)
 	RegisterServiceServer(srv, c)
 	reflection.Register(srv)
 	grpc_health_v1.RegisterHealthServer(srv, health.NewServer())

@@ -26,9 +26,6 @@ type Config struct {
 	Log struct {
 		Level int `envconfig:"LOG_LEVEL" default:"-4" required:"true"`
 	}
-	Search struct {
-		Mastodon MastodonConfig
-	}
 }
 
 type DbConfig struct {
@@ -55,19 +52,6 @@ type DbConfig struct {
 		Enabled  bool `envconfig:"DB_TLS_ENABLED" default:"false" required:"true"`
 		Insecure bool `envconfig:"DB_TLS_INSECURE" default:"false" required:"true"`
 	}
-}
-
-type MastodonConfig struct {
-	Client struct {
-		Key    string `envconfig:"MASTODON_CLIENT_KEY" required:"true"`
-		Secret string `envconfig:"MASTODON_CLIENT_SECRET" required:"true"`
-		Token  string `envconfig:"MASTODON_CLIENT_TOKEN" required:"true"`
-	}
-	Endpoint struct {
-		Search string `envconfig:"MASTODON_ENDPOINT_SEARCH" default:"https://mastodon.social/api/v2/search" required:"true"`
-		Stream string `envconfig:"MASTODON_ENDPOINT_STREAM" default:"https://streaming.mastodon.social/api/v1/streaming/public?remote=false&only_media=false" required:"true"`
-	}
-	StreamTimeoutMax time.Duration `envconfig:"MASTODON_STREAM_TIMEOUT_MAX" default:"1m" required:"true"`
 }
 
 func NewConfigFromEnv() (cfg Config, err error) {

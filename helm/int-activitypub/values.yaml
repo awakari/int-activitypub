@@ -132,10 +132,6 @@ db:
 log:
   # https://pkg.go.dev/golang.org/x/exp/slog#Level
   level: -4
-mastodon:
-  endpoint:
-    search: "https://mastodon.social/api/v2/search"
-    stream: "https://streaming.mastodon.social/api/v1/streaming/public?remote=false&only_media=false"
 secrets:
   backup:
     image: "alpine:3.19"
