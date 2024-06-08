@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/awakari/client-sdk-go/api"
 	apiGrpc "github.com/awakari/int-activitypub/api/grpc"
@@ -73,9 +72,6 @@ func main() {
 	go func() {
 		for {
 			err = svcMstdn.ConsumeLiveStreamPublic(context.Background())
-			if errors.Is(err, context.DeadlineExceeded) {
-				err = nil
-			}
 			if err != nil {
 				panic(err)
 			}

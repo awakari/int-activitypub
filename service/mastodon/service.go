@@ -39,7 +39,6 @@ const minFollowersCount = 10
 const minPostCount = 10
 const typeCloudEvent = "com.awakari.mastodon.v1"
 const groupIdDefault = "default"
-const streamSubDurationDefault = 1 * time.Hour
 
 func NewService(clientHttp *http.Client, userAgent string, cfgMastodon config.MastodonConfig, svc service.Service, w writer.Service) Service {
 	return mastodon{
@@ -116,6 +115,7 @@ func (m mastodon) ConsumeLiveStreamPublic(ctx context.Context) (err error) {
 		for {
 			select {
 			case ssEvt := <-chSsEvts:
+				fmt.Printf("new live stream event id: %s, type: %s, retry: %+v\n", ssEvt.ID, ssEvt.Event, ssEvt.Retry)
 				m.consumeLiveStreamEvent(ssEvt)
 			case <-ctx.Done():
 				err = ctx.Err()
