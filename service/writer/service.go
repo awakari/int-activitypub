@@ -91,6 +91,8 @@ func (svc service) getWriterAndPublish(ctx context.Context, evt *pb.CloudEvent, 
 			fallthrough
 		case errors.Is(err, resolver.ErrUnavailable):
 			fallthrough
+		case errors.Is(err, resolver.ErrInternal):
+			fallthrough
 		case errors.Is(err, io.EOF):
 			k := writerKey(groupId, userId)
 			svc.cacheLock.Lock()
