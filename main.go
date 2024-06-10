@@ -18,7 +18,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"time"
 )
 
 func main() {
@@ -76,7 +75,7 @@ func main() {
 	actor := vocab.Actor{
 		ID:   vocab.ID(fmt.Sprintf("https://%s/actor", cfg.Api.Http.Host)),
 		Type: vocab.ServiceType,
-		Name: vocab.DefaultNaturalLanguageValue("AwakariBot"),
+		Name: vocab.DefaultNaturalLanguageValue("Awakari"),
 		Context: vocab.ItemCollection{
 			vocab.IRI("https://www.w3.org/ns/activitystreams"),
 			vocab.IRI("https://w3id.org/security/v1"),
@@ -91,8 +90,19 @@ func main() {
 			Type:      vocab.ImageType,
 			URL:       vocab.IRI("https://awakari.com/logo-color-1024.png"),
 		},
-		Summary:           vocab.DefaultNaturalLanguageValue("Awakari ActivityPub Bot"),
-		URL:               vocab.IRI("https://awakari.com"),
+		Summary: vocab.DefaultNaturalLanguageValue(
+			"<p>Awakari is a free service that discovers and follows interesting Fediverse publishers on behalf of own users. " +
+				"The service accepts public only messages and filters these to fulfill own user interest queries.</p>" +
+				"<p>Before accepting any publisher's data, Awakari requests to follow them. " +
+				"The acceptance means publisher's <i>explicit consent</i> to process their public messages, like most of other Fediverse servers do. " +
+				"If you don't agree with the following, please don't accept the follow request or remove Awakari from your followers.</p>" +
+				"Contact: <a href=\"mailto:awakari@awakari.com\">awakari@awakari.com</a><br/>" +
+				"Donate: <a href=\"https://awakari.com/donation.html\">https://awakari.com/donation.html</a><br/>" +
+				"Privacy: <a href=\"https://awakari.com/privacy.html\">https://awakari.com/privacy.html</a><br/>" +
+				"Source: <a href=\"https://github.com/awakari/int-activitypub\">https://github.com/awakari/int-activitypub</a><br/>" +
+				"Terms: <a href=\"https://awakari.com/tos.html\">https://awakari.com/tos.html</a></p>",
+		),
+		URL:               vocab.IRI("https://awakari.com/login.html"),
 		Inbox:             vocab.IRI(fmt.Sprintf("https://%s/inbox", cfg.Api.Http.Host)),
 		Outbox:            vocab.IRI(fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host)),
 		Following:         vocab.IRI(fmt.Sprintf("https://%s/following", cfg.Api.Http.Host)),
@@ -143,63 +153,9 @@ func main() {
 	}
 	hwf := handler.NewWebFingerHandler(wf)
 	hi := handler.NewInboxHandler(svcActivityPub, svc)
-	outboxItems := vocab.ItemCollection{
-		vocab.Article{
-			ID:        "https://awakari.com/articles/why-not-rss.html",
-			URL:       vocab.IRI("https://awakari.com/articles/why-not-rss.html"),
-			Name:      vocab.DefaultNaturalLanguageValue("Why Not RSS?"),
-			Summary:   vocab.DefaultNaturalLanguageValue("Today many of us want to get updates timely from the services they use: news, shops, jobs, etc. But visiting every service every minute is wasting of the time. One can increase the update period and do it daily. Unfortunately, this means the important update is not early enough. Even worse, the important update may be gone already and lost."),
-			Published: time.Date(2024, 1, 8, 0, 0, 0, 0, time.UTC),
-		},
-		vocab.Article{
-			ID:        "https://awakari.com/articles/spacetime-search.html",
-			URL:       vocab.IRI("https://awakari.com/articles/spacetime-search.html"),
-			Name:      vocab.DefaultNaturalLanguageValue("On Search In Space And Tie"),
-			Summary:   vocab.DefaultNaturalLanguageValue("The role of a chance in our life is great. It's always about finding a relevant opportunity. Whether it's a dream job, car, home or a partner."),
-			Published: time.Date(2024, 1, 13, 0, 0, 0, 0, time.UTC),
-		},
-		vocab.Article{
-			ID:        "https://awakari.com/articles/beyond-rss.html",
-			URL:       vocab.IRI("https://awakari.com/articles/beyond-rss.html"),
-			Name:      vocab.DefaultNaturalLanguageValue("Beyond RSS"),
-			Summary:   vocab.DefaultNaturalLanguageValue("The idea of the Awakari service is to filter important events from unlimited number of various sources. This article is about the ways it uses to extract a structured data from the Internet beyond RSS feeds and Telegram channels."),
-			Published: time.Date(2024, 2, 9, 0, 0, 0, 0, time.UTC),
-		},
-		vocab.Article{
-			ID:        "https://awakari.com/articles/awakari-goes-social/index.html",
-			URL:       vocab.IRI("https://awakari.com/articles/awakari-goes-social/index.html"),
-			Name:      vocab.DefaultNaturalLanguageValue("Beyond RSS"),
-			Summary:   vocab.DefaultNaturalLanguageValue("Today more and more services support ActivityPub to exchange activities in the decentralized world also known as Fediverse. The applications are not limited to social networks and blogs. There are also image, music, video sharing services and more.\n\n   By treating these activities as source events Awakari brings the whole new dimension to the Fediverse world. With Awakari, one can track any activity matching own criteria from unlimited number of publishers and services in addition to the existing source types like RSS and Telegram."),
-			Published: time.Date(2024, 2, 22, 0, 0, 0, 0, time.UTC),
-		},
-	}
-	outboxItemsToPublish := vocab.ItemCollection{
-		outboxItems[0],
-		outboxItems[1],
-		outboxItems[2],
-		outboxItems[3],
-	}
-	for _, p := range outboxItemsToPublish {
-		a := vocab.Activity{
-			ID:     vocab.IRI(fmt.Sprintf("%s#create", p.GetID())),
-			Type:   vocab.CreateType,
-			URL:    vocab.IRI(fmt.Sprintf("%s#create", p.GetID())),
-			Actor:  vocab.IRI(fmt.Sprintf("https://%s/actor", cfg.Api.Http.Host)),
-			Object: p,
-		}
-		err = svcActivityPub.SendActivity(context.TODO(), a, "https://mastodon.social/inbox")
-		switch err {
-		case nil:
-			log.Info(fmt.Sprintf("Published the outbox activity %+v", a))
-		default:
-			log.Info(fmt.Sprintf("Failed to publish the outbox activity %+v: %s", a, err))
-		}
-	}
 	ho := handler.NewOutboxHandler(vocab.OrderedCollectionPage{
-		ID:           vocab.IRI(fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host)),
-		Context:      vocab.IRI("https://www.w3.org/ns/activitystreams"),
-		OrderedItems: outboxItems,
-		TotalItems:   uint(len(outboxItems)),
+		ID:      vocab.IRI(fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host)),
+		Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
 	})
 	hFollowing := handler.NewFollowingHandler(stor)
 	//

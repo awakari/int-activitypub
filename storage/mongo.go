@@ -38,6 +38,7 @@ const attrLast = "last"
 const attrCreated = "created"
 const attrSubId = "subId"
 const attrTerm = "term"
+const attrErr = "err"
 
 type storageMongo struct {
 	conn *mongo.Client
@@ -248,6 +249,7 @@ func (sm storageMongo) Update(ctx context.Context, src model.Source) (err error)
 			attrType:     src.Type,
 			attrSummary:  src.Summary,
 			attrLast:     src.Last,
+			attrErr:      src.Err,
 		},
 	}
 	var result *mongo.UpdateResult

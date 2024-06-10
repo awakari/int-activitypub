@@ -14,4 +14,5 @@ type Source struct {
 	Created  time.Time
 	SubId    string
 	Term     string
+	Err      string
 }

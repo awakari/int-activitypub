@@ -15,7 +15,6 @@ import (
 	"github.com/awakari/int-activitypub/storage"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	vocab "github.com/go-ap/activitypub"
-	"github.com/google/uuid"
 )
 
 type Service interface {
@@ -89,6 +88,23 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 			err = fmt.Errorf("%w: failed to fetch actor: %s, cause: %s", ErrInvalid, addrResolved, err)
 		}
 	}
+	var src model.Source
+	if err == nil {
+		src.ActorId = actor.ID.String()
+		src.GroupId = groupId
+		src.UserId = userId
+		src.Type = string(actor.Type)
+		src.Name = actor.Name.String()
+		src.Summary = actor.Summary.String()
+		src.Created = time.Now().UTC()
+		src.Last = time.Now().UTC()
+		src.SubId = subId
+		src.Term = term
+		err = svc.stor.Create(ctx, src)
+		if err == nil {
+			addrResolved = src.ActorId
+		}
+	}
 	if err == nil {
 		activity := vocab.Activity{
 			Type:    vocab.FollowType,
@@ -97,65 +113,10 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 			Object:  vocab.IRI(addrResolved),
 		}
 		err = svc.ap.SendActivity(ctx, activity, actor.Inbox.GetID())
-	}
-	if err == nil {
-		src := model.Source{
-			ActorId: actor.ID.String(),
-			GroupId: groupId,
-			UserId:  userId,
-			Type:    string(actor.Type),
-			Name:    actor.Name.String(),
-			Summary: actor.Summary.String(),
-			Created: time.Now().UTC(),
-			Last:    time.Now().UTC(),
-			SubId:   subId,
-			Term:    term,
+		if err != nil {
+			src.Err = err.Error()
+			_ = svc.stor.Update(ctx, src)
 		}
-		err = svc.stor.Create(ctx, src)
-		if err == nil {
-			addrResolved = src.ActorId
-		}
-	}
-	if err == nil {
-		var reason string
-		switch term {
-		case "":
-			reason = "an Awakari user manually requested this"
-		default:
-			reason = "Awakari discovered your public posts matching a user query"
-		}
-		actorSelf := vocab.IRI(fmt.Sprintf("https://%s/actor", svc.hostSelf))
-		activityFollowRequested := vocab.Activity{
-			Type:    vocab.CreateType,
-			Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
-			Actor:   actorSelf,
-			To: []vocab.Item{
-				actor.GetLink(),
-			},
-			AttributedTo: actor.GetLink(),
-			Object: vocab.Note{
-				ID: vocab.ID(actorSelf.String() + "/" + uuid.NewString()),
-				To: []vocab.Item{
-					actor.GetLink(),
-				},
-				Type:      vocab.NoteType,
-				Published: time.Now().UTC(),
-				Content: vocab.DefaultNaturalLanguageValue(
-					"<p>Hi " + actor.Name.String() + "!</p>" +
-						"<p>AwakariBot requests to follow you because " + reason + ".</p>" +
-						"<p>Your acceptance means your <i>explicit consent</i> to process your public (only) posts, " +
-						"like most of other Fediverse servers do. " +
-						"If you don't agree with the following, please don't accept the follow request.</p>" +
-						"About: <a href=\"https://awakari.com\">https://awakari.com</a><br/>" +
-						"Contact: <a href=\"mailto:awakari@awakari.com\">awakari@awakari.com</a><br/>" +
-						"Donate: <a href=\"https://awakari.com/donation.html\">https://awakari.com/donation.html</a><br/>" +
-						"Privacy: <a href=\"https://awakari.com/privacy.html\">https://awakari.com/privacy.html</a><br/>" +
-						"Source: <a href=\"https://github.com/awakari/int-activitypub\">https://github.com/awakari/int-activitypub</a><br/>" +
-						"Terms: <a href=\"https://awakari.com/tos.html\">https://awakari.com/tos.html</a></p>",
-				),
-			},
-		}
-		err = svc.ap.SendActivity(ctx, activityFollowRequested, actor.Inbox.GetID())
 	}
 	return
 }
@@ -167,51 +128,8 @@ func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activi
 	if err == nil {
 		switch {
 		case activity.Type == vocab.AcceptType:
-			actorSelf := vocab.IRI(fmt.Sprintf("https://%s/actor", svc.hostSelf))
-			var reasonFollowed string
-			switch src.Term {
-			case "":
-				reasonFollowed = "an Awakari user manually requested this"
-			default:
-				reasonFollowed = "Awakari discovered your public posts matching a user query"
-			}
-			activityFollowAccepted := vocab.Activity{
-				Type:    vocab.CreateType,
-				Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
-				Actor:   actorSelf,
-				To: []vocab.Item{
-					actor.GetLink(),
-				},
-				AttributedTo: actor.GetLink(),
-				Object: vocab.Note{
-					ID: vocab.ID(actorSelf.String() + "/" + uuid.NewString()),
-					To: []vocab.Item{
-						actor.GetLink(),
-					},
-					Type:      vocab.NoteType,
-					Published: time.Now().UTC(),
-					Content: vocab.DefaultNaturalLanguageValue(
-						"<p>Hi " + actor.Name.String() + "!</p>" +
-							"<p>AwakariBot followed you because " + reasonFollowed + ". " +
-							"The follow request has been <b>accepted</b>.</p>" +
-							"<p>Note this acceptance means your <i>explicit consent</i> to process your public (only) posts, " +
-							"like most of other Fediverse servers do.</p>" +
-							"<p>If you don't agree with the following, please remove the bot from your followers. " +
-							"Additionally, you can disable automatic follow request acceptance.</p>" +
-							"About: <a href=\"https://awakari.com\">https://awakari.com</a><br/>" +
-							"Contact: <a href=\"mailto:awakari@awakari.com\">awakari@awakari.com</a><br/>" +
-							"Donate: <a href=\"https://awakari.com/donation.html\">https://awakari.com/donation.html</a><br/>" +
-							"Privacy: <a href=\"https://awakari.com/privacy.html\">https://awakari.com/privacy.html</a><br/>" +
-							"Source: <a href=\"https://github.com/awakari/int-activitypub\">https://github.com/awakari/int-activitypub</a><br/>" +
-							"Terms: <a href=\"https://awakari.com/tos.html\">https://awakari.com/tos.html</a>",
-					),
-				},
-			}
-			err = svc.ap.SendActivity(ctx, activityFollowAccepted, actor.Inbox.GetLink())
-			if err == nil {
-				src.Accepted = true
-				err = svc.stor.Update(ctx, src)
-			}
+			src.Accepted = true
+			err = svc.stor.Update(ctx, src)
 		case src.Accepted:
 			var evt *pb.CloudEvent
 			evt, _ = svc.conv.Convert(ctx, actor, activity)

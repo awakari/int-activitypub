@@ -29,7 +29,7 @@ func (ah actorHandler) Handle(ctx *gin.Context) {
 		ctx.Writer.Header().Add("Content-Type", "application/ld+json; profile=\"https://www.w3.org/ns/activitystreams\"")
 		ctx.JSON(http.StatusOK, ah.a)
 	default:
-		ctx.Redirect(http.StatusMovedPermanently, "https://awakari.com")
+		ctx.Redirect(http.StatusMovedPermanently, "https://awakari.com/login.html")
 	}
 	return
 }
