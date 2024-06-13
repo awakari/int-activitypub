@@ -44,6 +44,8 @@ spec:
               value: "{{ .Values.api.writer.batchSize }}"
             - name: API_WRITER_URI
               value: "{{ .Values.api.writer.uri }}"
+            - name: API_PROMETHEUS_URI
+              value: "{{ .Values.api.prometheus.protocol}}://{{ .Values.api.prometheus.host }}:{{ .Values.api.prometheus.port }}"
             - name: DB_URI
               value: "{{ .Values.db.protocol }}://{{ .Values.db.hostname }}/?retryWrites=true&w=majority"
             - name: DB_NAME

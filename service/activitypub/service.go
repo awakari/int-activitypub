@@ -8,7 +8,10 @@ import (
 	"fmt"
 	apiHttp "github.com/awakari/int-activitypub/api/http"
 	vocab "github.com/go-ap/activitypub"
+	apiPromV1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"github.com/prometheus/common/model"
 	"github.com/superseriousbusiness/httpsig"
+	"github.com/writeas/go-nodeinfo"
 	"golang.org/x/crypto/ssh"
 	"io"
 	"net/http"
@@ -20,16 +23,19 @@ type Service interface {
 	ResolveActorLink(ctx context.Context, host, name string) (self vocab.IRI, err error)
 	FetchActor(ctx context.Context, self vocab.IRI) (a vocab.Actor, err error)
 	SendActivity(ctx context.Context, a vocab.Activity, inbox vocab.IRI) (err error)
+	nodeinfo.Resolver
 }
 
 type service struct {
 	clientHttp *http.Client
 	userAgent  string
 	privKey    []byte
+	apiProm    apiPromV1.API
 }
 
 const fmtWebFinger = "https://%s/.well-known/webfinger?resource=acct:%s@%s"
 const limitRespBodyLen = 65_536
+const metricQuerySubscribers = "sum by (service) (awk_subscribers_total)"
 
 var prefs = []httpsig.Algorithm{
 	httpsig.RSA_SHA256,
@@ -46,11 +52,12 @@ var ErrActorWebFinger = errors.New("failed to get the webfinger data for actor")
 var ErrActorFetch = errors.New("failed to get the actor")
 var ErrActivitySend = errors.New("failed to send activity")
 
-func NewService(clientHttp *http.Client, userAgent string, privKey []byte) Service {
+func NewService(clientHttp *http.Client, userAgent string, privKey []byte, apiProm apiPromV1.API) Service {
 	return service{
 		clientHttp: clientHttp,
 		userAgent:  userAgent,
 		privKey:    privKey,
+		apiProm:    apiProm,
 	}
 }
 
@@ -183,6 +190,38 @@ func (svc service) signRequest(req *http.Request, data []byte) (err error) {
 		err = signer.SignRequest(privKey, fmt.Sprintf("https://%s/actor#main-key", svc.userAgent), req, data)
 		if err != nil {
 			err = fmt.Errorf("failed to sign the follow request: %w", err)
+		}
+	}
+	return
+}
+
+func (svc service) IsOpenRegistration() (bool, error) {
+	return true, nil
+}
+
+func (svc service) Usage() (u nodeinfo.Usage, err error) {
+	ctx := context.TODO()
+	u.Users.Total, err = svc.getMetricInt(ctx, metricQuerySubscribers, 0)
+	u.Users.ActiveMonth = u.Users.Total
+	u.Users.ActiveHalfYear = u.Users.Total
+	return
+}
+
+func (svc service) getMetricInt(ctx context.Context, q string, d time.Duration) (num int, err error) {
+	var t time.Time
+	switch d {
+	case 0:
+		t = time.Now().UTC()
+	default:
+		t = time.Now().UTC().Add(-d)
+	}
+	var v model.Value
+	v, _, err = svc.apiProm.Query(ctx, q, t)
+	if err == nil {
+		if v.Type() == model.ValVector {
+			if vv := v.(model.Vector); len(vv) > 0 {
+				num = int(vv[0].Value)
+			}
 		}
 	}
 	return

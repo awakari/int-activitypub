@@ -21,6 +21,7 @@ type Config struct {
 			Public  string `envconfig:"API_KEY_PUBLIC" required:"true"`
 			Private string `envconfig:"API_KEY_PRIVATE" required:"true"`
 		}
+		Prometheus PrometheusConfig
 	}
 	Db  DbConfig
 	Log struct {
@@ -52,6 +53,10 @@ type DbConfig struct {
 		Enabled  bool `envconfig:"DB_TLS_ENABLED" default:"false" required:"true"`
 		Insecure bool `envconfig:"DB_TLS_INSECURE" default:"false" required:"true"`
 	}
+}
+
+type PrometheusConfig struct {
+	Uri string `envconfig:"API_PROMETHEUS_URI" default:"http://prometheus-server:80" required:"true"`
 }
 
 func NewConfigFromEnv() (cfg Config, err error) {

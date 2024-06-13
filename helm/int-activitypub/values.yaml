@@ -94,6 +94,10 @@ api:
     backoff: "10s"
     batchSize: 16
     uri: "resolver:50051"
+  prometheus:
+    protocol: "http"
+    host: "prometheus-server"
+    port: "80"
 cert:
   acme:
     email: "awakari@awakari.com"

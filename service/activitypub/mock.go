@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	vocab "github.com/go-ap/activitypub"
+	"github.com/writeas/go-nodeinfo"
 )
 
 type mock struct {
@@ -40,5 +41,13 @@ func (m mock) SendActivity(ctx context.Context, a vocab.Activity, inbox vocab.IR
 	case "https://host.fail/users/johndoe/inbox":
 		err = ErrActivitySend
 	}
+	return
+}
+
+func (m mock) IsOpenRegistration() (bool, error) {
+	return true, nil
+}
+
+func (m mock) Usage() (u nodeinfo.Usage, err error) {
 	return
 }
