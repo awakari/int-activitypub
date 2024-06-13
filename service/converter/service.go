@@ -45,6 +45,7 @@ const CeKeyTo = "to"
 const CeKeyUpdated = "updated"
 
 const asPublic = "https://www.w3.org/ns/activitystreams#Public"
+const NoBot = "#nobot"
 
 var ErrFail = errors.New("failed to convert")
 
@@ -141,6 +142,12 @@ func (svc service) convertActivity(a vocab.Activity, evt *pb.CloudEvent) (public
 		err = errors.Join(err, errCc)
 	}
 	if a.Content != nil {
+		content := a.Content.String()
+		if strings.Contains(content, NoBot) {
+			err = fmt.Errorf("%w: activity %s content contains %s", ErrFail, a.ID, NoBot)
+			evt = nil
+			return
+		}
 		txt := evt.GetTextData()
 		switch txt {
 		case "":
@@ -190,6 +197,11 @@ func (svc service) convertActivity(a vocab.Activity, evt *pb.CloudEvent) (public
 		}
 	}
 	if summ := a.Summary; summ != nil && len(summ) > 0 {
+		if strings.Contains(summ.String(), NoBot) {
+			err = fmt.Errorf("%w: activity %s summary contains %s", ErrFail, a.ID, NoBot)
+			evt = nil
+			return
+		}
 		txt := evt.GetTextData()
 		switch txt {
 		case "":
@@ -204,6 +216,13 @@ func (svc service) convertActivity(a vocab.Activity, evt *pb.CloudEvent) (public
 		err = errors.Join(err, convertAsText(summ, evt, CeKeySummary))
 	}
 	if tags := a.Tag; tags != nil && len(tags) > 0 {
+		for _, t := range tags {
+			if t.(vocab.Object).Name.String() == NoBot {
+				err = fmt.Errorf("%w: activity %s tags contain %s", ErrFail, a.ID, NoBot)
+				evt = nil
+				return
+			}
+		}
 		err = errors.Join(err, convertAsCollection(tags, evt, CeKeyCategories))
 	}
 	if to := a.To; to != nil && len(to) > 0 {
@@ -258,6 +277,12 @@ func (svc service) convertObject(obj *vocab.Object, evt *pb.CloudEvent) (public 
 		err = errors.Join(err, errCc)
 	}
 	if obj.Content != nil {
+		content := obj.Content.String()
+		if strings.Contains(content, NoBot) {
+			err = fmt.Errorf("%w: activity object %s content contains %s", ErrFail, obj.ID, NoBot)
+			evt = nil
+			return
+		}
 		txt := evt.GetTextData()
 		switch txt {
 		case "":
@@ -307,6 +332,11 @@ func (svc service) convertObject(obj *vocab.Object, evt *pb.CloudEvent) (public 
 		}
 	}
 	if summ := obj.Summary; summ != nil && len(summ) > 0 {
+		if strings.Contains(summ.String(), NoBot) {
+			err = fmt.Errorf("%w: activity object %s summary contains %s", ErrFail, obj.ID, NoBot)
+			evt = nil
+			return
+		}
 		txt := evt.GetTextData()
 		switch txt {
 		case "":
@@ -320,6 +350,13 @@ func (svc service) convertObject(obj *vocab.Object, evt *pb.CloudEvent) (public 
 		}
 	}
 	if tags := obj.Tag; tags != nil && len(tags) > 0 {
+		for _, t := range tags {
+			if t.(vocab.Object).Name.String() == NoBot {
+				err = fmt.Errorf("%w: activity object %s tags contain %s", ErrFail, obj.ID, NoBot)
+				evt = nil
+				return
+			}
+		}
 		err = errors.Join(err, convertAsCollection(tags, evt, CeKeyCategories))
 	}
 	if to := obj.To; to != nil && len(to) > 0 {

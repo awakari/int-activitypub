@@ -28,6 +28,20 @@ func (m mock) FetchActor(ctx context.Context, self vocab.IRI) (a vocab.Actor, er
 	switch self {
 	case "https://fail.social/users/johndoe":
 		err = ErrActorFetch
+	case "https://privacy.social/users/nobot1":
+		a.ID = self
+		a.Name = vocab.DefaultNaturalLanguageValue("Bots Hater1")
+		a.Inbox = vocab.IRI(fmt.Sprintf("%s/inbox", self))
+		a.Summary = vocab.DefaultNaturalLanguageValue("Please #nobot otherwise I will complain")
+	case "https://privacy.social/users/nobot2":
+		a.ID = self
+		a.Name = vocab.DefaultNaturalLanguageValue("Bots Hater2")
+		a.Inbox = vocab.IRI(fmt.Sprintf("%s/inbox", self))
+		a.Tag = []vocab.Item{
+			vocab.Object{
+				Name: vocab.DefaultNaturalLanguageValue("#nobot"),
+			},
+		}
 	default:
 		a.ID = self
 		a.Name = vocab.DefaultNaturalLanguageValue("John Doe")

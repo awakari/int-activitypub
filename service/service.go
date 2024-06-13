@@ -27,6 +27,7 @@ type Service interface {
 
 var ErrInvalid = errors.New("invalid argument")
 var ErrNoAccept = errors.New("follow request is not accepted yet")
+var ErrNoFollow = errors.New("can not follow")
 
 type service struct {
 	stor     storage.Storage
@@ -56,7 +57,7 @@ func NewService(
 }
 
 func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, subId, term string) (addrResolved string, err error) {
-	//
+
 	var addrParsed *url.URL
 	addrParsed, err = url.Parse(addr)
 	if err == nil {
@@ -80,7 +81,7 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 			addrResolved = addr
 		}
 	}
-	//
+
 	var actor vocab.Actor
 	if err == nil {
 		actor, err = svc.ap.FetchActor(ctx, vocab.IRI(addrResolved))
@@ -88,6 +89,17 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 			err = fmt.Errorf("%w: failed to fetch actor: %s, cause: %s", ErrInvalid, addrResolved, err)
 		}
 	}
+	if err == nil {
+		if strings.Contains(actor.Summary.String(), converter.NoBot) {
+			err = fmt.Errorf("%w: actor summary contains %s: %s, summary: %s", ErrNoFollow, converter.NoBot, addrResolved, actor.Summary)
+		}
+		for _, t := range actor.Tag {
+			if t.IsObject() && t.(vocab.Object).Name.String() == converter.NoBot {
+				err = fmt.Errorf("%w: actor has %s tag", ErrNoFollow, converter.NoBot)
+			}
+		}
+	}
+
 	var src model.Source
 	if err == nil {
 		src.ActorId = actor.ID.String()
@@ -105,6 +117,7 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 			addrResolved = src.ActorId
 		}
 	}
+
 	if err == nil {
 		activity := vocab.Activity{
 			Type:    vocab.FollowType,
@@ -118,6 +131,7 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 			_ = svc.stor.Update(ctx, src)
 		}
 	}
+
 	return
 }
 

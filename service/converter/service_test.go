@@ -412,6 +412,27 @@ func TestService_Convert(t *testing.T) {
 				},
 			},
 		},
+		"nobot1": {
+			in: `
+{
+  "id": "https://mastodon.social/users/akurilov/statuses/111941782784824099/activity",
+  "type": "Create",
+  "published": "2024-02-16T15:07:30Z",
+  "actor": "https://mastodon.social/users/akurilov",
+  "object": {
+	  "@context": "https://www.w3.org/ns/activitystreams",
+	  "id": "https://location.edent.tel/9bc18f6eb339ec475c9bcfe69acf21fb",
+	  "type": "Note",
+	  "published": "2024-01-28T12:13:38+00:00",
+	  "attributedTo": "https://location.edent.tel/edent_location",
+	  "content": "Please #nobot otherwise I will complain",
+	  "to": [
+		"https://www.w3.org/ns/activitystreams#Public"
+	  ]
+  }
+}`,
+			err: ErrFail,
+		},
 	}
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
