@@ -25,10 +25,6 @@ type Service interface {
 	Unfollow(ctx context.Context, url vocab.IRI, groupId, userId string) (err error)
 }
 
-var ErrInvalid = errors.New("invalid argument")
-var ErrNoAccept = errors.New("follow request is not accepted yet")
-var ErrNoFollow = errors.New("can not follow")
-
 type service struct {
 	stor     storage.Storage
 	ap       activitypub.Service
@@ -39,6 +35,11 @@ type service struct {
 
 const acctSep = "@"
 const lastUpdateThreshold = 1 * time.Hour
+const NoBot = "#nobot"
+
+var ErrInvalid = errors.New("invalid argument")
+var ErrNoAccept = errors.New("follow request is not accepted yet")
+var ErrNoFollow = errors.New("can not follow")
 
 func NewService(
 	stor storage.Storage,
@@ -90,12 +91,9 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 		}
 	}
 	if err == nil {
-		if strings.Contains(actor.Summary.String(), converter.NoBot) {
-			err = fmt.Errorf("%w: actor summary contains %s: %s, summary: %s", ErrNoFollow, converter.NoBot, addrResolved, actor.Summary)
-		}
 		for _, t := range actor.Tag {
-			if t.IsObject() && t.(vocab.Object).Name.String() == converter.NoBot {
-				err = fmt.Errorf("%w: actor has %s tag", ErrNoFollow, converter.NoBot)
+			if t.IsObject() && t.(vocab.Object).Name.String() == NoBot {
+				err = fmt.Errorf("%w: actor has %s tag", ErrNoFollow, NoBot)
 			}
 		}
 	}

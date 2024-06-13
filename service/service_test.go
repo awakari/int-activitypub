@@ -60,11 +60,6 @@ func TestService_RequestFollow(t *testing.T) {
 			err:  storage.ErrInternal,
 		},
 		"nobot1": {
-			addr: "https://privacy.social/users/nobot1",
-			url:  "https://privacy.social/users/nobot1",
-			err:  ErrNoFollow,
-		},
-		"nobot2": {
 			addr: "https://privacy.social/users/nobot2",
 			url:  "https://privacy.social/users/nobot2",
 			err:  ErrNoFollow,
