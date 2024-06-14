@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/awakari/int-activitypub/model"
+	"github.com/awakari/int-activitypub/util"
 	vocab "github.com/go-ap/activitypub"
 	"log/slog"
 )
@@ -26,9 +27,9 @@ func (l logging) RequestFollow(ctx context.Context, addr, groupId, userId, subId
 	return
 }
 
-func (l logging) HandleActivity(ctx context.Context, actor vocab.Actor, activity vocab.Activity) (err error) {
-	err = l.svc.HandleActivity(ctx, actor, activity)
-	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.HandleActivity(actor.Id=%s, activity.Type=%s): %s", actor.ID, activity.Type, err))
+func (l logging) HandleActivity(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (err error) {
+	err = l.svc.HandleActivity(ctx, actor, activity, tags)
+	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.HandleActivity(actor.Id=%s, activity.Type=%s, tags=%d): %s", actor.ID, activity.Type, len(tags.Tag), err))
 	return
 }
 

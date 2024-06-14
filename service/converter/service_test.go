@@ -3,6 +3,7 @@ package converter
 import (
 	"context"
 	"encoding/json"
+	"github.com/awakari/int-activitypub/util"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/stretchr/testify/assert"
@@ -10,6 +11,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"log/slog"
 	"testing"
+	"time"
 )
 
 func TestService_Convert(t *testing.T) {
@@ -224,11 +226,6 @@ func TestService_Convert(t *testing.T) {
 							CeString: "Create",
 						},
 					},
-					"subject": {
-						Attr: &pb.CloudEventAttributeValue_CeString{
-							CeString: "[]",
-						},
-					},
 					"latitude": {
 						Attr: &pb.CloudEventAttributeValue_CeString{
 							CeString: "-73.974740",
@@ -294,11 +291,6 @@ func TestService_Convert(t *testing.T) {
 					"cc": {
 						Attr: &pb.CloudEventAttributeValue_CeString{
 							CeString: "https://e14n.com/evan",
-						},
-					},
-					"subject": {
-						Attr: &pb.CloudEventAttributeValue_CeString{
-							CeString: "[]",
 						},
 					},
 					"summary": {
@@ -379,11 +371,6 @@ func TestService_Convert(t *testing.T) {
 							CeString: "https://www.w3.org/ns/activitystreams#Public",
 						},
 					},
-					"subject": {
-						Attr: &pb.CloudEventAttributeValue_CeString{
-							CeString: "[]",
-						},
-					},
 					"summary": {
 						Attr: &pb.CloudEventAttributeValue_CeString{
 							CeString: "Martin added an article to his blog",
@@ -412,13 +399,108 @@ func TestService_Convert(t *testing.T) {
 				},
 			},
 		},
+		"nobot": {
+			actor: vocab.Actor{
+				ID: "https://mastodon.social/users/akurilov",
+			},
+			in: `{
+  "@context": [
+    "https://www.w3.org/ns/activitystreams",
+    {
+      "ostatus": "http://ostatus.org#",
+      "atomUri": "ostatus:atomUri",
+      "inReplyToAtomUri": "ostatus:inReplyToAtomUri",
+      "conversation": "ostatus:conversation",
+      "sensitive": "as:sensitive",
+      "toot": "http://joinmastodon.org/ns#",
+      "votersCount": "toot:votersCount",
+      "Hashtag": "as:Hashtag"
+    }
+  ],
+  "id": "https://mastodon.social/users/akurilov/statuses/112614067761000729",
+  "type": "Note",
+  "summary": null,
+  "inReplyTo": null,
+  "published": "2024-06-14T08:38:25Z",
+  "url": "https://mastodon.social/@akurilov/112614067761000729",
+  "attributedTo": "https://mastodon.social/users/akurilov",
+  "to": [
+    "https://www.w3.org/ns/activitystreams#Public"
+  ],
+  "cc": [
+    "https://mastodon.social/users/akurilov/followers"
+  ],
+  "sensitive": false,
+  "atomUri": "https://mastodon.social/users/akurilov/statuses/112614067761000729",
+  "inReplyToAtomUri": null,
+  "conversation": "tag:mastodon.social,2024-06-14:objectId=729942125:objectType=Conversation",
+  "content": "\u003cp\u003etest \u003ca href=\"https://mastodon.social/tags/nobot\" class=\"mention hashtag\" rel=\"tag\"\u003e#\u003cspan\u003enobot\u003c/span\u003e\u003c/a\u003e\u003c/p\u003e",
+  "contentMap": {
+    "en": "\u003cp\u003etest \u003ca href=\"https://mastodon.social/tags/nobot\" class=\"mention hashtag\" rel=\"tag\"\u003e#\u003cspan\u003enobot\u003c/span\u003e\u003c/a\u003e\u003c/p\u003e"
+  },
+  "attachment": [],
+  "tag": [
+    {
+      "type": "Hashtag",
+      "href": "https://mastodon.social/tags/nobot",
+      "name": "#nobot"
+    }
+  ],
+  "replies": {
+    "id": "https://mastodon.social/users/akurilov/statuses/112614067761000729/replies",
+    "type": "Collection",
+    "first": {
+      "type": "CollectionPage",
+      "next": "https://mastodon.social/users/akurilov/statuses/112614067761000729/replies?only_other_accounts=true\u0026page=true",
+      "partOf": "https://mastodon.social/users/akurilov/statuses/112614067761000729/replies",
+      "items": []
+    }
+  }
+}`,
+			out: &pb.CloudEvent{
+				Id:          "cce71487-9c06-4316-9a36-da0d8654ca0e",
+				Source:      "https://mastodon.social/users/akurilov",
+				SpecVersion: "1.0",
+				Type:        "com.awakari.activitypub.v1",
+				Attributes: map[string]*pb.CloudEventAttributeValue{
+					"cc": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "https://mastodon.social/users/akurilov/followers",
+						},
+					},
+					"object": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "Note",
+						},
+					},
+					"objecturl": {
+						Attr: &pb.CloudEventAttributeValue_CeUri{
+							CeUri: "https://mastodon.social/users/akurilov/statuses/112614067761000729",
+						},
+					},
+					"time": {
+						Attr: &pb.CloudEventAttributeValue_CeTimestamp{
+							CeTimestamp: timestamppb.New(time.Date(2024, 6, 14, 8, 38, 25, 0, time.UTC)),
+						},
+					},
+					"to": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "https://www.w3.org/ns/activitystreams#Public",
+						},
+					},
+				},
+				Data: &pb.CloudEvent_TextData{
+					TextData: "\u003cp\u003etest \u003ca href=\"https://mastodon.social/tags/nobot\" class=\"mention hashtag\" rel=\"tag\"\u003e#\u003cspan\u003enobot\u003c/span\u003e\u003c/a\u003e\u003c/p\u003e",
+				},
+			},
+		},
 	}
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
 			var activity vocab.Activity
 			err := json.Unmarshal([]byte(c.in), &activity)
 			require.Nil(t, err)
-			evt, err := svc.Convert(context.TODO(), c.actor, activity)
+			evt, err := svc.Convert(context.TODO(), c.actor, activity, util.ActivityTags{})
 			if c.out == nil {
 				assert.Nil(t, evt)
 			} else {

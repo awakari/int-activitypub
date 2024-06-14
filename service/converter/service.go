@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/awakari/int-activitypub/util"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/google/uuid"
@@ -13,7 +14,7 @@ import (
 )
 
 type Service interface {
-	Convert(ctx context.Context, actor vocab.Actor, activity vocab.Activity) (evt *pb.CloudEvent, err error)
+	Convert(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (evt *pb.CloudEvent, err error)
 }
 
 type service struct {
@@ -52,7 +53,7 @@ func NewService() Service {
 	return service{}
 }
 
-func (svc service) Convert(ctx context.Context, actor vocab.Actor, activity vocab.Activity) (evt *pb.CloudEvent, err error) {
+func (svc service) Convert(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (evt *pb.CloudEvent, err error) {
 	//
 	evt = &pb.CloudEvent{
 		Id:          uuid.NewString(),
@@ -60,11 +61,6 @@ func (svc service) Convert(ctx context.Context, actor vocab.Actor, activity voca
 		SpecVersion: CeSpecVersion,
 		Type:        CeType,
 		Attributes: map[string]*pb.CloudEventAttributeValue{
-			CeKeySubject: {
-				Attr: &pb.CloudEventAttributeValue_CeString{
-					CeString: actor.Name.String(),
-				},
-			},
 			CeKeyTime: {
 				Attr: &pb.CloudEventAttributeValue_CeTimestamp{
 					CeTimestamp: timestamppb.New(activity.Published),
@@ -72,9 +68,16 @@ func (svc service) Convert(ctx context.Context, actor vocab.Actor, activity voca
 			},
 		},
 	}
+	if actor.Name.Count() > 0 {
+		evt.Attributes[CeKeySubject] = &pb.CloudEventAttributeValue{
+			Attr: &pb.CloudEventAttributeValue_CeString{
+				CeString: actor.Name.String(),
+			},
+		}
+	}
 	//
 	var public bool
-	public, err = svc.convertActivity(activity, evt)
+	public, err = svc.convertActivity(activity, evt, tags)
 	var publicObj bool
 	t := string(activity.Type)
 	if activity.Object != nil {
@@ -108,7 +111,7 @@ func (svc service) Convert(ctx context.Context, actor vocab.Actor, activity voca
 	return
 }
 
-func (svc service) convertActivity(a vocab.Activity, evt *pb.CloudEvent) (public bool, err error) {
+func (svc service) convertActivity(a vocab.Activity, evt *pb.CloudEvent, tags util.ActivityTags) (public bool, err error) {
 	evt.Attributes[CeKeyObject] = &pb.CloudEventAttributeValue{
 		Attr: &pb.CloudEventAttributeValue_CeString{
 			CeString: string(a.Type),
@@ -203,8 +206,16 @@ func (svc service) convertActivity(a vocab.Activity, evt *pb.CloudEvent) (public
 		}
 		err = errors.Join(err, convertAsText(summ, evt, CeKeySummary))
 	}
-	if tags := a.Tag; tags != nil && len(tags) > 0 {
-		err = errors.Join(err, convertAsCollection(tags, evt, CeKeyCategories))
+	var tagNames []string
+	for _, t := range tags.Tag {
+		tagNames = append(tagNames, t.Name)
+	}
+	if len(tagNames) > 0 {
+		evt.Attributes[CeKeyCategories] = &pb.CloudEventAttributeValue{
+			Attr: &pb.CloudEventAttributeValue_CeString{
+				CeString: strings.Join(tagNames, " "),
+			},
+		}
 	}
 	if to := a.To; to != nil && len(to) > 0 {
 		var publicTo bool

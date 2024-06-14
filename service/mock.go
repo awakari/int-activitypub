@@ -5,6 +5,7 @@ import (
 	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/storage"
+	"github.com/awakari/int-activitypub/util"
 	vocab "github.com/go-ap/activitypub"
 )
 
@@ -31,7 +32,7 @@ func (m mock) RequestFollow(ctx context.Context, addr, groupId, userId, subId, t
 	return
 }
 
-func (m mock) HandleActivity(ctx context.Context, actor vocab.Actor, activity vocab.Activity) (err error) {
+func (m mock) HandleActivity(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (err error) {
 	switch actor.ID {
 	case "fail":
 		err = storage.ErrInternal

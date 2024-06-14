@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/awakari/int-activitypub/util"
 	"net/url"
 	"strings"
 	"time"
@@ -19,7 +20,7 @@ import (
 
 type Service interface {
 	RequestFollow(ctx context.Context, addr, groupId, userId, subId, term string) (url string, err error)
-	HandleActivity(ctx context.Context, actor vocab.Actor, activity vocab.Activity) (err error)
+	HandleActivity(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (err error)
 	Read(ctx context.Context, url vocab.IRI) (src model.Source, err error)
 	List(ctx context.Context, filter model.Filter, limit uint32, cursor string, order model.Order) (page []string, err error)
 	Unfollow(ctx context.Context, url vocab.IRI, groupId, userId string) (err error)
@@ -35,11 +36,10 @@ type service struct {
 
 const acctSep = "@"
 const lastUpdateThreshold = 1 * time.Hour
-const NoBot = "#nobot"
 
 var ErrInvalid = errors.New("invalid argument")
 var ErrNoAccept = errors.New("follow request is not accepted yet")
-var ErrNoFollow = errors.New("can not follow")
+var ErrNoBot = errors.New(fmt.Sprintf("actor or activity contains the %s tag", NoBot))
 
 func NewService(
 	stor storage.Storage,
@@ -91,10 +91,8 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 		}
 	}
 	if err == nil {
-		for _, t := range actor.Tag {
-			if t.IsObject() && t.(vocab.Object).Name.String() == NoBot {
-				err = fmt.Errorf("%w: actor has %s tag", ErrNoFollow, NoBot)
-			}
+		if ActorHasNoBotTag(actor) {
+			err = fmt.Errorf("%w: actor %s", ErrNoBot, actor.ID)
 		}
 	}
 
@@ -133,18 +131,21 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 	return
 }
 
-func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activity vocab.Activity) (err error) {
+func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (err error) {
 	var src model.Source
 	srcId := actor.ID.String()
 	src, err = svc.stor.Read(ctx, srcId)
-	if err == nil {
+	switch {
+	case err == nil:
 		switch {
 		case activity.Type == vocab.AcceptType:
 			src.Accepted = true
 			err = svc.stor.Update(ctx, src)
+		case ActorHasNoBotTag(actor):
+			err = svc.stor.Delete(ctx, srcId, src.GroupId, src.UserId)
 		case src.Accepted:
 			var evt *pb.CloudEvent
-			evt, _ = svc.conv.Convert(ctx, actor, activity)
+			evt, _ = svc.conv.Convert(ctx, actor, activity, tags)
 			if evt != nil && evt.Data != nil {
 				t := time.Now().UTC()
 				// don't update the storage on every activity but only when difference is higher than the threshold
@@ -161,6 +162,8 @@ func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activi
 		default:
 			err = fmt.Errorf("%w: actor=%+v, activity.Type=%s", ErrNoAccept, actor, activity.Type)
 		}
+	case errors.Is(err, storage.ErrNotFound):
+		err = svc.unfollow(ctx, actor.ID)
 	}
 	return
 }
@@ -176,6 +179,14 @@ func (svc service) List(ctx context.Context, filter model.Filter, limit uint32, 
 }
 
 func (svc service) Unfollow(ctx context.Context, url vocab.IRI, groupId, userId string) (err error) {
+	err = svc.unfollow(ctx, url)
+	if err == nil {
+		err = svc.stor.Delete(ctx, url.String(), groupId, userId)
+	}
+	return
+}
+
+func (svc service) unfollow(ctx context.Context, url vocab.IRI) (err error) {
 	var actor vocab.Actor
 	if err == nil {
 		actor, err = svc.ap.FetchActor(ctx, url)
@@ -196,9 +207,6 @@ func (svc service) Unfollow(ctx context.Context, url vocab.IRI, groupId, userId 
 			},
 		}
 		err = svc.ap.SendActivity(ctx, activity, actor.Inbox.GetLink())
-	}
-	if err == nil {
-		err = svc.stor.Delete(ctx, url.String(), groupId, userId)
 	}
 	return
 }

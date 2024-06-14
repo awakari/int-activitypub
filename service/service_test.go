@@ -7,6 +7,7 @@ import (
 	"github.com/awakari/int-activitypub/service/converter"
 	"github.com/awakari/int-activitypub/service/writer"
 	"github.com/awakari/int-activitypub/storage"
+	"github.com/awakari/int-activitypub/util"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/stretchr/testify/assert"
 	"log/slog"
@@ -62,7 +63,7 @@ func TestService_RequestFollow(t *testing.T) {
 		"nobot1": {
 			addr: "https://privacy.social/users/nobot2",
 			url:  "https://privacy.social/users/nobot2",
-			err:  ErrNoFollow,
+			err:  ErrNoBot,
 		},
 	}
 	for k, c := range cases {
@@ -94,7 +95,7 @@ func TestService_HandleActivity(t *testing.T) {
 	}
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
-			err := svc.HandleActivity(context.TODO(), vocab.Actor{ID: c.url}, c.activity)
+			err := svc.HandleActivity(context.TODO(), vocab.Actor{ID: c.url}, c.activity, util.ActivityTags{})
 			assert.ErrorIs(t, err, c.err)
 		})
 	}

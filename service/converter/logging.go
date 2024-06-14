@@ -3,6 +3,7 @@ package converter
 import (
 	"context"
 	"fmt"
+	"github.com/awakari/int-activitypub/util"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	vocab "github.com/go-ap/activitypub"
 	"log/slog"
@@ -20,13 +21,13 @@ func NewLogging(svc Service, log *slog.Logger) Service {
 	}
 }
 
-func (l logging) Convert(ctx context.Context, actor vocab.Actor, activity vocab.Activity) (evt *pb.CloudEvent, err error) {
-	evt, err = l.svc.Convert(ctx, actor, activity)
+func (l logging) Convert(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (evt *pb.CloudEvent, err error) {
+	evt, err = l.svc.Convert(ctx, actor, activity, tags)
 	switch evt {
 	case nil:
-		l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.Convert(actor=%s, activity=%s): <nil>, %s", actor.ID, activity.ID, err))
+		l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.Convert(actor=%s, activity=%s, tags=%d): <nil>, %s", actor.ID, activity.ID, len(tags.Tag), err))
 	default:
-		l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.Convert(actor=%s, activity=%s): %s, %s", actor.ID, activity.ID, evt.Id, err))
+		l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.Convert(actor=%s, activity=%s, tags=%d): %s, %s", actor.ID, activity.ID, len(tags.Tag), evt.Id, err))
 	}
 	return
 }

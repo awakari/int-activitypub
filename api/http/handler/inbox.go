@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/awakari/int-activitypub/service"
 	"github.com/awakari/int-activitypub/service/activitypub"
-	"github.com/awakari/int-activitypub/storage"
+	"github.com/awakari/int-activitypub/util"
 	"github.com/gin-gonic/gin"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/superseriousbusiness/httpsig"
@@ -49,6 +49,19 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 		return
 	}
 
+	var tags util.ActivityTags
+	err = json.Unmarshal(data, &tags)
+	if err != nil {
+		fmt.Printf("Inbox request unmarshal failure: %s\n", err)
+		ctx.String(http.StatusBadRequest, err.Error())
+		return
+	}
+	if service.ActivityHasNoBotTag(tags) {
+		fmt.Printf("Activity %s contains %s tag\n", activity.ID, service.NoBot)
+		ctx.String(http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+
 	t := activity.Type
 	if t == "" || t == vocab.DeleteType && activity.Actor.GetID() == activity.Object.GetID() {
 		ctx.Status(http.StatusOK)
@@ -69,11 +82,12 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 		return
 	}
 
-	err = h.svc.HandleActivity(ctx, actor, activity)
+	err = h.svc.HandleActivity(ctx, actor, activity, tags)
 	switch {
-	case errors.Is(err, service.ErrNoAccept):
+	case errors.Is(err, service.ErrNoAccept), errors.Is(err, service.ErrNoBot):
 		ctx.String(http.StatusUnprocessableEntity, err.Error())
-	case errors.Is(err, storage.ErrNotFound), errors.Is(err, service.ErrInvalid):
+		return
+	case errors.Is(err, service.ErrInvalid):
 		ctx.String(http.StatusBadRequest, err.Error())
 		return
 	case err != nil:
