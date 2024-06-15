@@ -153,6 +153,7 @@ func main() {
 				"If you don't agree with the following, please don't accept the follow request or remove Awakari from your followers.</p>" +
 				"Contact: <a href=\"mailto:awakari@awakari.com\">awakari@awakari.com</a><br/>" +
 				"Donate: <a href=\"https://awakari.com/donation.html\">https://awakari.com/donation.html</a><br/>" +
+				"Opt-Out: <a href=\"https://github.com/awakari/.github/blob/master/OPT-OUT.md\">https://github.com/awakari/.github/blob/master/OPT-OUT.md</a><br/>" +
 				"Privacy: <a href=\"https://awakari.com/privacy.html\">https://awakari.com/privacy.html</a><br/>" +
 				"Source: <a href=\"https://github.com/awakari/int-activitypub\">https://github.com/awakari/int-activitypub</a><br/>" +
 				"Terms: <a href=\"https://awakari.com/tos.html\">https://awakari.com/tos.html</a></p>",
