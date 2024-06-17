@@ -90,6 +90,8 @@ tolerations: []
 affinity: {}
 
 api:
+  event:
+    type: "awakari.activitypub.v1"
   writer:
     backoff: "10s"
     batchSize: 16

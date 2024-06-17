@@ -1,4 +1,6 @@
 api:
+  event:
+    type: "com.awakari.activitypub.v1"
   writer:
     uri: "api:50051"
 
