@@ -100,7 +100,7 @@ func main() {
 			NodeDescription: "Awakari Fediverese Integration",
 			Private:         false,
 			Software: nodeinfo.SoftwareMeta{
-				HomePage: "https://awakari.com",
+				HomePage: "https://awakari.com/activitypub",
 				GitHub:   "https://github.com/awakari/int-activitypub",
 				Follow:   "https://github.com/awakari/int-activitypub",
 			},
@@ -158,7 +158,7 @@ func main() {
 				"Source: <a href=\"https://github.com/awakari/int-activitypub\">https://github.com/awakari/int-activitypub</a><br/>" +
 				"Terms: <a href=\"https://awakari.com/tos.html\">https://awakari.com/tos.html</a></p>",
 		),
-		URL:               vocab.IRI("https://awakari.com/login.html"),
+		URL:               vocab.IRI("https://awakari.com/activitypub"),
 		Inbox:             vocab.IRI(fmt.Sprintf("https://%s/inbox", cfg.Api.Http.Host)),
 		Outbox:            vocab.IRI(fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host)),
 		Following:         vocab.IRI(fmt.Sprintf("https://%s/following", cfg.Api.Http.Host)),
@@ -175,8 +175,8 @@ func main() {
 		Attachment: vocab.ItemCollection{
 			vocab.Page{
 				Name: vocab.DefaultNaturalLanguageValue("Home"),
-				ID:   vocab.ID("https://awakari.com"),
-				URL:  vocab.IRI("https://awakari.com"),
+				ID:   vocab.ID("https://awakari.com/activitypub"),
+				URL:  vocab.IRI("https://awakari.com/activitypub"),
 			},
 			vocab.Page{
 				Name: vocab.DefaultNaturalLanguageValue("GitHub"),
@@ -233,6 +233,7 @@ func main() {
 		nodeInfo.NodeInfo(ctx.Writer, ctx.Request)
 		return
 	})
+	r.GET("/", ha.Handle)
 	log.Info(fmt.Sprintf("starting to listen the HTTP API @ port #%d...", cfg.Api.Http.Port))
 	err = r.Run(fmt.Sprintf(":%d", cfg.Api.Http.Port))
 	if err != nil {
