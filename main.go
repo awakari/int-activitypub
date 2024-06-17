@@ -75,7 +75,7 @@ func main() {
 	svcActivityPub := activitypub.NewService(clientHttp, cfg.Api.Http.Host, []byte(cfg.Api.Key.Private), ap)
 	svcActivityPub = activitypub.NewServiceLogging(svcActivityPub, log)
 
-	svcConv := converter.NewService()
+	svcConv := converter.NewService(cfg.Api.EventType)
 	svcConv = converter.NewLogging(svcConv, log)
 
 	svcWriter := writer.NewService(clientAwk, cfg.Api.Writer.Backoff)
