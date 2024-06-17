@@ -1,4 +1,6 @@
 api:
+  event:
+    type: "app.awakari.activitypub.v1"
   writer:
     uri: "api:50051"
 
@@ -7,7 +9,7 @@ cert:
   acme:
     server: "https://acme-v02.api.letsencrypt.org/directory"
   issuer:
-    name: letsencrypt
+    name: letsencrypt-awakari-app
 
 ingressHttpV1:
   hosts:

@@ -38,6 +38,8 @@ spec:
             - name: API_HTTP_HOST
               value: "{{ .host }}"
             {{- end }}
+            - name: API_EVENT_TYPE
+              value: "{{ .Values.api.event.type }}"
             - name: API_WRITER_BACKOFF
               value: "{{ .Values.api.writer.backoff }}"
             - name: API_WRITER_BATCH_SIZE

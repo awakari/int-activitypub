@@ -18,9 +18,9 @@ type Service interface {
 }
 
 type service struct {
+	ceType string
 }
 
-const CeType = "com.awakari.activitypub.v1"
 const CeSpecVersion = "1.0"
 const CeKeyAction = "action"
 const CeKeyAttachmentUrl = "attachmenturl"
@@ -49,8 +49,10 @@ const asPublic = "https://www.w3.org/ns/activitystreams#Public"
 
 var ErrFail = errors.New("failed to convert")
 
-func NewService() Service {
-	return service{}
+func NewService(ceType string) Service {
+	return service{
+		ceType: ceType,
+	}
 }
 
 func (svc service) Convert(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (evt *pb.CloudEvent, err error) {
@@ -59,7 +61,7 @@ func (svc service) Convert(ctx context.Context, actor vocab.Actor, activity voca
 		Id:          uuid.NewString(),
 		Source:      actor.ID.String(),
 		SpecVersion: CeSpecVersion,
-		Type:        CeType,
+		Type:        svc.ceType,
 		Attributes: map[string]*pb.CloudEventAttributeValue{
 			CeKeyTime: {
 				Attr: &pb.CloudEventAttributeValue_CeTimestamp{
