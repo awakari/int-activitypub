@@ -41,8 +41,6 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 		return
 	}
 
-	fmt.Printf("Activity payload data: \n%s\n", string(data))
-
 	var activity vocab.Activity
 	err = json.Unmarshal(data, &activity)
 	if err != nil {
