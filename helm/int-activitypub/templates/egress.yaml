@@ -1,7 +1,7 @@
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
-  name: int-activitypub-allow-fetch-from-internet
+  name: {{ include "int-activitypub.fullname" . }}
 spec:
   policyTypes:
     - Egress
