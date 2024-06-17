@@ -20,7 +20,7 @@ import (
 
 type Service interface {
 	RequestFollow(ctx context.Context, addr, groupId, userId, subId, term string) (url string, err error)
-	HandleActivity(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (err error)
+	HandleActivity(ctx context.Context, actor vocab.Actor, actorTags util.ObjectTags, activity vocab.Activity, activityTags util.ActivityTags) (err error)
 	Read(ctx context.Context, url vocab.IRI) (src model.Source, err error)
 	List(ctx context.Context, filter model.Filter, limit uint32, cursor string, order model.Order) (page []string, err error)
 	Unfollow(ctx context.Context, url vocab.IRI, groupId, userId string) (err error)
@@ -84,16 +84,15 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 	}
 
 	var actor vocab.Actor
+	var actorTags util.ObjectTags
 	if err == nil {
-		actor, err = svc.ap.FetchActor(ctx, vocab.IRI(addrResolved))
+		actor, actorTags, err = svc.ap.FetchActor(ctx, vocab.IRI(addrResolved))
 		if err != nil {
 			err = fmt.Errorf("%w: failed to fetch actor: %s, cause: %s", ErrInvalid, addrResolved, err)
 		}
 	}
-	if err == nil {
-		if ActorHasNoBotTag(actor) {
-			err = fmt.Errorf("%w: actor %s", ErrNoBot, actor.ID)
-		}
+	if err == nil && ActorHasNoBotTag(actorTags) {
+		err = fmt.Errorf("%w: actor %s", ErrNoBot, actor.ID)
 	}
 
 	var src model.Source
@@ -131,7 +130,7 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 	return
 }
 
-func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (err error) {
+func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, actorTags util.ObjectTags, activity vocab.Activity, activityTags util.ActivityTags) (err error) {
 	var src model.Source
 	srcId := actor.ID.String()
 	src, err = svc.stor.Read(ctx, srcId)
@@ -141,11 +140,11 @@ func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, activi
 		case activity.Type == vocab.AcceptType:
 			src.Accepted = true
 			err = svc.stor.Update(ctx, src)
-		case ActorHasNoBotTag(actor):
+		case ActorHasNoBotTag(actorTags):
 			err = svc.stor.Delete(ctx, srcId, src.GroupId, src.UserId)
 		case src.Accepted:
 			var evt *pb.CloudEvent
-			evt, _ = svc.conv.Convert(ctx, actor, activity, tags)
+			evt, _ = svc.conv.Convert(ctx, actor, activity, activityTags)
 			if evt != nil && evt.Data != nil {
 				t := time.Now().UTC()
 				// don't update the storage on every activity but only when difference is higher than the threshold
@@ -189,7 +188,7 @@ func (svc service) Unfollow(ctx context.Context, url vocab.IRI, groupId, userId 
 func (svc service) unfollow(ctx context.Context, url vocab.IRI) (err error) {
 	var actor vocab.Actor
 	if err == nil {
-		actor, err = svc.ap.FetchActor(ctx, url)
+		actor, _, err = svc.ap.FetchActor(ctx, url)
 		if err != nil {
 			err = fmt.Errorf("%w: failed to fetch actor: %s, cause: %s", ErrInvalid, url, err)
 		}

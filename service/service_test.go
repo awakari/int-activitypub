@@ -19,7 +19,7 @@ func TestService_RequestFollow(t *testing.T) {
 		storage.NewStorageMock(),
 		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
 		"test.social",
-		converter.NewLogging(converter.NewService(), slog.Default()),
+		converter.NewLogging(converter.NewService("foo"), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
 	)
 	svc = NewLogging(svc, slog.Default())
@@ -80,7 +80,7 @@ func TestService_HandleActivity(t *testing.T) {
 		storage.NewStorageMock(),
 		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
 		"test.social",
-		converter.NewLogging(converter.NewService(), slog.Default()),
+		converter.NewLogging(converter.NewService("foo"), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
 	)
 	svc = NewLogging(svc, slog.Default())
@@ -95,7 +95,7 @@ func TestService_HandleActivity(t *testing.T) {
 	}
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
-			err := svc.HandleActivity(context.TODO(), vocab.Actor{ID: c.url}, c.activity, util.ActivityTags{})
+			err := svc.HandleActivity(context.TODO(), vocab.Actor{ID: c.url}, util.ObjectTags{}, c.activity, util.ActivityTags{})
 			assert.ErrorIs(t, err, c.err)
 		})
 	}
@@ -106,7 +106,7 @@ func TestService_Read(t *testing.T) {
 		storage.NewStorageMock(),
 		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
 		"test.social",
-		converter.NewLogging(converter.NewService(), slog.Default()),
+		converter.NewLogging(converter.NewService("foo"), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
 	)
 	svc = NewLogging(svc, slog.Default())
@@ -141,7 +141,7 @@ func TestService_List(t *testing.T) {
 		storage.NewStorageMock(),
 		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
 		"test.social",
-		converter.NewLogging(converter.NewService(), slog.Default()),
+		converter.NewLogging(converter.NewService("foo"), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
 	)
 	svc = NewLogging(svc, slog.Default())
@@ -178,7 +178,7 @@ func TestService_Unfollow(t *testing.T) {
 		storage.NewStorageMock(),
 		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
 		"test.social",
-		converter.NewLogging(converter.NewService(), slog.Default()),
+		converter.NewLogging(converter.NewService("foo"), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
 	)
 	svc = NewLogging(svc, slog.Default())

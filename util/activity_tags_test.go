@@ -70,6 +70,7 @@ func TestActivityHasNoBotTag(t *testing.T) {
 			tags: ActivityTags{
 				Tag: []ActivityTag{
 					{
+						Type: "Hashtag",
 						Name: "#nobot",
 					},
 				},

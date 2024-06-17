@@ -2,14 +2,13 @@ package service
 
 import (
 	"github.com/awakari/int-activitypub/util"
-	vocab "github.com/go-ap/activitypub"
 )
 
 const NoBot = "#nobot"
 
-func ActorHasNoBotTag(actor vocab.Actor) (contains bool) {
-	for _, t := range actor.Tag {
-		if t.IsObject() && t.(vocab.Object).Name.String() == NoBot {
+func ActorHasNoBotTag(o util.ObjectTags) (contains bool) {
+	for _, t := range o.Tag {
+		if t.Name == NoBot {
 			contains = true
 			break
 		}
@@ -17,8 +16,14 @@ func ActorHasNoBotTag(actor vocab.Actor) (contains bool) {
 	return
 }
 
-func ActivityHasNoBotTag(tags util.ActivityTags) (contains bool) {
-	for _, t := range tags.Tag {
+func ActivityHasNoBotTag(a util.ActivityTags) (contains bool) {
+	for _, t := range a.Tag {
+		if t.Name == NoBot {
+			contains = true
+			break
+		}
+	}
+	for _, t := range a.Object.Tag {
 		if t.Name == NoBot {
 			contains = true
 			break

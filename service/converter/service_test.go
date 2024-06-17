@@ -15,7 +15,7 @@ import (
 )
 
 func TestService_Convert(t *testing.T) {
-	svc := NewService()
+	svc := NewService("foo")
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
 		actor vocab.Actor
@@ -73,7 +73,7 @@ func TestService_Convert(t *testing.T) {
 }`,
 			out: &pb.CloudEvent{
 				SpecVersion: "1.0",
-				Type:        "com.awakari.activitypub.v1",
+				Type:        "foo",
 				Source:      "https://mastodon.social/users/johndoe",
 				Attributes: map[string]*pb.CloudEventAttributeValue{
 					"action": {
@@ -151,7 +151,7 @@ func TestService_Convert(t *testing.T) {
 }`,
 			out: &pb.CloudEvent{
 				SpecVersion: "1.0",
-				Type:        "com.awakari.activitypub.v1",
+				Type:        "foo",
 				Source:      "https://mastodon.social/users/johndoe",
 				Attributes: map[string]*pb.CloudEventAttributeValue{
 					"subject": {
@@ -219,7 +219,7 @@ func TestService_Convert(t *testing.T) {
 }`,
 			out: &pb.CloudEvent{
 				SpecVersion: "1.0",
-				Type:        "com.awakari.activitypub.v1",
+				Type:        "foo",
 				Attributes: map[string]*pb.CloudEventAttributeValue{
 					"action": {
 						Attr: &pb.CloudEventAttributeValue_CeString{
@@ -281,7 +281,7 @@ func TestService_Convert(t *testing.T) {
 }`,
 			out: &pb.CloudEvent{
 				SpecVersion: "1.0",
-				Type:        "com.awakari.activitypub.v1",
+				Type:        "foo",
 				Attributes: map[string]*pb.CloudEventAttributeValue{
 					"action": {
 						Attr: &pb.CloudEventAttributeValue_CeString{
@@ -359,7 +359,7 @@ func TestService_Convert(t *testing.T) {
 }`,
 			out: &pb.CloudEvent{
 				SpecVersion: "1.0",
-				Type:        "com.awakari.activitypub.v1",
+				Type:        "foo",
 				Attributes: map[string]*pb.CloudEventAttributeValue{
 					"action": {
 						Attr: &pb.CloudEventAttributeValue_CeString{
@@ -461,7 +461,7 @@ func TestService_Convert(t *testing.T) {
 				Id:          "cce71487-9c06-4316-9a36-da0d8654ca0e",
 				Source:      "https://mastodon.social/users/akurilov",
 				SpecVersion: "1.0",
-				Type:        "com.awakari.activitypub.v1",
+				Type:        "foo",
 				Attributes: map[string]*pb.CloudEventAttributeValue{
 					"cc": {
 						Attr: &pb.CloudEventAttributeValue_CeString{

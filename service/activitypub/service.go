@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	apiHttp "github.com/awakari/int-activitypub/api/http"
+	"github.com/awakari/int-activitypub/util"
 	vocab "github.com/go-ap/activitypub"
 	apiPromV1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
@@ -21,7 +22,7 @@ import (
 
 type Service interface {
 	ResolveActorLink(ctx context.Context, host, name string) (self vocab.IRI, err error)
-	FetchActor(ctx context.Context, self vocab.IRI) (a vocab.Actor, err error)
+	FetchActor(ctx context.Context, self vocab.IRI) (a vocab.Actor, tags util.ObjectTags, err error)
 	SendActivity(ctx context.Context, a vocab.Activity, inbox vocab.IRI) (err error)
 	nodeinfo.Resolver
 }
@@ -93,7 +94,7 @@ func (svc service) ResolveActorLink(ctx context.Context, host, name string) (sel
 	return
 }
 
-func (svc service) FetchActor(ctx context.Context, addr vocab.IRI) (actor vocab.Actor, err error) {
+func (svc service) FetchActor(ctx context.Context, addr vocab.IRI) (actor vocab.Actor, tags util.ObjectTags, err error) {
 	//
 	var req *http.Request
 	req, err = http.NewRequestWithContext(ctx, http.MethodGet, string(addr), nil)
@@ -125,6 +126,9 @@ func (svc service) FetchActor(ctx context.Context, addr vocab.IRI) (actor vocab.
 	}
 	if err == nil {
 		err = json.Unmarshal(data, &actor)
+	}
+	if err == nil {
+		err = json.Unmarshal(data, &tags)
 	}
 	//
 	if err != nil {

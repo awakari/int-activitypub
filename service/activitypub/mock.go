@@ -3,6 +3,7 @@ package activitypub
 import (
 	"context"
 	"fmt"
+	"github.com/awakari/int-activitypub/util"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/writeas/go-nodeinfo"
 )
@@ -24,7 +25,7 @@ func (m mock) ResolveActorLink(ctx context.Context, host, name string) (self voc
 	return
 }
 
-func (m mock) FetchActor(ctx context.Context, self vocab.IRI) (a vocab.Actor, err error) {
+func (m mock) FetchActor(ctx context.Context, self vocab.IRI) (a vocab.Actor, tags util.ObjectTags, err error) {
 	switch self {
 	case "https://fail.social/users/johndoe":
 		err = ErrActorFetch
@@ -37,9 +38,11 @@ func (m mock) FetchActor(ctx context.Context, self vocab.IRI) (a vocab.Actor, er
 		a.ID = self
 		a.Name = vocab.DefaultNaturalLanguageValue("Bots Hater2")
 		a.Inbox = vocab.IRI(fmt.Sprintf("%s/inbox", self))
-		a.Tag = []vocab.Item{
-			vocab.Object{
-				Name: vocab.DefaultNaturalLanguageValue("#nobot"),
+		tags = util.ObjectTags{
+			Tag: []util.ActivityTag{
+				{
+					Name: "#nobot",
+				},
 			},
 		}
 	default:

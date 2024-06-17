@@ -25,7 +25,7 @@ func TestService_FetchActor(t *testing.T) {
 		t.Skip()
 	}
 	svc := NewService(http.DefaultClient, "activitypub.awakari.com", []byte{}, nil)
-	actor, err := svc.FetchActor(context.TODO(), "https://mastodon.social/users/akurilov")
+	actor, _, err := svc.FetchActor(context.TODO(), "https://mastodon.social/users/akurilov")
 	assert.Equal(t, "https://mastodon.social/users/akurilov/inbox", actor.Inbox.GetLink().String())
 	assert.Nil(t, err)
 }

@@ -41,6 +41,8 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 		return
 	}
 
+	fmt.Printf("Activity payload data: \n%s\n", string(data))
+
 	var activity vocab.Activity
 	err = json.Unmarshal(data, &activity)
 	if err != nil {
@@ -58,7 +60,7 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 	}
 	if service.ActivityHasNoBotTag(tags) {
 		fmt.Printf("Activity %s contains %s tag\n", activity.ID, service.NoBot)
-		ctx.String(http.StatusUnprocessableEntity, err.Error())
+		ctx.String(http.StatusUnprocessableEntity, fmt.Sprintf("Activity %s contains %s tag\n", activity.ID, service.NoBot))
 		return
 	}
 
@@ -69,7 +71,8 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 	}
 
 	var actor vocab.Actor
-	actor, err = h.svcActivityPub.FetchActor(ctx, activity.Actor.GetLink())
+	var actorTags util.ObjectTags
+	actor, actorTags, err = h.svcActivityPub.FetchActor(ctx, activity.Actor.GetLink())
 	if err != nil {
 		ctx.String(http.StatusInternalServerError, err.Error())
 		return
@@ -82,7 +85,7 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 		return
 	}
 
-	err = h.svc.HandleActivity(ctx, actor, activity, tags)
+	err = h.svc.HandleActivity(ctx, actor, actorTags, activity, tags)
 	switch {
 	case errors.Is(err, service.ErrNoAccept), errors.Is(err, service.ErrNoBot):
 		ctx.String(http.StatusUnprocessableEntity, err.Error())

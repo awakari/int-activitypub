@@ -3,6 +3,7 @@ package activitypub
 import (
 	"context"
 	"fmt"
+	"github.com/awakari/int-activitypub/util"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/writeas/go-nodeinfo"
 	"log/slog"
@@ -26,9 +27,9 @@ func (l logging) ResolveActorLink(ctx context.Context, host, name string) (self 
 	return
 }
 
-func (l logging) FetchActor(ctx context.Context, addr vocab.IRI) (actor vocab.Actor, err error) {
-	actor, err = l.svc.FetchActor(ctx, addr)
-	l.log.Log(ctx, logLevel(err), fmt.Sprintf("activitypub.FetchActor(addr=%s): {Id;%+v, Inbox:%+v}, %s", addr, actor.ID, actor.Inbox, err))
+func (l logging) FetchActor(ctx context.Context, addr vocab.IRI) (actor vocab.Actor, tags util.ObjectTags, err error) {
+	actor, tags, err = l.svc.FetchActor(ctx, addr)
+	l.log.Log(ctx, logLevel(err), fmt.Sprintf("activitypub.FetchActor(addr=%s): {Id;%+v, Inbox:%+v, Tags:%+v}, %s", addr, actor.ID, actor.Inbox, tags, err))
 	return
 }
 
