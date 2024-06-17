@@ -70,13 +70,6 @@ kubectl create secret generic int-activitypub-keys \
   --from-file=private=private.pem
 ```
 
-```shell
-kubectl create secret generic int-activitypub-search-client-mastodon \
-  --from-literal=key=key1 \
-  --from-literal=secret=secret1 \
-  --from-literal=token=token1
-```
-
 ## Manual Testing
 
 Example request:
