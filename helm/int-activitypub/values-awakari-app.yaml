@@ -21,6 +21,7 @@ ingressHttpV1:
         - activitypub.awakari.app
 
 db:
+  table:
     name:
       followers: followers-awakari-app
       following: following-awakari-app
