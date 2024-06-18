@@ -50,12 +50,7 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 	}
 
 	var tags util.ActivityTags
-	err = json.Unmarshal(data, &tags)
-	if err != nil {
-		fmt.Printf("Inbox request unmarshal failure: %s\n", err)
-		ctx.String(http.StatusBadRequest, err.Error())
-		return
-	}
+	_ = json.Unmarshal(data, &tags)
 	if service.ActivityHasNoBotTag(tags) {
 		fmt.Printf("Activity %s contains %s tag\n", activity.ID, service.NoBot)
 		ctx.String(http.StatusUnprocessableEntity, fmt.Sprintf("Activity %s contains %s tag\n", activity.ID, service.NoBot))
