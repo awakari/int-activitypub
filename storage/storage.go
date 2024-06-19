@@ -14,6 +14,7 @@ type Storage interface {
 	Update(ctx context.Context, src model.Source) (err error)
 	Delete(ctx context.Context, srcId, groupId, userId string) (err error)
 	List(ctx context.Context, filter model.Filter, limit uint32, cursor string, order model.Order) (page []string, err error)
+	Count(ctx context.Context) (count int64, err error)
 }
 
 var ErrInternal = errors.New("source storage internal failure")

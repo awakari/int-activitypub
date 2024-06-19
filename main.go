@@ -217,7 +217,7 @@ func main() {
 		ID:      vocab.IRI(fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host)),
 		Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
 	})
-	hFollowing := handler.NewFollowingHandler(stor)
+	hFollowing := handler.NewFollowingHandler(stor, fmt.Sprintf("https://%s/following", cfg.Api.Http.Host))
 
 	r := gin.Default()
 	r.GET("/.well-known/webfinger", hwf.Handle)

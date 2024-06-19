@@ -350,6 +350,12 @@ func (sm storageMongo) List(ctx context.Context, filter model.Filter, limit uint
 	return
 }
 
+func (sm storageMongo) Count(ctx context.Context) (count int64, err error) {
+	count, err = sm.coll.EstimatedDocumentCount(ctx)
+	err = decodeError(err, "")
+	return
+}
+
 func decodeError(src error, recId string) (dst error) {
 	switch {
 	case src == nil:

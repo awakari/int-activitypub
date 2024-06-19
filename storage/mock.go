@@ -76,3 +76,8 @@ func (s mock) List(ctx context.Context, filter model.Filter, limit uint32, curso
 	}
 	return
 }
+
+func (s mock) Count(ctx context.Context) (count int64, err error) {
+	count = 42
+	return
+}

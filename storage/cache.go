@@ -60,3 +60,8 @@ func (lc localCache) List(ctx context.Context, filter model.Filter, limit uint32
 	page, err = lc.stor.List(ctx, filter, limit, cursor, order)
 	return
 }
+
+func (lc localCache) Count(ctx context.Context) (count int64, err error) {
+	count, err = lc.stor.Count(ctx)
+	return
+}

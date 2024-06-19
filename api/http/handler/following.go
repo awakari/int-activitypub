@@ -11,7 +11,8 @@ import (
 )
 
 type following struct {
-	stor storage.Storage
+	stor    storage.Storage
+	baseUrl string
 }
 
 const keyCursor = "cursor"
@@ -20,43 +21,49 @@ const defaultOrder = model.OrderAsc
 
 var defaultFilter = model.Filter{}
 
-func NewFollowingHandler(stor storage.Storage) Handler {
+func NewFollowingHandler(stor storage.Storage, baseUrl string) Handler {
 	return following{
-		stor: stor,
+		stor:    stor,
+		baseUrl: baseUrl,
 	}
 }
 
 func (f following) Handle(ctx *gin.Context) {
-	baseUrl := fmt.Sprintf("%s://%s%s", ctx.Request.URL.Scheme, ctx.Request.URL.Host, ctx.Request.URL.Path)
 	cursor := ctx.Query(keyCursor)
 	if cursor != "" {
 		var err error
 		cursor, err = url.QueryUnescape(cursor)
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, fmt.Sprintf("invalid cursor value \"%s\", cause: %s", cursor, err))
+			ctx.String(http.StatusBadRequest, fmt.Sprintf("invalid cursor value \"%s\", cause: %s", cursor, err))
 			return
 		}
 	}
-	page, err := f.stor.List(ctx, defaultFilter, defaultLimit, cursor, defaultOrder)
-	switch err {
-	case nil:
-		ocp := vocab.OrderedCollectionPage{
-			ID:      vocab.ID(ctx.Request.URL.String()),
-			Type:    "OrderedCollectionPage",
-			Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
-			PartOf:  vocab.IRI(baseUrl),
-		}
-		for _, src := range page {
-			ocp.OrderedItems = append(ocp.OrderedItems, vocab.IRI(src))
-		}
-		if len(page) > 0 {
-			next := page[len(page)-1]
-			next = url.QueryEscape(next)
-			ocp.Next = vocab.IRI(fmt.Sprintf("%s?%s=%s", baseUrl, keyCursor, next))
-		}
-		ctx.JSON(http.StatusOK, ocp)
-	default:
-		ctx.String(http.StatusInternalServerError, fmt.Sprintf("failed to list sources: %s", err))
+	count, err := f.stor.Count(ctx)
+	if err != nil {
+		ctx.String(http.StatusInternalServerError, fmt.Sprintf("failed to estimate count of sources: %s", err))
+		return
 	}
+	page, err := f.stor.List(ctx, defaultFilter, defaultLimit, cursor, defaultOrder)
+	if err != nil {
+		ctx.String(http.StatusInternalServerError, fmt.Sprintf("failed to list sources: %s", err))
+		return
+	}
+	ocp := vocab.OrderedCollectionPage{
+		ID:         vocab.IRI(f.baseUrl + "?" + keyCursor + "=" + cursor),
+		Type:       "OrderedCollectionPage",
+		Context:    vocab.IRI("https://www.w3.org/ns/activitystreams"),
+		PartOf:     vocab.IRI(f.baseUrl),
+		TotalItems: uint(count),
+		First:      vocab.IRI(f.baseUrl),
+	}
+	for _, src := range page {
+		ocp.OrderedItems = append(ocp.OrderedItems, vocab.IRI(src))
+	}
+	if len(page) > 0 {
+		next := page[len(page)-1]
+		next = url.QueryEscape(next)
+		ocp.Next = vocab.IRI(f.baseUrl + "?" + keyCursor + "=" + next)
+	}
+	ctx.JSON(http.StatusOK, ocp)
 	return
 }
