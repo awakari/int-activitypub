@@ -91,6 +91,7 @@ func encodeSource(src model.Source) (dst *Source) {
 		Name:     src.Name,
 		Summary:  src.Summary,
 		Accepted: src.Accepted,
+		Rejected: src.Rejected,
 		SubId:    src.SubId,
 		Term:     src.Term,
 	}

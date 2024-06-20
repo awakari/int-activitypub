@@ -21,6 +21,7 @@ type recSrc struct {
 	Name     string    `bson:"name"`
 	Summary  string    `bson:"summary"`
 	Accepted bool      `bson:"accepted"`
+	Rejected bool      `bson:"rejected"`
 	Last     time.Time `bson:"last,omitempty"`
 	Created  time.Time `bson:"created"`
 	SubId    string    `bson:"subId"`
@@ -34,6 +35,7 @@ const attrType = "type"
 const attrName = "name"
 const attrSummary = "summary"
 const attrAccepted = "accepted"
+const attrRejected = "rejected"
 const attrLast = "last"
 const attrCreated = "created"
 const attrSubId = "subId"
@@ -78,6 +80,10 @@ var projRead = bson.D{
 	},
 	{
 		Key:   attrAccepted,
+		Value: 1,
+	},
+	{
+		Key:   attrRejected,
 		Value: 1,
 	},
 	{
@@ -229,6 +235,7 @@ func (sm storageMongo) Read(ctx context.Context, srcId string) (a model.Source, 
 		a.Name = rec.Name
 		a.Summary = rec.Summary
 		a.Accepted = rec.Accepted
+		a.Rejected = rec.Rejected
 		a.Last = rec.Last
 		a.Created = rec.Created
 		a.SubId = rec.SubId
@@ -245,6 +252,7 @@ func (sm storageMongo) Update(ctx context.Context, src model.Source) (err error)
 	u := bson.M{
 		"$set": bson.M{
 			attrAccepted: src.Accepted,
+			attrRejected: src.Rejected,
 			attrName:     src.Name,
 			attrType:     src.Type,
 			attrSummary:  src.Summary,

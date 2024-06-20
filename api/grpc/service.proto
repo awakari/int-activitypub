@@ -80,6 +80,7 @@ message Source {
   google.protobuf.Timestamp created = 9;
   string subId = 10;
   string term = 11;
+  bool rejected = 12;
 }
 
 message Filter {

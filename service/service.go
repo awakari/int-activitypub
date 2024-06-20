@@ -140,6 +140,9 @@ func (svc service) HandleActivity(ctx context.Context, actor vocab.Actor, actorT
 		case activity.Type == vocab.AcceptType:
 			src.Accepted = true
 			err = svc.stor.Update(ctx, src)
+		case activity.Type == vocab.RejectType:
+			src.Rejected = true
+			err = svc.stor.Update(ctx, src)
 		case ActorHasNoBotTag(actorTags):
 			err = svc.stor.Delete(ctx, srcId, src.GroupId, src.UserId)
 		case src.Accepted:

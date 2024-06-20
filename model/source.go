@@ -10,6 +10,7 @@ type Source struct {
 	Name     string
 	Summary  string
 	Accepted bool
+	Rejected bool
 	Last     time.Time
 	Created  time.Time
 	SubId    string
