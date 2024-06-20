@@ -25,10 +25,7 @@ func NewActorHandler(a vocab.Actor, extraAttrs map[string]any) (h Handler) {
 func (ah actorHandler) Handle(ctx *gin.Context) {
 	accept := ctx.Request.Header.Get("Accept")
 	switch accept {
-	case "application/json", "application/ld+json":
-		ctx.Writer.Header().Add("Content-Type", "application/ld+json; profile=\"https://www.w3.org/ns/activitystreams\"")
-		ctx.JSON(http.StatusOK, ah.a)
-	default:
+	case "text/html", "application/xhtml+xml", "text/xml", "application/xml":
 		ctx.Writer.Header().Add("Content-Type", "text/html; charset=utf-8")
 		ctx.String(http.StatusOK, `<!DOCTYPE html>
 <html lang="en">
@@ -56,6 +53,9 @@ func (ah actorHandler) Handle(ctx *gin.Context) {
 		<a href="https://awakari.com/tos.html">Terms</a>
 	</p>
 </body>`)
+	default:
+		ctx.Writer.Header().Add("Content-Type", "application/ld+json; profile=\"https://www.w3.org/ns/activitystreams\"")
+		ctx.JSON(http.StatusOK, ah.a)
 	}
 	return
 }
