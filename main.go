@@ -200,7 +200,7 @@ func main() {
 
 	// WebFinger
 	wf := apiHttp.WebFinger{
-		Subject: fmt.Sprintf("acct:Awakari@%s", cfg.Api.Http.Host),
+		Subject: fmt.Sprintf("acct:%s@%s", cfg.Api.Actor.Name, cfg.Api.Http.Host),
 		Links: []apiHttp.WebFingerLink{
 			{
 				Rel:  "self",
