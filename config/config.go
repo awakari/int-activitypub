@@ -18,9 +18,17 @@ type Config struct {
 			BatchSize uint32        `envconfig:"API_WRITER_BATCH_SIZE" default:"16" required:"true"`
 			Uri       string        `envconfig:"API_WRITER_URI" default:"resolver:50051" required:"true"`
 		}
+		Actor struct {
+			Name string `envconfig:"API_ACTOR_NAME" required:"true" default:"awakari"`
+			Type string `envconfig:"API_ACTOR_TYPE" required:"true" default:"Service"`
+		}
 		Key struct {
 			Public  string `envconfig:"API_KEY_PUBLIC" required:"true"`
 			Private string `envconfig:"API_KEY_PRIVATE" required:"true"`
+		}
+		Node struct {
+			Name        string `envconfig:"API_NODE_NAME" required:"true"`
+			Description string `envconfig:"API_NODE_DESCRIPTION" required:"true" default:"Awakari Fediverse Integration"`
 		}
 		Prometheus PrometheusConfig
 	}

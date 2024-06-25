@@ -1,0 +1,32 @@
+api:
+  actor:
+    type: "Interest"
+    name: "indy.rest"
+  node:
+    name: "indy.rest"
+  writer:
+    uri: "api:50051"
+
+# prod
+cert:
+  acme:
+    server: "https://acme-v02.api.letsencrypt.org/directory"
+  issuer:
+    name: letsencrypt-indy-rest
+
+ingressHttpV1:
+  hosts:
+    - host: indy.rest
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: secret-indy-rest-tls-server
+      hosts:
+        - indy.rest
+
+db:
+  table:
+    name:
+      followers: followers-indy-rest
+      following: following-indy-rest

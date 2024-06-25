@@ -94,6 +94,14 @@ spec:
                   key: private
             - name: DB_TABLE_RETENTION_PERIOD_FOLLOWING
               value: "{{ .Values.db.table.retention.following }}"
+            - name: API_ACTOR_NAME
+              value: "{{ .Values.api.actor.name }}"
+            - name: API_ACTOR_TYPE
+              value: "{{ .Values.api.actor.type }}"
+            - name: API_NODE_DESCRIPTION
+              value: "{{ .Values.api.node.description }}"
+            - name: API_NODE_NAME
+              value: "{{ .Values.api.node.name }}"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
