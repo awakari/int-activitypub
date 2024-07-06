@@ -97,8 +97,8 @@ func main() {
 		BaseURL: fmt.Sprintf("https://%s", cfg.Api.Http.Host),
 		InfoURL: "/api/nodeinfo",
 		Metadata: nodeinfo.Metadata{
-			NodeName:        cfg.Api.Http.Host,
-			NodeDescription: "Awakari Fediverese Integration",
+			NodeName:        cfg.Api.Node.Name,
+			NodeDescription: cfg.Api.Node.Description,
 			Private:         false,
 			Software: nodeinfo.SoftwareMeta{
 				HomePage: "https://awakari.com/activitypub",
@@ -130,8 +130,8 @@ func main() {
 	// actor
 	actor := vocab.Actor{
 		ID:   vocab.ID(fmt.Sprintf("https://%s/actor", cfg.Api.Http.Host)),
-		Type: vocab.ServiceType,
-		Name: vocab.DefaultNaturalLanguageValue("Awakari"),
+		Type: vocab.ActivityVocabularyType(cfg.Api.Actor.Type),
+		Name: vocab.DefaultNaturalLanguageValue(cfg.Api.Actor.Name),
 		Context: vocab.ItemCollection{
 			vocab.IRI("https://www.w3.org/ns/activitystreams"),
 			vocab.IRI("https://w3id.org/security/v1"),
@@ -196,7 +196,7 @@ func main() {
 
 	// WebFinger
 	wf := apiHttp.WebFinger{
-		Subject: fmt.Sprintf("acct:Awakari@%s", cfg.Api.Http.Host),
+		Subject: fmt.Sprintf("acct:%s@%s", cfg.Api.Actor.Name, cfg.Api.Http.Host),
 		Links: []apiHttp.WebFingerLink{
 			{
 				Rel:  "self",

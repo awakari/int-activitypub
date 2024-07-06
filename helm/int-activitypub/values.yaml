@@ -90,6 +90,12 @@ tolerations: []
 affinity: {}
 
 api:
+  actor:
+    name: "awakari"
+    type: "Service"
+  node:
+    description: "Awakari Fediverse Integration"
+    name: "awakari.com"
   event:
     type: "awakari.activitypub.v1"
   interests:
