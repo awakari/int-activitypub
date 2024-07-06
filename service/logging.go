@@ -27,9 +27,9 @@ func (l logging) RequestFollow(ctx context.Context, addr, groupId, userId, subId
 	return
 }
 
-func (l logging) HandleActivity(ctx context.Context, actor vocab.Actor, actorTags util.ObjectTags, activity vocab.Activity, activityTags util.ActivityTags) (err error) {
-	err = l.svc.HandleActivity(ctx, actor, actorTags, activity, activityTags)
-	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.HandleActivity(actor.Id=%s, actor.Tags=%d, activity.Type=%s, activity.Tags=%d): %s", actor.ID, len(actorTags.Tag), activity.Type, len(activityTags.Tag), err))
+func (l logging) HandleActivity(ctx context.Context, actorIdLocal string, actor vocab.Actor, actorTags util.ObjectTags, activity vocab.Activity, activityTags util.ActivityTags) (err error) {
+	err = l.svc.HandleActivity(ctx, actorIdLocal, actor, actorTags, activity, activityTags)
+	l.log.Log(ctx, logLevel(err), fmt.Sprintf("service.HandleActivity(actorIdLocal=%s, actor.Id=%s, actor.Tags=%d, activity.Type=%s, activity.Tags=%d): err=%s", actorIdLocal, actor.ID, len(actorTags.Tag), activity.Type, len(activityTags.Tag), err))
 	return
 }
 

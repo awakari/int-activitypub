@@ -7,6 +7,7 @@ import (
 	apiGrpc "github.com/awakari/int-activitypub/api/grpc"
 	apiHttp "github.com/awakari/int-activitypub/api/http"
 	"github.com/awakari/int-activitypub/api/http/handler"
+	"github.com/awakari/int-activitypub/api/http/reader"
 	"github.com/awakari/int-activitypub/config"
 	"github.com/awakari/int-activitypub/service"
 	"github.com/awakari/int-activitypub/service/activitypub"
@@ -82,7 +83,18 @@ func main() {
 	svcWriter := writer.NewService(clientAwk, cfg.Api.Writer.Backoff)
 	svcWriter = writer.NewLogging(svcWriter, log)
 
-	svc := service.NewService(stor, svcActivityPub, cfg.Api.Http.Host, svcConv, svcWriter)
+	// init websub reader
+	svcReader := reader.NewService(clientHttp, cfg.Api.Reader.Uri)
+	svcReader = reader.NewServiceLogging(svcReader, log)
+	urlCallbackBase := fmt.Sprintf(
+		"%s://%s:%d%s",
+		cfg.Api.Reader.CallBack.Protocol,
+		cfg.Api.Reader.CallBack.Host,
+		cfg.Api.Reader.CallBack.Port,
+		cfg.Api.Reader.CallBack.Path,
+	)
+
+	svc := service.NewService(stor, svcActivityPub, cfg.Api.Http.Host, svcConv, svcWriter, svcReader, urlCallbackBase)
 	svc = service.NewLogging(svc, log)
 
 	log.Info(fmt.Sprintf("starting to listen the gRPC API @ port #%d...", cfg.Api.Port))
@@ -219,6 +231,7 @@ func main() {
 	r.GET("/.well-known/webfinger", hwf.Handle)
 	r.GET("/actor/:id", ha.Handle)
 	r.GET("/actor", ha.Handle)
+	r.POST("/inbox/:id", hi.Handle)
 	r.POST("/inbox", hi.Handle)
 	r.GET("/outbox", ho.Handle)
 	r.GET("/following", hFollowing.Handle)
@@ -232,7 +245,21 @@ func main() {
 	})
 	r.GET("/", ha.Handle)
 	log.Info(fmt.Sprintf("starting to listen the HTTP API @ port #%d...", cfg.Api.Http.Port))
-	err = r.Run(fmt.Sprintf(":%d", cfg.Api.Http.Port))
+	go func() {
+		err = r.Run(fmt.Sprintf(":%d", cfg.Api.Http.Port))
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	hc := handler.NewCallbackHandler(cfg.Api.Reader.Uri)
+
+	log.Info(fmt.Sprintf("starting to listen the HTTP API @ port #%d...", cfg.Api.Reader.CallBack.Port))
+	internalCallbacks := gin.Default()
+	internalCallbacks.
+		GET(cfg.Api.Reader.CallBack.Path, hc.Confirm).
+		POST(cfg.Api.Reader.CallBack.Path, hc.Deliver)
+	err = internalCallbacks.Run(fmt.Sprintf(":%d", cfg.Api.Reader.CallBack.Port))
 	if err != nil {
 		panic(err)
 	}

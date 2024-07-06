@@ -6,6 +6,7 @@ require (
 	github.com/awakari/client-sdk-go v1.1.0
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cloudevents/sdk-go/binding/format/protobuf/v2 v2.15.2
+	github.com/cloudevents/sdk-go/v2 v2.15.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-ap/activitypub v0.0.0-20240408091739-ba76b44c2594
 	github.com/google/uuid v1.6.0

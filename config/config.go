@@ -23,24 +23,25 @@ type ApiConfig struct {
 	Interests struct {
 		Uri string `envconfig:"API_INTEREST_URI" required:"true" default:"subscriptions-proxy:50051"`
 	}
+	Reader ReaderConfig
 	Writer struct {
 		Backoff   time.Duration `envconfig:"API_WRITER_BACKOFF" default:"10s" required:"true"`
 		BatchSize uint32        `envconfig:"API_WRITER_BATCH_SIZE" default:"16" required:"true"`
 		Uri       string        `envconfig:"API_WRITER_URI" default:"resolver:50051" required:"true"`
 	}
-    Actor struct {
-        Name string `envconfig:"API_ACTOR_NAME" required:"true" default:"awakari"`
-        Type string `envconfig:"API_ACTOR_TYPE" required:"true" default:"Service"`
-    }
-    Key struct {
+	Actor struct {
+		Name string `envconfig:"API_ACTOR_NAME" required:"true" default:"awakari"`
+		Type string `envconfig:"API_ACTOR_TYPE" required:"true" default:"Service"`
+	}
+	Key struct {
 		Public  string `envconfig:"API_KEY_PUBLIC" required:"true"`
 		Private string `envconfig:"API_KEY_PRIVATE" required:"true"`
 	}
-    Node struct {
-        Name        string `envconfig:"API_NODE_NAME" required:"true"`
-        Description string `envconfig:"API_NODE_DESCRIPTION" required:"true" default:"Awakari Fediverse Integration"`
-    }
-    Prometheus PrometheusConfig
+	Node struct {
+		Name        string `envconfig:"API_NODE_NAME" required:"true"`
+		Description string `envconfig:"API_NODE_DESCRIPTION" required:"true" default:"Awakari Fediverse Integration"`
+	}
+	Prometheus PrometheusConfig
 }
 
 type DbConfig struct {
@@ -71,6 +72,16 @@ type DbConfig struct {
 
 type PrometheusConfig struct {
 	Uri string `envconfig:"API_PROMETHEUS_URI" default:"http://prometheus-server:80" required:"true"`
+}
+
+type ReaderConfig struct {
+	Uri      string `envconfig:"API_READER_URI" default:"http://reader:8080/v1" required:"true"`
+	CallBack struct {
+		Protocol string `envconfig:"API_READER_CALLBACK_PROTOCOL" default:"http" required:"true"`
+		Host     string `envconfig:"API_READER_CALLBACK_HOST" default:"int-activitypub" required:"true"`
+		Port     uint16 `envconfig:"API_READER_CALLBACK_PORT" default:"8081" required:"true"`
+		Path     string `envconfig:"API_READER_CALLBACK_PATH" default:"/v1/callback" required:"true"`
+	}
 }
 
 func NewConfigFromEnv() (cfg Config, err error) {

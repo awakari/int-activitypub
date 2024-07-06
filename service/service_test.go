@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/awakari/int-activitypub/api/http/reader"
 	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/service/converter"
@@ -21,6 +22,8 @@ func TestService_RequestFollow(t *testing.T) {
 		"test.social",
 		converter.NewLogging(converter.NewService("foo"), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
+		reader.NewServiceLogging(reader.NewServiceMock(), slog.Default()),
+		"http://int-activitypub:8081",
 	)
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
@@ -82,6 +85,8 @@ func TestService_HandleActivity(t *testing.T) {
 		"test.social",
 		converter.NewLogging(converter.NewService("foo"), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
+		reader.NewServiceLogging(reader.NewServiceMock(), slog.Default()),
+		"http://int-activitypub:8081",
 	)
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
@@ -95,7 +100,7 @@ func TestService_HandleActivity(t *testing.T) {
 	}
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
-			err := svc.HandleActivity(context.TODO(), vocab.Actor{ID: c.url}, util.ObjectTags{}, c.activity, util.ActivityTags{})
+			err := svc.HandleActivity(context.TODO(), "", vocab.Actor{ID: c.url}, util.ObjectTags{}, c.activity, util.ActivityTags{})
 			assert.ErrorIs(t, err, c.err)
 		})
 	}
@@ -108,6 +113,8 @@ func TestService_Read(t *testing.T) {
 		"test.social",
 		converter.NewLogging(converter.NewService("foo"), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
+		reader.NewServiceLogging(reader.NewServiceMock(), slog.Default()),
+		"http://int-activitypub:8081",
 	)
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
@@ -143,6 +150,8 @@ func TestService_List(t *testing.T) {
 		"test.social",
 		converter.NewLogging(converter.NewService("foo"), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
+		reader.NewServiceLogging(reader.NewServiceMock(), slog.Default()),
+		"http://int-activitypub:8081",
 	)
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
@@ -180,6 +189,8 @@ func TestService_Unfollow(t *testing.T) {
 		"test.social",
 		converter.NewLogging(converter.NewService("foo"), slog.Default()),
 		writer.NewLogging(writer.NewMock(), slog.Default()),
+		reader.NewServiceLogging(reader.NewServiceMock(), slog.Default()),
+		"http://int-activitypub:8081",
 	)
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {

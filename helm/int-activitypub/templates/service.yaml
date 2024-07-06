@@ -15,5 +15,9 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
+    - port: "{{ .Values.service.callback.port }}"
+      targetPort: callback
+      protocol: TCP
+      name: callback
   selector:
     {{- include "int-activitypub.selectorLabels" . | nindent 4 }}

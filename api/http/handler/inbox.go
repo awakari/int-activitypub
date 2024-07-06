@@ -78,7 +78,8 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 		return
 	}
 
-	err = h.svc.HandleActivity(ctx, actor, actorTags, activity, tags)
+	actorIdLocal := ctx.Param("id")
+	err = h.svc.HandleActivity(ctx, actorIdLocal, actor, actorTags, activity, tags)
 	switch {
 	case errors.Is(err, service.ErrNoAccept), errors.Is(err, service.ErrNoBot):
 		ctx.String(http.StatusUnprocessableEntity, err.Error())
@@ -97,9 +98,7 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 
 func (h inboxHandler) verify(ctx *gin.Context, data []byte, actor vocab.Actor) (err error) {
 	var verifier httpsig.Verifier
-	if err == nil {
-		verifier, err = httpsig.NewVerifier(ctx.Request)
-	}
+	verifier, err = httpsig.NewVerifier(ctx.Request)
 	if err == nil {
 		pubKeyId := verifier.KeyId()
 		if pubKeyId != actor.PublicKey.ID.String() {
@@ -114,7 +113,7 @@ func (h inboxHandler) verify(ctx *gin.Context, data []byte, actor vocab.Actor) (
 		}
 	}
 	var pubKey crypto.PublicKey
-	if err == nil {
+	if err == nil && pubKeyDer != nil {
 		pubKey, err = x509.ParsePKIXPublicKey(pubKeyDer.Bytes)
 	}
 	// The verifier will verify the Digest in addition to the HTTP signature

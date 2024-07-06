@@ -48,6 +48,16 @@ spec:
               value: "{{ .Values.api.writer.batchSize }}"
             - name: API_WRITER_URI
               value: "{{ .Values.api.writer.uri }}"
+            - name: API_READER_URI
+              value: "{{ .Values.api.reader.uri }}"
+            - name: API_READER_CALLBACK_PROTOCOL
+              value: "{{ .Values.api.reader.callback.protocol }}"
+            - name: API_READER_CALLBACK_HOST
+              value: "{{ include "bot-telegram.fullname" . }}"
+            - name: API_READER_CALLBACK_PORT
+              value: "{{ .Values.service.callback.port }}"
+            - name: API_READER_CALLBACK_PATH
+              value: "{{ .Values.api.reader.callback.path }}"
             - name: API_PROMETHEUS_URI
               value: "{{ .Values.api.prometheus.protocol}}://{{ .Values.api.prometheus.host }}:{{ .Values.api.prometheus.port }}"
             - name: DB_URI
@@ -113,7 +123,10 @@ spec:
               containerPort: {{ .Values.service.port }}
               protocol: TCP
             - name: http
-              containerPort: 8080
+              containerPort: "{{ .Values.service.http.port }}"
+              protocol: TCP
+            - name: callback
+              containerPort: "{{ .Values.service.callback.port }}"
               protocol: TCP
           livenessProbe:
             grpc:
