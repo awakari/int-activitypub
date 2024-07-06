@@ -40,6 +40,8 @@ spec:
             {{- end }}
             - name: API_EVENT_TYPE
               value: "{{ .Values.api.event.type }}"
+            - name: API_INTERESTS_URI
+              value: "{{ .Values.api.interests.uri }}"
             - name: API_WRITER_BACKOFF
               value: "{{ .Values.api.writer.backoff }}"
             - name: API_WRITER_BATCH_SIZE

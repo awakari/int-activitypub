@@ -92,6 +92,8 @@ affinity: {}
 api:
   event:
     type: "awakari.activitypub.v1"
+  interests:
+    uri: "subscriptions-proxy:50051"
   writer:
     backoff: "10s"
     batchSize: 16

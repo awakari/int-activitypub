@@ -6,28 +6,33 @@ import (
 )
 
 type Config struct {
-	Api struct {
-		Http struct {
-			Host string `envconfig:"API_HTTP_HOST" required:"true"`
-			Port uint16 `envconfig:"API_HTTP_PORT" default:"8080" required:"true"`
-		}
-		Port      uint16 `envconfig:"API_PORT" default:"50051" required:"true"`
-		EventType string `envconfig:"API_EVENT_TYPE" required:"true" default:"com.awakari.activitypub.v1"`
-		Writer    struct {
-			Backoff   time.Duration `envconfig:"API_WRITER_BACKOFF" default:"10s" required:"true"`
-			BatchSize uint32        `envconfig:"API_WRITER_BATCH_SIZE" default:"16" required:"true"`
-			Uri       string        `envconfig:"API_WRITER_URI" default:"resolver:50051" required:"true"`
-		}
-		Key struct {
-			Public  string `envconfig:"API_KEY_PUBLIC" required:"true"`
-			Private string `envconfig:"API_KEY_PRIVATE" required:"true"`
-		}
-		Prometheus PrometheusConfig
-	}
+	Api ApiConfig
 	Db  DbConfig
 	Log struct {
 		Level int `envconfig:"LOG_LEVEL" default:"-4" required:"true"`
 	}
+}
+
+type ApiConfig struct {
+	Http struct {
+		Host string `envconfig:"API_HTTP_HOST" required:"true"`
+		Port uint16 `envconfig:"API_HTTP_PORT" default:"8080" required:"true"`
+	}
+	Port      uint16 `envconfig:"API_PORT" default:"50051" required:"true"`
+	EventType string `envconfig:"API_EVENT_TYPE" required:"true" default:"com.awakari.activitypub.v1"`
+	Interests struct {
+		Uri string `envconfig:"API_INTEREST_URI" required:"true" default:"subscriptions-proxy:50051"`
+	}
+	Writer struct {
+		Backoff   time.Duration `envconfig:"API_WRITER_BACKOFF" default:"10s" required:"true"`
+		BatchSize uint32        `envconfig:"API_WRITER_BATCH_SIZE" default:"16" required:"true"`
+		Uri       string        `envconfig:"API_WRITER_URI" default:"resolver:50051" required:"true"`
+	}
+	Key struct {
+		Public  string `envconfig:"API_KEY_PUBLIC" required:"true"`
+		Private string `envconfig:"API_KEY_PRIVATE" required:"true"`
+	}
+	Prometheus PrometheusConfig
 }
 
 type DbConfig struct {

@@ -51,6 +51,7 @@ func main() {
 	clientAwk, err = api.
 		NewClientBuilder().
 		WriterUri(cfg.Api.Writer.Uri).
+		SubscriptionsUri(cfg.Api.Interests.Uri).
 		Build()
 	if err != nil {
 		panic(fmt.Sprintf("failed to initialize the Awakari API client: %s", err))
@@ -138,12 +139,7 @@ func main() {
 		Icon: vocab.Image{
 			MediaType: "image/png",
 			Type:      vocab.ImageType,
-			URL:       vocab.IRI("https://awakari.com/logo-color-256.png"),
-		},
-		Image: vocab.Image{
-			MediaType: "image/png",
-			Type:      vocab.ImageType,
-			URL:       vocab.IRI("https://awakari.com/logo-color-1024.png"),
+			URL:       vocab.IRI("https://awakari.com/logo-color-64.png"),
 		},
 		Summary: vocab.DefaultNaturalLanguageValue(
 			"<p>Awakari is a free service that discovers and follows interesting Fediverse publishers on behalf of own users. " +
@@ -196,7 +192,7 @@ func main() {
 		"indexable":                 true,
 		"memorial":                  false,
 	}
-	ha := handler.NewActorHandler(actor, actorExtraAttrs)
+	ha := handler.NewActorHandler(actor, actorExtraAttrs, clientAwk, "https://awakari.com/sub-details.html?id=", cfg.Api)
 
 	// WebFinger
 	wf := apiHttp.WebFinger{
@@ -209,7 +205,7 @@ func main() {
 			},
 		},
 	}
-	hwf := handler.NewWebFingerHandler(wf)
+	hwf := handler.NewWebFingerHandler(wf, cfg.Api.Http.Host, clientAwk)
 
 	// inbox, outbox, following
 	hi := handler.NewInboxHandler(svcActivityPub, svc)
@@ -221,6 +217,7 @@ func main() {
 
 	r := gin.Default()
 	r.GET("/.well-known/webfinger", hwf.Handle)
+	r.GET("/actor/:id", ha.Handle)
 	r.GET("/actor", ha.Handle)
 	r.POST("/inbox", hi.Handle)
 	r.GET("/outbox", ho.Handle)

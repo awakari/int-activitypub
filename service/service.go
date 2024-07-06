@@ -34,7 +34,6 @@ type service struct {
 	w        writer.Service
 }
 
-const acctSep = "@"
 const lastUpdateThreshold = 1 * time.Hour
 
 var ErrInvalid = errors.New("invalid argument")
@@ -63,11 +62,11 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 	addrParsed, err = url.Parse(addr)
 	if err == nil {
 		switch {
-		case addrParsed.Scheme == "" && strings.Contains(addr, acctSep):
-			if len(addr) > 0 && strings.HasPrefix(addr, acctSep) {
+		case addrParsed.Scheme == "" && strings.Contains(addr, model.AcctSep):
+			if len(addr) > 0 && strings.HasPrefix(addr, model.AcctSep) {
 				addr = addr[1:]
 			}
-			acct := strings.SplitN(addr, acctSep, 3)
+			acct := strings.SplitN(addr, model.AcctSep, 3)
 			if len(acct) == 2 {
 				name, host := acct[0], acct[1]
 				var actorSelfLink vocab.IRI

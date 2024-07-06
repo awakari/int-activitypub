@@ -67,14 +67,8 @@ jobs:
             --region ${{ secrets.GKE_CLUSTER_REGION }} \
             --project ${{ secrets.GKE_PROJECT_ID }}
 
-      - name: Helm Upgrade awakari.com
+      - name: Helm Upgrade
         run: |
           helm upgrade --install ${COMPONENT} helm/package/${COMPONENT}-0.0.0.tgz \
             --values helm/int-activitypub/values-awakari-com.yaml \
-            --set podAnnotations.commit=$(git rev-parse --short HEAD),db.password.secret.enabled=false,db.protocol=mongodb+srv,db.tls.enabled=true,db.tls.insecure=true,db.hostname=${{ secrets.DB_HOST_DEMO }},db.username=${{ secrets.DB_USERNAME_DEMO }},db.password.raw=${{ secrets.DB_PASSWORD_DEMO }}
-
-      - name: Helm Upgrade awakari.app
-        run: |
-          helm upgrade --install ${COMPONENT}-awakari-app helm/package/${COMPONENT}-0.0.0.tgz \
-            --values helm/int-activitypub/values-awakari-app.yaml \
             --set podAnnotations.commit=$(git rev-parse --short HEAD),db.password.secret.enabled=false,db.protocol=mongodb+srv,db.tls.enabled=true,db.tls.insecure=true,db.hostname=${{ secrets.DB_HOST_DEMO }},db.username=${{ secrets.DB_USERNAME_DEMO }},db.password.raw=${{ secrets.DB_PASSWORD_DEMO }}

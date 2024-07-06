@@ -7,10 +7,11 @@ import (
 	"errors"
 	"fmt"
 	apiHttp "github.com/awakari/int-activitypub/api/http"
+	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/util"
 	vocab "github.com/go-ap/activitypub"
 	apiPromV1 "github.com/prometheus/client_golang/api/prometheus/v1"
-	"github.com/prometheus/common/model"
+	modelProm "github.com/prometheus/common/model"
 	"github.com/superseriousbusiness/httpsig"
 	"github.com/writeas/go-nodeinfo"
 	"golang.org/x/crypto/ssh"
@@ -34,7 +35,6 @@ type service struct {
 	apiProm    apiPromV1.API
 }
 
-const fmtWebFinger = "https://%s/.well-known/webfinger?resource=acct:%s@%s"
 const limitRespBodyLen = 65_536
 const metricQuerySubscribers = "sum by (service) (awk_subscribers_total)"
 
@@ -64,7 +64,7 @@ func NewService(clientHttp *http.Client, userAgent string, privKey []byte, apiPr
 
 func (svc service) ResolveActorLink(ctx context.Context, host, name string) (self vocab.IRI, err error) {
 	var req *http.Request
-	req, err = http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf(fmtWebFinger, host, name, host), nil)
+	req, err = http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf(model.WebFingerFmtUrl, host, name, host), nil)
 	var resp *http.Response
 	if err == nil {
 		req.Header.Add("Accept", "application/json")
@@ -219,11 +219,11 @@ func (svc service) getMetricInt(ctx context.Context, q string, d time.Duration) 
 	default:
 		t = time.Now().UTC().Add(-d)
 	}
-	var v model.Value
+	var v modelProm.Value
 	v, _, err = svc.apiProm.Query(ctx, q, t)
 	if err == nil {
-		if v.Type() == model.ValVector {
-			if vv := v.(model.Vector); len(vv) > 0 {
+		if v.Type() == modelProm.ValVector {
+			if vv := v.(modelProm.Vector); len(vv) > 0 {
 				num = int(vv[0].Value)
 			}
 		}
