@@ -23,7 +23,7 @@ import (
 
 type Service interface {
 	ResolveActorLink(ctx context.Context, host, name string) (self vocab.IRI, err error)
-	FetchActor(ctx context.Context, self vocab.IRI) (a vocab.Actor, tags util.ObjectTags, err error)
+	FetchActor(ctx context.Context, addr vocab.IRI) (a vocab.Actor, tags util.ObjectTags, err error)
 	SendActivity(ctx context.Context, a vocab.Activity, inbox vocab.IRI) (err error)
 	nodeinfo.Resolver
 }
@@ -180,9 +180,7 @@ func (svc service) SendActivity(ctx context.Context, a vocab.Activity, inbox voc
 
 func (svc service) signRequest(req *http.Request, data []byte) (err error) {
 	var signer httpsig.Signer
-	if err == nil {
-		signer, _, err = httpsig.NewSigner(prefs, digestAlgorithm, headersToSign, httpsig.Signature, 120)
-	}
+	signer, _, err = httpsig.NewSigner(prefs, digestAlgorithm, headersToSign, httpsig.Signature, 120)
 	var privKey any
 	if err == nil {
 		privKey, err = ssh.ParseRawPrivateKey(svc.privKey)

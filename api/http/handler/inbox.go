@@ -7,6 +7,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"github.com/awakari/int-activitypub/api/http/reader"
 	"github.com/awakari/int-activitypub/service"
 	"github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/util"
@@ -81,6 +82,9 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 	actorIdLocal := ctx.Param("id")
 	err = h.svc.HandleActivity(ctx, actorIdLocal, actor, actorTags, activity, tags)
 	switch {
+	case errors.Is(err, reader.ErrConflict):
+		ctx.String(http.StatusConflict, err.Error())
+		return
 	case errors.Is(err, service.ErrNoAccept), errors.Is(err, service.ErrNoBot):
 		ctx.String(http.StatusUnprocessableEntity, err.Error())
 		return
