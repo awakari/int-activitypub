@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	apiHttp "github.com/awakari/int-activitypub/api/http"
 	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/storage"
 	"github.com/gin-gonic/gin"
@@ -64,6 +65,7 @@ func (f following) Handle(ctx *gin.Context) {
 		next = url.QueryEscape(next)
 		ocp.Next = vocab.IRI(f.baseUrl + "?" + keyCursor + "=" + next)
 	}
-	ctx.JSON(http.StatusOK, ocp)
+	ocpFixed := apiHttp.FixContext(ocp)
+	ctx.JSON(http.StatusOK, ocpFixed)
 	return
 }

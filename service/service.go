@@ -170,6 +170,8 @@ func (svc service) HandleActivity(
 	switch activity.Type {
 	case vocab.FollowType:
 		err = svc.handleFollowActivity(ctx, actorIdLocal, actorId, activity)
+	case vocab.UndoType:
+		err = svc.handleUndoActivity(ctx, actorIdLocal, actorId, activity)
 	default:
 		err = svc.handleSourceActivity(ctx, actorId, actor, actorTags, activity, activityTags)
 	}
@@ -177,7 +179,7 @@ func (svc service) HandleActivity(
 }
 
 func (svc service) handleFollowActivity(ctx context.Context, actorIdLocal, actorId string, activity vocab.Activity) (err error) {
-	cbUrl := svc.cbUrlBase + "?" + reader.QueryParamFollower + "=" + url.QueryEscape(actorId)
+	cbUrl := svc.makeCallbackUrl(actorId)
 	err = svc.r.CreateCallback(ctx, actorIdLocal, cbUrl)
 	var actor vocab.Actor
 	if err == nil {
@@ -187,6 +189,20 @@ func (svc service) handleFollowActivity(ctx context.Context, actorIdLocal, actor
 		accept := vocab.AcceptNew(vocab.ID(actorIdLocal), activity.Object)
 		err = svc.ap.SendActivity(ctx, *accept, actor.Inbox.GetID())
 	}
+	return
+}
+
+func (svc service) handleUndoActivity(ctx context.Context, actorIdLocal, actorId string, activity vocab.Activity) (err error) {
+	switch activity.Object.GetType() {
+	case vocab.FollowType:
+		cbUrl := svc.makeCallbackUrl(actorId)
+		err = svc.r.DeleteCallback(ctx, actorIdLocal, cbUrl)
+	}
+	return
+}
+
+func (svc service) makeCallbackUrl(actorId string) (cbUrl string) {
+	cbUrl = svc.cbUrlBase + "?" + reader.QueryParamFollower + "=" + url.QueryEscape(actorId)
 	return
 }
 

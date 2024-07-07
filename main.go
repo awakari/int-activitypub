@@ -219,13 +219,14 @@ func main() {
 	}
 	hwf := handler.NewWebFingerHandler(wf, cfg.Api.Http.Host, clientAwk)
 
-	// inbox, outbox, following
+	// handlers for inbox, outbox, following, followers
 	hi := handler.NewInboxHandler(svcActivityPub, svc)
 	ho := handler.NewOutboxHandler(vocab.OrderedCollectionPage{
 		ID:      vocab.IRI(fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host)),
 		Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
 	})
 	hFollowing := handler.NewFollowingHandler(stor, fmt.Sprintf("https://%s/following", cfg.Api.Http.Host))
+	hFollowers := handler.NewFollowersHandler(svcReader, fmt.Sprintf("https://%s/followers", cfg.Api.Http.Host))
 
 	r := gin.Default()
 	r.GET("/.well-known/webfinger", hwf.Handle)
@@ -235,6 +236,7 @@ func main() {
 	r.POST("/inbox", hi.Handle)
 	r.GET("/outbox", ho.Handle)
 	r.GET("/following", hFollowing.Handle)
+	r.GET("/followers/:id", hFollowers.Handle)
 	r.GET(nodeinfo.NodeInfoPath, func(ctx *gin.Context) {
 		nodeInfo.NodeInfoDiscover(ctx.Writer, ctx.Request)
 		return

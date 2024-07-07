@@ -23,3 +23,8 @@ func (m mock) DeleteCallback(ctx context.Context, subId, url string) (err error)
 	//TODO implement me
 	panic("implement me")
 }
+
+func (m mock) CountByInterest(ctx context.Context, interestId string) (count int64, err error) {
+	count = 42
+	return
+}

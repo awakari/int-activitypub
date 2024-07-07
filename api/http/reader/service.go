@@ -14,6 +14,7 @@ type Service interface {
 	CreateCallback(ctx context.Context, subId, url string) (err error)
 	GetCallback(ctx context.Context, subId, url string) (cb Callback, err error)
 	DeleteCallback(ctx context.Context, subId, url string) (err error)
+	CountByInterest(ctx context.Context, interestId string) (count int64, err error)
 }
 
 type service struct {
@@ -42,6 +43,37 @@ func NewService(clientHttp *http.Client, uriBase string) Service {
 
 func (svc service) CreateCallback(ctx context.Context, subId, callbackUrl string) (err error) {
 	err = svc.updateCallback(ctx, subId, callbackUrl, modeSubscribe)
+	return
+}
+
+func (svc service) CountByInterest(ctx context.Context, interestId string) (count int64, err error) {
+	var req *http.Request
+	req, err = http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/callbacks/list/%s", svc.uriBase, interestId), http.NoBody)
+	var resp *http.Response
+	if err == nil {
+		resp, err = svc.clientHttp.Do(req)
+	}
+	switch err {
+	case nil:
+		defer resp.Body.Close()
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var cbl CallbackList
+			err = json.NewDecoder(resp.Body).Decode(&cbl)
+			switch err {
+			case nil:
+				count = cbl.Count
+			default:
+				err = fmt.Errorf("%w: %s", ErrInternal, err)
+			}
+		case http.StatusNotFound:
+			err = ErrNotFound
+		default:
+			err = fmt.Errorf("%w: response status %d", ErrInternal, resp.StatusCode)
+		}
+	default:
+		err = fmt.Errorf("%w: %s", ErrInternal, err)
+	}
 	return
 }
 

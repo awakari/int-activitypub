@@ -39,6 +39,13 @@ func (sl serviceLogging) DeleteCallback(ctx context.Context, subId, url string) 
 	return
 }
 
+func (sl serviceLogging) CountByInterest(ctx context.Context, interestId string) (count int64, err error) {
+	count, err = sl.svc.CountByInterest(ctx, interestId)
+	ll := sl.logLevel(err)
+	sl.log.Log(ctx, ll, fmt.Sprintf("reader.CountByInterest(%s): %d, err=%s", interestId, count, err))
+	return
+}
+
 func (sl serviceLogging) logLevel(err error) (lvl slog.Level) {
 	switch err {
 	case nil:
