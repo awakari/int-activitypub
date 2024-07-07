@@ -37,7 +37,8 @@ func (hf followers) Handle(ctx *gin.Context) {
 		TotalItems: uint(count),
 		First:      vocab.IRI(url + "?page=1"),
 	}
-	ocpFixed := apiHttp.FixContext(ocp)
+	ocpFixed, cs := apiHttp.FixContext(ocp)
+	ctx.Writer.Header().Set("etag", fmt.Sprintf("W/\"%x\"", cs))
 	ctx.JSON(http.StatusOK, ocpFixed)
 	return
 }

@@ -65,7 +65,8 @@ func (f following) Handle(ctx *gin.Context) {
 		next = url.QueryEscape(next)
 		ocp.Next = vocab.IRI(f.baseUrl + "?" + keyCursor + "=" + next)
 	}
-	ocpFixed := apiHttp.FixContext(ocp)
+	ocpFixed, cs := apiHttp.FixContext(ocp)
+	ctx.Writer.Header().Set("etag", fmt.Sprintf("W/\"%x\"", cs))
 	ctx.JSON(http.StatusOK, ocpFixed)
 	return
 }

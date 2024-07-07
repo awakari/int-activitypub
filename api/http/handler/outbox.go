@@ -12,8 +12,9 @@ type outboxHandler struct {
 }
 
 func NewOutboxHandler(coll vocab.OrderedCollectionPage) Handler {
+	collFixed, _ := apiHttp.FixContext(coll)
 	return outboxHandler{
-		coll: apiHttp.FixContext(coll),
+		coll: collFixed,
 	}
 }
 

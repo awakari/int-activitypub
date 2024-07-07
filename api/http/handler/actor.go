@@ -17,6 +17,7 @@ import (
 type actorHandler struct {
 	actorDefault             vocab.Actor
 	actorDefaultFixed        map[string]any
+	actorDefaultChecksum     uint32
 	extraAttrs               map[string]any
 	clientAwk                api.Client
 	urlPrefixInterestDetails string
@@ -30,13 +31,14 @@ func NewActorHandler(
 	urlPrefixInterestDetails string,
 	cfgApi config.ApiConfig,
 ) (h Handler) {
-	aFixed := apiHttp.FixContext(actorDefault)
+	aFixed, aCheckSum := apiHttp.FixContext(actorDefault)
 	for k, v := range extraAttrs {
 		aFixed[k] = v
 	}
 	h = actorHandler{
 		actorDefault:             actorDefault,
 		actorDefaultFixed:        aFixed,
+		actorDefaultChecksum:     aCheckSum,
 		extraAttrs:               extraAttrs,
 		clientAwk:                clientAwk,
 		urlPrefixInterestDetails: urlPrefixInterestDetails,
@@ -88,6 +90,7 @@ func (ah actorHandler) handleDefault(ctx *gin.Context, accept string) {
 </body>`)
 	default:
 		ctx.Writer.Header().Add("Content-Type", "application/ld+json; profile=\"https://www.w3.org/ns/activitystreams\"")
+		ctx.Writer.Header().Set("etag", fmt.Sprintf("W/\"%x\"", ah.actorDefaultChecksum))
 		ctx.JSON(http.StatusOK, ah.actorDefaultFixed)
 	}
 	return
@@ -123,10 +126,11 @@ func (ah actorHandler) handleInterest(ctx *gin.Context, accept, id string) {
 					URL:  vocab.IRI(ah.urlPrefixInterestDetails + id),
 				},
 			}
-			aFixed := apiHttp.FixContext(actor)
+			aFixed, cs := apiHttp.FixContext(actor)
 			for k, v := range ah.extraAttrs {
 				aFixed[k] = v
 			}
+			ctx.Writer.Header().Set("etag", fmt.Sprintf("W/\"%x\"", cs))
 			ctx.JSON(http.StatusOK, aFixed)
 		case errors.Is(err, subscriptions.ErrNotFound):
 			ctx.String(http.StatusNotFound, "public interest does not exist: %s", id)
