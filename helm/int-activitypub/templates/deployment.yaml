@@ -123,10 +123,10 @@ spec:
               containerPort: {{ .Values.service.port }}
               protocol: TCP
             - name: http
-              containerPort: "{{ .Values.service.http.port }}"
+              containerPort: {{ .Values.service.http.port }}
               protocol: TCP
             - name: callback
-              containerPort: "{{ .Values.service.callback.port }}"
+              containerPort: {{ .Values.service.callback.port }}
               protocol: TCP
           livenessProbe:
             grpc:
