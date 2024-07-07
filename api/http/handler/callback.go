@@ -4,8 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/awakari/int-activitypub/api/http/reader"
+	"github.com/awakari/int-activitypub/service/activitypub"
+	"github.com/awakari/int-activitypub/service/converter"
+	"github.com/bytedance/sonic/utf8"
+	ceProto "github.com/cloudevents/sdk-go/binding/format/protobuf/v2"
+	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	ce "github.com/cloudevents/sdk-go/v2/event"
 	"github.com/gin-gonic/gin"
+	vocab "github.com/go-ap/activitypub"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -19,6 +25,8 @@ type CallbackHandler interface {
 
 type callbackHandler struct {
 	topicPrefixBase string
+	svcConv         converter.Service
+	svcAp           activitypub.Service
 }
 
 const keyHubChallenge = "hub.challenge"
@@ -26,9 +34,11 @@ const keyHubTopic = "hub.topic"
 const linkSelfSuffix = ">; rel=\"self\""
 const keyAckCount = "X-Ack-Count"
 
-func NewCallbackHandler(topicPrefixBase string) CallbackHandler {
+func NewCallbackHandler(topicPrefixBase string, svcConv converter.Service, svcAp activitypub.Service) CallbackHandler {
 	return callbackHandler{
 		topicPrefixBase: topicPrefixBase,
+		svcConv:         svcConv,
+		svcAp:           svcAp,
 	}
 }
 
@@ -71,9 +81,17 @@ func (ch callbackHandler) Deliver(ctx *gin.Context) {
 		return
 	}
 
-	follower, err := url.QueryUnescape(ctx.Query(reader.QueryParamFollower))
-	if err != nil || follower == "" {
+	followerUrl, err := url.QueryUnescape(ctx.Query(reader.QueryParamFollower))
+	if err != nil || followerUrl == "" {
 		ctx.String(http.StatusBadRequest, fmt.Sprintf("follower parameter is missing or invalid: val=%s, err=%s", ctx.Query(reader.QueryParamFollower), err))
+		return
+	}
+
+	var follower vocab.Actor
+	follower, _, err = ch.svcAp.FetchActor(ctx, vocab.IRI(followerUrl))
+	if err != nil {
+		ctx.String(http.StatusInternalServerError, fmt.Sprintf("failed to resolve the follower %s: %s", follower, err))
+		return
 	}
 
 	defer ctx.Request.Body.Close()
@@ -84,9 +102,39 @@ func (ch callbackHandler) Deliver(ctx *gin.Context) {
 		return
 	}
 
-	fmt.Printf("Deliver %d events to %s following the interest %s\n", len(evts), follower, interestId)
-	ctx.Writer.Header().Add(keyAckCount, strconv.FormatUint(uint64(len(evts)), 10))
-	ctx.Status(http.StatusOK)
+	var countDelivered uint64
+	for _, evt := range evts {
+		var evtProto *pb.CloudEvent
+		evtProto, err = ceProto.ToProto(evt)
+		var dataTxt string
+		if err == nil {
+			err = evt.DataAs(&dataTxt)
+		}
+		if err == nil && utf8.ValidateString(dataTxt) {
+			evtProto.Data = &pb.CloudEvent_TextData{
+				TextData: dataTxt,
+			}
+		}
+		var a vocab.Activity
+		if err == nil {
+			a, err = ch.svcConv.ConvertEventToActivity(ctx, evtProto, interestId, follower.ID)
+		}
+		if err == nil {
+			err = ch.svcAp.SendActivity(ctx, a, follower.Inbox.GetLink())
+		}
+		if err != nil {
+			break
+		}
+		countDelivered++
+	}
+
+	ctx.Writer.Header().Add(keyAckCount, strconv.FormatUint(countDelivered, 10))
+	switch {
+	case countDelivered < 1 && err != nil:
+		ctx.String(http.StatusInternalServerError, err.Error())
+	default:
+		ctx.Status(http.StatusOK)
+	}
 
 	return
 }

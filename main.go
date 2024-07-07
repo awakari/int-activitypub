@@ -77,7 +77,7 @@ func main() {
 	svcActivityPub := activitypub.NewService(clientHttp, cfg.Api.Http.Host, []byte(cfg.Api.Key.Private), ap)
 	svcActivityPub = activitypub.NewServiceLogging(svcActivityPub, log)
 
-	svcConv := converter.NewService(cfg.Api.EventType)
+	svcConv := converter.NewService(cfg.Api.EventType, fmt.Sprintf("https://%s", cfg.Api.Http.Host), vocab.ActivityVocabularyType(cfg.Api.Actor.Type))
 	svcConv = converter.NewLogging(svcConv, log)
 
 	svcWriter := writer.NewService(clientAwk, cfg.Api.Writer.Backoff)
@@ -113,7 +113,7 @@ func main() {
 			NodeDescription: cfg.Api.Node.Description,
 			Private:         false,
 			Software: nodeinfo.SoftwareMeta{
-				HomePage: "https://awakari.com/activitypub",
+				HomePage: "https://awakari.com",
 				GitHub:   "https://github.com/awakari/int-activitypub",
 				Follow:   "https://github.com/awakari/int-activitypub",
 			},
@@ -254,7 +254,7 @@ func main() {
 		}
 	}()
 
-	hc := handler.NewCallbackHandler(cfg.Api.Reader.Uri)
+	hc := handler.NewCallbackHandler(cfg.Api.Reader.Uri, svcConv, svcActivityPub)
 
 	log.Info(fmt.Sprintf("starting to listen the HTTP API @ port #%d...", cfg.Api.Reader.CallBack.Port))
 	internalCallbacks := gin.Default()

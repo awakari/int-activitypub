@@ -15,7 +15,7 @@ import (
 )
 
 func TestService_Convert(t *testing.T) {
-	svc := NewService("foo")
+	svc := NewService("foo", "urlBase", vocab.ServiceType)
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
 		actor vocab.Actor
@@ -500,7 +500,7 @@ func TestService_Convert(t *testing.T) {
 			var activity vocab.Activity
 			err := json.Unmarshal([]byte(c.in), &activity)
 			require.Nil(t, err)
-			evt, err := svc.Convert(context.TODO(), c.actor, activity, util.ActivityTags{})
+			evt, err := svc.ConvertActivityToEvent(context.TODO(), c.actor, activity, util.ActivityTags{})
 			if c.out == nil {
 				assert.Nil(t, evt)
 			} else {

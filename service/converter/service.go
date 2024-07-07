@@ -14,11 +14,14 @@ import (
 )
 
 type Service interface {
-	Convert(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (evt *pb.CloudEvent, err error)
+	ConvertActivityToEvent(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (evt *pb.CloudEvent, err error)
+	ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent, interestId string, followerId vocab.ID) (a vocab.Activity, err error)
 }
 
 type service struct {
-	ceType string
+	ceType    string
+	urlBase   string
+	actorType vocab.ActivityVocabularyType
 }
 
 const CeSpecVersion = "1.0"
@@ -49,13 +52,15 @@ const asPublic = "https://www.w3.org/ns/activitystreams#Public"
 
 var ErrFail = errors.New("failed to convert")
 
-func NewService(ceType string) Service {
+func NewService(ceType, urlBase string, actorType vocab.ActivityVocabularyType) Service {
 	return service{
-		ceType: ceType,
+		ceType:    ceType,
+		urlBase:   urlBase,
+		actorType: actorType,
 	}
 }
 
-func (svc service) Convert(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (evt *pb.CloudEvent, err error) {
+func (svc service) ConvertActivityToEvent(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (evt *pb.CloudEvent, err error) {
 	//
 	evt = &pb.CloudEvent{
 		Id:          uuid.NewString(),
@@ -473,6 +478,103 @@ func convertLocation(loc vocab.Item, evt *pb.CloudEvent) (err error) {
 		}
 	default:
 		err = fmt.Errorf("%w location, unexpected type: %s", ErrFail, reflect.TypeOf(loc))
+	}
+	return
+}
+
+func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent, interestId string, followerId vocab.ID) (a vocab.Activity, err error) {
+	a.ID = vocab.ID(svc.urlBase + "/" + evt.Id)
+	attrAction, actionPresent := evt.Attributes[CeKeyAction]
+	switch actionPresent {
+	case true:
+		a.Type = vocab.ActivityVocabularyType(attrAction.GetCeString())
+	default:
+		a.Type = vocab.CreateType
+	}
+	a.Actor = vocab.ActorNew(vocab.ID(fmt.Sprintf("%s/actor/%s", svc.urlBase, interestId)), svc.actorType)
+	var objType vocab.ActivityVocabularyType
+	attrObj, objPresent := evt.Attributes[CeKeyObject]
+	if objPresent {
+		objType = vocab.ActivityVocabularyType(attrObj.GetCeString())
+		if objType == "" {
+			objType = vocab.ActivityVocabularyType(attrObj.GetCeUri())
+		}
+	}
+	if !vocab.ObjectTypes.Contains(objType) {
+		objType = vocab.NoteType
+	}
+	obj := vocab.ObjectNew(objType)
+	a.Object = obj
+	obj.ID = vocab.ID(svc.urlBase + "/" + evt.Id)
+	attrTs, tsPresent := evt.Attributes[CeKeyTime]
+	if tsPresent {
+		obj.Published = attrTs.GetCeTimestamp().AsTime()
+	}
+	attrTsUpd, tsUpdPresent := evt.Attributes[CeKeyUpdated]
+	if tsUpdPresent {
+		obj.Updated = attrTsUpd.GetCeTimestamp().AsTime()
+	}
+	obj.Content = vocab.DefaultNaturalLanguageValue(evt.GetTextData())
+	obj.To = vocab.ItemCollection{
+		followerId,
+	}
+	obj.CC = vocab.ItemCollection{
+		vocab.IRI("https://www.w3.org/ns/activitystreams#Public"),
+	}
+	obj.AttributedTo = vocab.ItemCollection{
+		vocab.IRI(evt.Source),
+	}
+	attrObjUrl, attrObjUrlPresent := evt.Attributes[CeKeyObjectUrl]
+	if attrObjUrlPresent {
+		objUrl := attrObjUrl.GetCeString()
+		if objUrl == "" {
+			objUrl = attrObjUrl.GetCeUri()
+		}
+		obj.URL = vocab.LinkNew(vocab.ID(objUrl), vocab.LinkType)
+	}
+	attrAttType, attrAttTypePresent := evt.Attributes[CeKeyAttachmentType]
+	attrAttUrl, attrAttUrlPresent := evt.Attributes[CeKeyAttachmentUrl]
+	if attrAttTypePresent && attrAttUrlPresent {
+		objAtt := vocab.ObjectNew(vocab.ObjectType)
+		objAtt.MediaType = vocab.MimeType(attrAttType.GetCeString())
+		objAttUrl := attrAttUrl.GetCeUri()
+		if objAttUrl == "" {
+			objAttUrl = attrAttUrl.GetCeString()
+		}
+		objAtt.URL = vocab.LinkNew(vocab.ID(objAttUrl), vocab.LinkType)
+		obj.Attachment = objAtt
+	}
+	attrCats, attrCatsPresent := evt.Attributes[CeKeyCategories]
+	if attrCatsPresent {
+		for _, cat := range strings.Split(attrCats.GetCeString(), " ") {
+			t := vocab.ObjectNew(vocab.ObjectType)
+			t.Name = vocab.DefaultNaturalLanguageValue(cat)
+			obj.Tag = append(obj.Tag, t)
+		}
+	}
+	attrIco, attrIcoPresent := evt.Attributes[CeKeyIcon]
+	if attrIcoPresent {
+		icoUrl := attrIco.GetCeString()
+		if icoUrl == "" {
+			icoUrl = attrIco.GetCeUri()
+		}
+		obj.Icon = vocab.LinkNew(vocab.ID(icoUrl), vocab.LinkType)
+	}
+	attrImg, attrImgPresent := evt.Attributes[CeKeyImageUrl]
+	if attrImgPresent {
+		imgUrl := attrImg.GetCeString()
+		if imgUrl == "" {
+			imgUrl = attrIco.GetCeUri()
+		}
+		obj.Image = vocab.LinkNew(vocab.ID(imgUrl), vocab.LinkType)
+	}
+	attrPreview, attrPreviewPresent := evt.Attributes[CeKeyPreview]
+	if attrPreviewPresent {
+		previewUrl := attrPreview.GetCeString()
+		if previewUrl == "" {
+			previewUrl = attrIco.GetCeUri()
+		}
+		obj.Image = vocab.LinkNew(vocab.ID(previewUrl), vocab.LinkType)
 	}
 	return
 }

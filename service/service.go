@@ -146,7 +146,7 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 			Actor:   vocab.IRI(fmt.Sprintf("https://%s/actor", svc.hostSelf)),
 			Object:  vocab.IRI(addrResolved),
 		}
-		err = svc.ap.SendActivity(ctx, activity, actor.Inbox.GetID())
+		err = svc.ap.SendActivity(ctx, activity, actor.Inbox.GetLink())
 		if err != nil {
 			src.Err = err.Error()
 			_ = svc.stor.Update(ctx, src)
@@ -187,7 +187,7 @@ func (svc service) handleFollowActivity(ctx context.Context, actorIdLocal, actor
 	}
 	if err == nil {
 		accept := vocab.AcceptNew(vocab.ID(actorIdLocal), activity.Object)
-		err = svc.ap.SendActivity(ctx, *accept, actor.Inbox.GetID())
+		err = svc.ap.SendActivity(ctx, *accept, actor.Inbox.GetLink())
 	}
 	return
 }
@@ -229,7 +229,7 @@ func (svc service) handleSourceActivity(
 			err = svc.stor.Delete(ctx, srcId, src.GroupId, src.UserId)
 		case src.Accepted:
 			var evt *pb.CloudEvent
-			evt, _ = svc.conv.Convert(ctx, actor, activity, activityTags)
+			evt, _ = svc.conv.ConvertActivityToEvent(ctx, actor, activity, activityTags)
 			if evt != nil && evt.Data != nil {
 				t := time.Now().UTC()
 				// don't update the storage on every activity but only when difference is higher than the threshold

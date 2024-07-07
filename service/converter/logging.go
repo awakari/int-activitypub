@@ -21,14 +21,20 @@ func NewLogging(svc Service, log *slog.Logger) Service {
 	}
 }
 
-func (l logging) Convert(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (evt *pb.CloudEvent, err error) {
-	evt, err = l.svc.Convert(ctx, actor, activity, tags)
+func (l logging) ConvertActivityToEvent(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (evt *pb.CloudEvent, err error) {
+	evt, err = l.svc.ConvertActivityToEvent(ctx, actor, activity, tags)
 	switch evt {
 	case nil:
-		l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.Convert(actor=%s, activity=%s, tags=%d): <nil>, %s", actor.ID, activity.ID, len(tags.Tag), err))
+		l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.ConvertActivityToEvent(actor=%s, activity=%s, tags=%d): <nil>, %s", actor.ID, activity.ID, len(tags.Tag), err))
 	default:
-		l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.Convert(actor=%s, activity=%s, tags=%d): %s, %s", actor.ID, activity.ID, len(tags.Tag), evt.Id, err))
+		l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.ConvertActivityToEvent(actor=%s, activity=%s, tags=%d): %s, %s", actor.ID, activity.ID, len(tags.Tag), evt.Id, err))
 	}
+	return
+}
+
+func (l logging) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent, interestId string, followerId vocab.ID) (a vocab.Activity, err error) {
+	a, err = l.svc.ConvertEventToActivity(ctx, evt, interestId, followerId)
+	l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.ConvertEventToActivity(evtId=%s, interestId=%s, followerId=%s): err=%s", evt.Id, interestId, followerId, err))
 	return
 }
 
