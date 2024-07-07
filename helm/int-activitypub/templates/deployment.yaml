@@ -53,7 +53,7 @@ spec:
             - name: API_READER_CALLBACK_PROTOCOL
               value: "{{ .Values.api.reader.callback.protocol }}"
             - name: API_READER_CALLBACK_HOST
-              value: "{{ include "bot-telegram.fullname" . }}"
+              value: "{{ include "int-activitypub.fullname" . }}"
             - name: API_READER_CALLBACK_PORT
               value: "{{ .Values.service.callback.port }}"
             - name: API_READER_CALLBACK_PATH
