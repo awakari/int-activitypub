@@ -15,7 +15,7 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
-    - port: "{{ .Values.service.callback.port }}"
+    - port: {{ .Values.service.callback.port }}
       targetPort: callback
       protocol: TCP
       name: callback
