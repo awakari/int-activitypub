@@ -30,7 +30,7 @@ type Service interface {
 
 type service struct {
 	clientHttp *http.Client
-	userAgent  string
+	hostname   string
 	privKey    []byte
 	apiProm    apiPromV1.API
 }
@@ -53,10 +53,10 @@ var ErrActorWebFinger = errors.New("failed to get the webfinger data for actor")
 var ErrActorFetch = errors.New("failed to get the actor")
 var ErrActivitySend = errors.New("failed to send activity")
 
-func NewService(clientHttp *http.Client, userAgent string, privKey []byte, apiProm apiPromV1.API) Service {
+func NewService(clientHttp *http.Client, hostname string, privKey []byte, apiProm apiPromV1.API) Service {
 	return service{
 		clientHttp: clientHttp,
-		userAgent:  userAgent,
+		hostname:   hostname,
 		privKey:    privKey,
 		apiProm:    apiProm,
 	}
@@ -68,7 +68,7 @@ func (svc service) ResolveActorLink(ctx context.Context, host, name string) (sel
 	var resp *http.Response
 	if err == nil {
 		req.Header.Add("Accept", "application/json")
-		req.Header.Add("User-Agent", svc.userAgent)
+		req.Header.Add("User-Agent", svc.hostname)
 		resp, err = svc.clientHttp.Do(req)
 	}
 	var data []byte
@@ -107,7 +107,7 @@ func (svc service) FetchActor(ctx context.Context, addr vocab.IRI) (actor vocab.
 		req.Header.Set("Host", reqUrl.Host)
 		req.Header.Add("Accept", "application/activity+json")
 		req.Header.Add("Accept-Charset", "utf-8")
-		req.Header.Add("User-Agent", svc.userAgent)
+		req.Header.Add("User-Agent", svc.hostname)
 		now := time.Now().UTC()
 		req.Header.Set("Date", now.Format(http.TimeFormat))
 	}
@@ -154,7 +154,7 @@ func (svc service) SendActivity(ctx context.Context, a vocab.Activity, inbox voc
 		req.Header.Set("Host", inboxUrl.Host)
 		req.Header.Set("Content-Type", "application/ld+json; profile=\"http://www.w3.org/ns/activitystreams\"")
 		req.Header.Add("Accept-Charset", "utf-8")
-		req.Header.Add("User-Agent", svc.userAgent)
+		req.Header.Add("User-Agent", svc.hostname)
 		now := time.Now().UTC()
 		req.Header.Set("Date", now.Format(http.TimeFormat))
 	}
@@ -190,7 +190,7 @@ func (svc service) signRequest(req *http.Request, data []byte) (err error) {
 		}
 	}
 	if err == nil {
-		err = signer.SignRequest(privKey, fmt.Sprintf("https://%s/actor#main-key", svc.userAgent), req, data)
+		err = signer.SignRequest(privKey, fmt.Sprintf("https://%s/actor#main-key", svc.hostname), req, data)
 		if err != nil {
 			err = fmt.Errorf("failed to sign the follow request: %w", err)
 		}

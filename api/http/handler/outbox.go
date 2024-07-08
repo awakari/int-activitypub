@@ -7,18 +7,18 @@ import (
 	"net/http"
 )
 
-type outboxHandler struct {
+type dummyCollHandler struct {
 	coll map[string]any
 }
 
-func NewOutboxHandler(coll vocab.OrderedCollectionPage) Handler {
+func NewDummyCollectionHandler(coll vocab.OrderedCollectionPage) Handler {
 	collFixed, _ := apiHttp.FixContext(coll)
-	return outboxHandler{
+	return dummyCollHandler{
 		coll: collFixed,
 	}
 }
 
-func (o outboxHandler) Handle(ctx *gin.Context) {
+func (o dummyCollHandler) Handle(ctx *gin.Context) {
 	ctx.Writer.Header().Add("Content-Type", "application/ld+json; profile=\"https://www.w3.org/ns/activitystreams\"")
 	ctx.JSON(http.StatusOK, o.coll)
 	return

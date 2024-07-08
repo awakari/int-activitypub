@@ -171,7 +171,7 @@ func main() {
 		Outbox:            vocab.IRI(fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host)),
 		Following:         vocab.IRI(fmt.Sprintf("https://%s/following", cfg.Api.Http.Host)),
 		Followers:         vocab.IRI(fmt.Sprintf("https://%s/followers", cfg.Api.Http.Host)),
-		PreferredUsername: vocab.DefaultNaturalLanguageValue("Awakari"),
+		PreferredUsername: vocab.DefaultNaturalLanguageValue(cfg.Api.Actor.Name),
 		Endpoints: &vocab.Endpoints{
 			SharedInbox: vocab.IRI(fmt.Sprintf("https://%s/inbox", cfg.Api.Http.Host)),
 		},
@@ -221,9 +221,11 @@ func main() {
 
 	// handlers for inbox, outbox, following, followers
 	hi := handler.NewInboxHandler(svcActivityPub, svc)
-	ho := handler.NewOutboxHandler(vocab.OrderedCollectionPage{
+	ho := handler.NewDummyCollectionHandler(vocab.OrderedCollectionPage{
 		ID:      vocab.IRI(fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host)),
 		Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
+		PartOf:  vocab.IRI(fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host)),
+		First:   vocab.IRI(fmt.Sprintf("https://%s/outbox?page=1", cfg.Api.Http.Host)),
 	})
 	hFollowing := handler.NewFollowingHandler(stor, fmt.Sprintf("https://%s/following", cfg.Api.Http.Host))
 	hFollowers := handler.NewFollowersHandler(svcReader, fmt.Sprintf("https://%s/followers", cfg.Api.Http.Host))
@@ -234,7 +236,14 @@ func main() {
 	r.GET("/actor", ha.Handle)
 	r.POST("/inbox/:id", hi.Handle)
 	r.POST("/inbox", hi.Handle)
+	r.GET("/outbox/:id", ho.Handle)
 	r.GET("/outbox", ho.Handle)
+	r.GET("/following/:id", handler.NewDummyCollectionHandler(vocab.OrderedCollectionPage{
+		ID:      vocab.IRI(fmt.Sprintf("https://%s/dummy/inbox", cfg.Api.Http.Host)),
+		Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
+		PartOf:  vocab.IRI(fmt.Sprintf("https://%s/dummy/inbox", cfg.Api.Http.Host)),
+		First:   vocab.IRI(fmt.Sprintf("https://%s/dummy/inbox?page=1", cfg.Api.Http.Host)),
+	}).Handle)
 	r.GET("/following", hFollowing.Handle)
 	r.GET("/followers/:id", hFollowers.Handle)
 	r.GET(nodeinfo.NodeInfoPath, func(ctx *gin.Context) {

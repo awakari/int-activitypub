@@ -41,7 +41,7 @@ func TestService_RequestFollow(t *testing.T) {
 		vocab.Activity{
 			Type:    vocab.FollowType,
 			Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
-			Actor:   vocab.IRI(fmt.Sprintf("https://%s/actor", "https://activitypub.awakari.com")),
+			Actor:   vocab.IRI(fmt.Sprintf("https://%s/actor", "activitypub.awakari.com")),
 			Object:  vocab.IRI("https://mastodon.social/users/akurilov"),
 		},
 		"https://mastodon.social/users/akurilov/inbox",
