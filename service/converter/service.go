@@ -522,7 +522,7 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 		vocab.IRI("https://www.w3.org/ns/activitystreams#Public"),
 	}
 	obj.AttributedTo = vocab.ItemCollection{
-		vocab.IRI(evt.Source),
+		a.Actor,
 	}
 	attrObjUrl, attrObjUrlPresent := evt.Attributes[CeKeyObjectUrl]
 	if attrObjUrlPresent {
