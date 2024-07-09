@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-func TestService_Convert(t *testing.T) {
+func TestService_ConvertActivityToEvent(t *testing.T) {
 	svc := NewService("foo", "urlBase", vocab.ServiceType)
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {

@@ -89,7 +89,7 @@ func (ah actorHandler) handleDefault(ctx *gin.Context, accept string) {
 	</p>
 </body>`)
 	default:
-		ctx.Writer.Header().Add("Content-Type", "application/ld+json; profile=\"https://www.w3.org/ns/activitystreams\"")
+		ctx.Writer.Header().Set("content-type", apiHttp.ContentTypeActivity)
 		ctx.Writer.Header().Set("etag", fmt.Sprintf("W/\"%x\"", ah.actorDefaultChecksum))
 		ctx.JSON(http.StatusOK, ah.actorDefaultFixed)
 	}
@@ -105,7 +105,6 @@ func (ah actorHandler) handleInterest(ctx *gin.Context, accept, id string) {
 		d, err := ah.clientAwk.ReadSubscription(ctxAwk, model.UserIdDefault, id)
 		switch {
 		case err == nil:
-			ctx.Writer.Header().Add("Content-Type", "application/ld+json; profile=\"https://www.w3.org/ns/activitystreams\"")
 			actor := ah.actorDefault // derive the default actor
 			actor.ID = vocab.ID(fmt.Sprintf("https://%s/actor/%s", ah.cfgApi.Http.Host, id))
 			actor.Name = vocab.DefaultNaturalLanguageValue(id)
@@ -130,6 +129,7 @@ func (ah actorHandler) handleInterest(ctx *gin.Context, accept, id string) {
 			for k, v := range ah.extraAttrs {
 				aFixed[k] = v
 			}
+			ctx.Writer.Header().Set("content-type", apiHttp.ContentTypeActivity)
 			ctx.Writer.Header().Set("etag", fmt.Sprintf("W/\"%x\"", cs))
 			ctx.JSON(http.StatusOK, aFixed)
 		case errors.Is(err, subscriptions.ErrNotFound):

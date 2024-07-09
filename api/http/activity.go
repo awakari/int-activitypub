@@ -6,6 +6,8 @@ import (
 	"hash/crc32"
 )
 
+const ContentTypeActivity = "application/activity+json; charset=utf-8"
+
 var contextExtMastodon = map[string]any{
 	"manuallyApprovesFollowers": "as:manuallyApprovesFollowers",
 	"toot":                      "http://joinmastodon.org/ns#",

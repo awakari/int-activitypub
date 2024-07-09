@@ -32,9 +32,9 @@ func (l logging) ConvertActivityToEvent(ctx context.Context, actor vocab.Actor, 
 	return
 }
 
-func (l logging) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent, interestId string, followerId vocab.ID) (a vocab.Activity, err error) {
-	a, err = l.svc.ConvertEventToActivity(ctx, evt, interestId, followerId)
-	l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.ConvertEventToActivity(evtId=%s, interestId=%s, followerId=%s): err=%s", evt.Id, interestId, followerId, err))
+func (l logging) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent, interestId string, follower vocab.Actor) (a vocab.Activity, err error) {
+	a, err = l.svc.ConvertEventToActivity(ctx, evt, interestId, follower)
+	l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.ConvertEventToActivity(evtId=%s, interestId=%s, followerId=%s): err=%s", evt.Id, interestId, follower.ID, err))
 	return
 }
 

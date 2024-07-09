@@ -142,6 +142,7 @@ func (svc service) SendActivity(ctx context.Context, a vocab.Activity, inbox voc
 	aFixed, _ := apiHttp.FixContext(a)
 	var d []byte
 	d, err = json.Marshal(aFixed)
+	fmt.Printf("SendActivity: %s\n", string(d))
 	var req *http.Request
 	if err == nil {
 		req, err = http.NewRequestWithContext(ctx, http.MethodPost, string(inbox), bytes.NewReader(d))
@@ -152,7 +153,7 @@ func (svc service) SendActivity(ctx context.Context, a vocab.Activity, inbox voc
 	}
 	if err == nil {
 		req.Header.Set("Host", inboxUrl.Host)
-		req.Header.Set("Content-Type", "application/ld+json; profile=\"http://www.w3.org/ns/activitystreams\"")
+		req.Header.Set("Content-Type", apiHttp.ContentTypeActivity)
 		req.Header.Add("Accept-Charset", "utf-8")
 		req.Header.Add("User-Agent", svc.hostname)
 		now := time.Now().UTC()
@@ -168,8 +169,10 @@ func (svc service) SendActivity(ctx context.Context, a vocab.Activity, inbox voc
 	var respData []byte
 	if err == nil {
 		respData, err = io.ReadAll(io.LimitReader(resp.Body, limitRespBodyLen))
-		if err == nil && resp.StatusCode >= 300 {
-			err = fmt.Errorf("follow response status: %d, headers: %+v, content:\n%s\n", resp.StatusCode, resp.Header, string(respData))
+		if err == nil {
+			if resp.StatusCode >= 300 {
+				err = fmt.Errorf("follow response status: %d, headers: %+v, content:\n%s\n", resp.StatusCode, resp.Header, string(respData))
+			}
 		}
 	}
 	//

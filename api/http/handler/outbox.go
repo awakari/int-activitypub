@@ -19,7 +19,7 @@ func NewDummyCollectionHandler(coll vocab.OrderedCollectionPage) Handler {
 }
 
 func (o dummyCollHandler) Handle(ctx *gin.Context) {
-	ctx.Writer.Header().Add("Content-Type", "application/ld+json; profile=\"https://www.w3.org/ns/activitystreams\"")
+	ctx.Writer.Header().Set("content-type", apiHttp.ContentTypeActivity)
 	ctx.JSON(http.StatusOK, o.coll)
 	return
 }

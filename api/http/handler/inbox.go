@@ -60,7 +60,7 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 
 	t := activity.Type
 	if t == "" || t == vocab.DeleteType && activity.Actor.GetID() == activity.Object.GetID() {
-		ctx.Status(http.StatusOK)
+		ctx.Status(http.StatusAccepted)
 		return
 	}
 
@@ -96,7 +96,7 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusOK)
+	ctx.Status(http.StatusAccepted)
 	return
 }
 
