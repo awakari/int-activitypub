@@ -4,6 +4,7 @@ import (
 	"fmt"
 	apiHttp "github.com/awakari/int-activitypub/api/http"
 	"github.com/awakari/int-activitypub/api/http/reader"
+	"github.com/awakari/int-activitypub/model"
 	"github.com/gin-gonic/gin"
 	vocab "github.com/go-ap/activitypub"
 	"net/http"
@@ -32,7 +33,7 @@ func (hf followers) Handle(ctx *gin.Context) {
 	ocp := vocab.OrderedCollectionPage{
 		ID:         vocab.IRI(url),
 		Type:       "OrderedCollectionPage",
-		Context:    vocab.IRI("https://www.w3.org/ns/activitystreams"),
+		Context:    vocab.IRI(model.NsAs),
 		PartOf:     vocab.IRI(url),
 		TotalItems: uint(count),
 		First:      vocab.IRI(url + "?page=1"),

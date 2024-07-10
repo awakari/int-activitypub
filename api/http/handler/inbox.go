@@ -35,6 +35,7 @@ func NewInboxHandler(svcActivityPub activitypub.Service, svc service.Service) Ha
 func (h inboxHandler) Handle(ctx *gin.Context) {
 
 	req := ctx.Request
+	defer req.Body.Close()
 	data, err := io.ReadAll(io.LimitReader(req.Body, limitReqBodyLen))
 	if err != nil {
 		fmt.Printf("Inbox request read failure: %s\n", err)

@@ -52,7 +52,7 @@ func (f following) Handle(ctx *gin.Context) {
 	ocp := vocab.OrderedCollectionPage{
 		ID:         vocab.IRI(f.baseUrl + "?" + keyCursor + "=" + cursor),
 		Type:       "OrderedCollectionPage",
-		Context:    vocab.IRI("https://www.w3.org/ns/activitystreams"),
+		Context:    vocab.IRI(model.NsAs),
 		PartOf:     vocab.IRI(f.baseUrl),
 		TotalItems: uint(count),
 		First:      vocab.IRI(f.baseUrl),

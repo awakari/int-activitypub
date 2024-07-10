@@ -3,6 +3,7 @@ package reader
 import (
 	"context"
 	"fmt"
+	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"log/slog"
 )
 
@@ -43,6 +44,13 @@ func (sl serviceLogging) CountByInterest(ctx context.Context, interestId string)
 	count, err = sl.svc.CountByInterest(ctx, interestId)
 	ll := sl.logLevel(err)
 	sl.log.Log(ctx, ll, fmt.Sprintf("reader.CountByInterest(%s): %d, err=%s", interestId, count, err))
+	return
+}
+
+func (sl serviceLogging) Read(ctx context.Context, interestId string, limit int) (last []*pb.CloudEvent, err error) {
+	last, err = sl.svc.Read(ctx, interestId, limit)
+	ll := sl.logLevel(err)
+	sl.log.Log(ctx, ll, fmt.Sprintf("reader.Read(%s, %d): %d, err=%s", interestId, limit, len(last), err))
 	return
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/awakari/int-activitypub/api/http/handler"
 	"github.com/awakari/int-activitypub/api/http/reader"
 	"github.com/awakari/int-activitypub/config"
+	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/service"
 	"github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/service/converter"
@@ -145,7 +146,7 @@ func main() {
 		Type: vocab.ActivityVocabularyType(cfg.Api.Actor.Type),
 		Name: vocab.DefaultNaturalLanguageValue(cfg.Api.Actor.Name),
 		Context: vocab.ItemCollection{
-			vocab.IRI("https://www.w3.org/ns/activitystreams"),
+			vocab.IRI(model.NsAs),
 			vocab.IRI("https://w3id.org/security/v1"),
 		},
 		Icon: vocab.Image{
@@ -204,6 +205,7 @@ func main() {
 		"indexable":                 true,
 		"memorial":                  false,
 	}
+	// TODO get the url prefix from config
 	ha := handler.NewActorHandler(actor, actorExtraAttrs, clientAwk, "https://awakari.com/sub-details.html?id=", cfg.Api)
 
 	// WebFinger
@@ -221,7 +223,8 @@ func main() {
 
 	// handlers for inbox, outbox, following, followers
 	hi := handler.NewInboxHandler(svcActivityPub, svc)
-	ho := handler.NewDummyCollectionHandler(vocab.OrderedCollectionPage{
+	ho := handler.NewOutboxHandler(svcReader, svcConv, fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host))
+	hoDummy := handler.NewDummyCollectionHandler(vocab.OrderedCollectionPage{
 		ID:      vocab.IRI(fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host)),
 		Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
 		PartOf:  vocab.IRI(fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host)),
@@ -237,7 +240,7 @@ func main() {
 	r.POST("/inbox/:id", hi.Handle)
 	r.POST("/inbox", hi.Handle)
 	r.GET("/outbox/:id", ho.Handle)
-	r.GET("/outbox", ho.Handle)
+	r.GET("/outbox", hoDummy.Handle)
 	r.GET("/following/:id", handler.NewDummyCollectionHandler(vocab.OrderedCollectionPage{
 		ID:      vocab.IRI(fmt.Sprintf("https://%s/dummy/inbox", cfg.Api.Http.Host)),
 		Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),

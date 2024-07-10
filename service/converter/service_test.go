@@ -411,10 +411,10 @@ func TestService_ConvertActivityToEvent(t *testing.T) {
       "atomUri": "ostatus:atomUri",
       "inReplyToAtomUri": "ostatus:inReplyToAtomUri",
       "conversation": "ostatus:conversation",
-      "sensitive": "as:sensitive",
+      "sensitive": "NsAs:sensitive",
       "toot": "http://joinmastodon.org/ns#",
       "votersCount": "toot:votersCount",
-      "Hashtag": "as:Hashtag"
+      "Hashtag": "NsAs:Hashtag"
     }
   ],
   "id": "https://mastodon.social/users/akurilov/statuses/112614067761000729",

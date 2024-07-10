@@ -1,8 +1,16 @@
 package reader
 
-import "context"
+import (
+	"context"
+	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
+)
 
 type mock struct {
+}
+
+func (m mock) Read(ctx context.Context, interestId string, limit int) (last []*pb.CloudEvent, err error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func NewServiceMock() Service {

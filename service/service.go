@@ -142,7 +142,7 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 	if err == nil {
 		activity := vocab.Activity{
 			Type:    vocab.FollowType,
-			Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
+			Context: vocab.IRI(model.NsAs),
 			Actor:   vocab.IRI(fmt.Sprintf("https://%s/actor", svc.hostSelf)),
 			Object:  vocab.IRI(addrResolved),
 		}
@@ -187,6 +187,7 @@ func (svc service) handleFollowActivity(ctx context.Context, actorIdLocal, actor
 	}
 	if err == nil {
 		accept := vocab.AcceptNew(vocab.ID(actorIdLocal), activity.Object)
+		accept.Context = vocab.IRI(model.NsAs)
 		err = svc.ap.SendActivity(ctx, *accept, actor.Inbox.GetLink())
 	}
 	return
@@ -280,7 +281,7 @@ func (svc service) unfollow(ctx context.Context, url vocab.IRI) (err error) {
 		actorSelf := vocab.IRI(fmt.Sprintf("https://%s/actor", svc.hostSelf))
 		activity := vocab.Activity{
 			Type:    vocab.UndoType,
-			Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
+			Context: vocab.IRI(model.NsAs),
 			Actor:   actorSelf,
 			Object: vocab.Activity{
 				Type:   vocab.FollowType,

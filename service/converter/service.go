@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/util"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	vocab "github.com/go-ap/activitypub"
@@ -12,11 +13,12 @@ import (
 	"net/url"
 	"reflect"
 	"strings"
+	"time"
 )
 
 type Service interface {
 	ConvertActivityToEvent(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (evt *pb.CloudEvent, err error)
-	ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent, interestId string, follower vocab.Actor) (a vocab.Activity, err error)
+	ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent, interestId string, follower *vocab.Actor) (a vocab.Activity, err error)
 }
 
 type service struct {
@@ -483,8 +485,9 @@ func convertLocation(loc vocab.Item, evt *pb.CloudEvent) (err error) {
 	return
 }
 
-func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent, interestId string, follower vocab.Actor) (a vocab.Activity, err error) {
+func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent, interestId string, follower *vocab.Actor) (a vocab.Activity, err error) {
 	a.ID = vocab.ID(svc.urlBase + "/" + evt.Id)
+	a.Context = vocab.IRI(model.NsAs)
 	attrAction, actionPresent := evt.Attributes[CeKeyAction]
 	switch actionPresent {
 	case true:
@@ -493,6 +496,15 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 		a.Type = vocab.CreateType
 	}
 	a.Actor = vocab.ID(fmt.Sprintf("%s/actor/%s", svc.urlBase, interestId))
+	a.Published = time.Now().UTC()
+	a.To = vocab.ItemCollection{
+		vocab.IRI(asPublic),
+	}
+	if follower != nil {
+		a.To = append(a.To, vocab.ItemCollection{
+			follower.ID,
+		})
+	}
 	var objType vocab.ActivityVocabularyType
 	attrObj, objPresent := evt.Attributes[CeKeyObject]
 	if objPresent {
@@ -516,18 +528,9 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	if tsUpdPresent {
 		obj.Updated = attrTsUpd.GetCeTimestamp().AsTime()
 	}
-	followerMention := "@" + follower.PreferredUsername.First().Value.String()
-	followerUrl, _ := url.Parse(follower.URL.GetLink().String())
-	if followerUrl != nil {
-		followerMention += "@" + followerUrl.Hostname()
-	}
-	obj.Content = vocab.DefaultNaturalLanguageValue(evt.GetTextData() + "\n" + followerMention)
-	obj.To = vocab.ItemCollection{
-		follower.ID,
-	}
-	obj.CC = vocab.ItemCollection{
-		vocab.IRI("https://www.w3.org/ns/activitystreams#Public"),
-	}
+	obj.Content = vocab.DefaultNaturalLanguageValue(evt.GetTextData())
+	obj.To = a.To
+	obj.CC = a.CC
 	obj.AttributedTo = vocab.ItemCollection{
 		a.Actor,
 	}
@@ -559,10 +562,22 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 			obj.Tag = append(obj.Tag, t)
 		}
 	}
-	tMention := vocab.MentionNew("")
-	tMention.Name = vocab.DefaultNaturalLanguageValue(followerMention)
-	tMention.Href = follower.ID
-	obj.Tag = append(obj.Tag, tMention)
+	if follower != nil {
+		followerMention := "@" + follower.PreferredUsername.First().Value.String()
+		followerUrl, _ := url.Parse(follower.URL.GetLink().String())
+		if followerUrl != nil {
+			followerMention += "@" + followerUrl.Hostname()
+		}
+		tMention := vocab.MentionNew("")
+		tMention.Name = vocab.DefaultNaturalLanguageValue(followerMention)
+		tMention.Href = follower.ID
+		obj.Tag = append(obj.Tag, tMention)
+	}
+	replies := vocab.CollectionNew(obj.ID + "/replies")
+	obj.Replies = replies
+	repliesPageFirst := vocab.CollectionPageNew(replies)
+	replies.First = repliesPageFirst
+	repliesPageFirst.Next = repliesPageFirst.PartOf
 	attrIco, attrIcoPresent := evt.Attributes[CeKeyIcon]
 	if attrIcoPresent {
 		icoUrl := attrIco.GetCeString()

@@ -106,6 +106,10 @@ func (ah actorHandler) handleInterest(ctx *gin.Context, accept, id string) {
 		switch {
 		case err == nil:
 			actor := ah.actorDefault // derive the default actor
+			actor.Context = vocab.ItemCollection{
+				vocab.IRI(model.NsAs),
+				vocab.IRI("https://w3id.org/security/v1"),
+			}
 			actor.ID = vocab.ID(fmt.Sprintf("https://%s/actor/%s", ah.cfgApi.Http.Host, id))
 			actor.Name = vocab.DefaultNaturalLanguageValue(id)
 			actor.Summary = vocab.DefaultNaturalLanguageValue(fmt.Sprintf("Awakari Interest: %s", d.Description))
