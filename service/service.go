@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/awakari/int-activitypub/api/http/reader"
 	"github.com/awakari/int-activitypub/util"
+	"github.com/google/uuid"
 	"net/url"
 	"strings"
 	"time"
@@ -29,7 +31,7 @@ type Service interface {
 		actorTags util.ObjectTags,
 		activity vocab.Activity,
 		activityTags util.ActivityTags,
-	) (err error)
+	) (post func(), err error)
 
 	Read(ctx context.Context, url vocab.IRI) (src model.Source, err error)
 
@@ -164,12 +166,13 @@ func (svc service) HandleActivity(
 	activity vocab.Activity,
 	activityTags util.ActivityTags,
 ) (
+	post func(),
 	err error,
 ) {
 	actorId := actor.ID.String()
 	switch activity.Type {
 	case vocab.FollowType:
-		err = svc.handleFollowActivity(ctx, actorIdLocal, actorId, activity)
+		post, err = svc.handleFollowActivity(ctx, actorIdLocal, actorId, activity)
 	case vocab.UndoType:
 		err = svc.handleUndoActivity(ctx, actorIdLocal, actorId, activity)
 	default:
@@ -178,7 +181,9 @@ func (svc service) HandleActivity(
 	return
 }
 
-func (svc service) handleFollowActivity(ctx context.Context, actorIdLocal, actorId string, activity vocab.Activity) (err error) {
+func (svc service) handleFollowActivity(ctx context.Context, actorIdLocal, actorId string, activity vocab.Activity) (post func(), err error) {
+	d, _ := json.Marshal(activity)
+	fmt.Printf("Follow activity payload: %s\n", d)
 	cbUrl := svc.makeCallbackUrl(actorId)
 	err = svc.r.CreateCallback(ctx, actorIdLocal, cbUrl)
 	var actor vocab.Actor
@@ -186,9 +191,14 @@ func (svc service) handleFollowActivity(ctx context.Context, actorIdLocal, actor
 		actor, _, err = svc.ap.FetchActor(ctx, vocab.IRI(actorId))
 	}
 	if err == nil {
-		accept := vocab.AcceptNew(vocab.ID(actorIdLocal), activity.Object)
-		accept.Context = vocab.IRI(model.NsAs)
-		err = svc.ap.SendActivity(ctx, *accept, actor.Inbox.GetLink())
+		post = func() {
+			time.Sleep(1 * time.Minute) // TODO tmp test code
+			accept := vocab.AcceptNew(vocab.IRI(fmt.Sprintf("https://%s/%s", svc.hostSelf, uuid.NewString())), activity.Object)
+			accept.Context = vocab.IRI(model.NsAs)
+			accept.Actor = vocab.ID(fmt.Sprintf("https://%s/actor/%s", svc.hostSelf, actorIdLocal))
+			accept.Object = activity
+			_ = svc.ap.SendActivity(ctx, *accept, actor.Inbox.GetLink())
+		}
 	}
 	return
 }

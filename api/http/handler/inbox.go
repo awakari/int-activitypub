@@ -81,7 +81,8 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 	}
 
 	actorIdLocal := ctx.Param("id")
-	err = h.svc.HandleActivity(ctx, actorIdLocal, actor, actorTags, activity, tags)
+	var post func()
+	post, err = h.svc.HandleActivity(ctx, actorIdLocal, actor, actorTags, activity, tags)
 	switch {
 	case errors.Is(err, reader.ErrConflict):
 		ctx.String(http.StatusConflict, err.Error())
@@ -95,6 +96,12 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 	case err != nil:
 		ctx.String(http.StatusInternalServerError, err.Error())
 		return
+	}
+
+	if post != nil {
+		defer func() {
+			go post()
+		}()
 	}
 
 	ctx.Status(http.StatusAccepted)
