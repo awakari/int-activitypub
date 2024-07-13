@@ -26,7 +26,7 @@ type Service interface {
 
 	HandleActivity(
 		ctx context.Context,
-		actorIdLocal string,
+		actorIdLocal, pubKeyId string,
 		actor vocab.Actor,
 		actorTags util.ObjectTags,
 		activity vocab.Activity,
@@ -111,10 +111,12 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 		}
 	}
 
+	pubKeyId := fmt.Sprintf("https://%s/actor#main-key", svc.hostSelf)
+
 	var actor vocab.Actor
 	var actorTags util.ObjectTags
 	if err == nil {
-		actor, actorTags, err = svc.ap.FetchActor(ctx, vocab.IRI(addrResolved))
+		actor, actorTags, err = svc.ap.FetchActor(ctx, vocab.IRI(addrResolved), pubKeyId)
 		if err != nil {
 			err = fmt.Errorf("%w: failed to fetch actor: %s, cause: %s", ErrInvalid, addrResolved, err)
 		}
@@ -148,7 +150,7 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 			Actor:   vocab.IRI(fmt.Sprintf("https://%s/actor", svc.hostSelf)),
 			Object:  vocab.IRI(addrResolved),
 		}
-		err = svc.ap.SendActivity(ctx, activity, actor.Inbox.GetLink())
+		err = svc.ap.SendActivity(ctx, activity, actor.Inbox.GetLink(), pubKeyId)
 		if err != nil {
 			src.Err = err.Error()
 			_ = svc.stor.Update(ctx, src)
@@ -160,7 +162,7 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 
 func (svc service) HandleActivity(
 	ctx context.Context,
-	actorIdLocal string,
+	actorIdLocal, pubKeyId string,
 	actor vocab.Actor,
 	actorTags util.ObjectTags,
 	activity vocab.Activity,
@@ -172,32 +174,32 @@ func (svc service) HandleActivity(
 	actorId := actor.ID.String()
 	switch activity.Type {
 	case vocab.FollowType:
-		post, err = svc.handleFollowActivity(ctx, actorIdLocal, actorId, activity)
+		post, err = svc.handleFollowActivity(ctx, actorIdLocal, pubKeyId, actorId, activity)
 	case vocab.UndoType:
 		err = svc.handleUndoActivity(ctx, actorIdLocal, actorId, activity)
 	default:
-		err = svc.handleSourceActivity(ctx, actorId, actor, actorTags, activity, activityTags)
+		err = svc.handleSourceActivity(ctx, actorId, pubKeyId, actor, actorTags, activity, activityTags)
 	}
 	return
 }
 
-func (svc service) handleFollowActivity(ctx context.Context, actorIdLocal, actorId string, activity vocab.Activity) (post func(), err error) {
+func (svc service) handleFollowActivity(ctx context.Context, actorIdLocal, pubKeyId, actorId string, activity vocab.Activity) (post func(), err error) {
 	d, _ := json.Marshal(activity)
 	fmt.Printf("Follow activity payload: %s\n", d)
 	cbUrl := svc.makeCallbackUrl(actorId)
 	err = svc.r.CreateCallback(ctx, actorIdLocal, cbUrl)
 	var actor vocab.Actor
 	if err == nil {
-		actor, _, err = svc.ap.FetchActor(ctx, vocab.IRI(actorId))
+		actor, _, err = svc.ap.FetchActor(ctx, vocab.IRI(actorId), pubKeyId)
 	}
 	if err == nil {
 		post = func() {
-			time.Sleep(1 * time.Minute) // TODO tmp test code
+			time.Sleep(10 * time.Second)
 			accept := vocab.AcceptNew(vocab.IRI(fmt.Sprintf("https://%s/%s", svc.hostSelf, uuid.NewString())), activity.Object)
 			accept.Context = vocab.IRI(model.NsAs)
 			accept.Actor = vocab.ID(fmt.Sprintf("https://%s/actor/%s", svc.hostSelf, actorIdLocal))
 			accept.Object = activity
-			_ = svc.ap.SendActivity(ctx, *accept, actor.Inbox.GetLink())
+			_ = svc.ap.SendActivity(ctx, *accept, actor.Inbox.GetLink(), pubKeyId)
 		}
 	}
 	return
@@ -219,7 +221,7 @@ func (svc service) makeCallbackUrl(actorId string) (cbUrl string) {
 
 func (svc service) handleSourceActivity(
 	ctx context.Context,
-	srcId string,
+	srcId, pubKeyId string,
 	actor vocab.Actor,
 	actorTags util.ObjectTags,
 	activity vocab.Activity,
@@ -258,7 +260,7 @@ func (svc service) handleSourceActivity(
 			err = fmt.Errorf("%w: actor=%+v, activity.Type=%s", ErrNoAccept, actor, activity.Type)
 		}
 	case errors.Is(err, storage.ErrNotFound):
-		err = svc.unfollow(ctx, actor.ID)
+		err = svc.unfollow(ctx, actor.ID, pubKeyId)
 	}
 	return
 }
@@ -274,16 +276,16 @@ func (svc service) List(ctx context.Context, filter model.Filter, limit uint32, 
 }
 
 func (svc service) Unfollow(ctx context.Context, url vocab.IRI, groupId, userId string) (err error) {
-	err = svc.unfollow(ctx, url)
+	err = svc.unfollow(ctx, url, fmt.Sprintf("https://%s/actor#main-key", svc.hostSelf))
 	if err == nil {
 		err = svc.stor.Delete(ctx, url.String(), groupId, userId)
 	}
 	return
 }
 
-func (svc service) unfollow(ctx context.Context, url vocab.IRI) (err error) {
+func (svc service) unfollow(ctx context.Context, url vocab.IRI, pubKeyId string) (err error) {
 	var actor vocab.Actor
-	actor, _, err = svc.ap.FetchActor(ctx, url)
+	actor, _, err = svc.ap.FetchActor(ctx, url, pubKeyId)
 	if err != nil {
 		err = fmt.Errorf("%w: failed to fetch actor: %s, cause: %s", ErrInvalid, url, err)
 	}
@@ -299,7 +301,7 @@ func (svc service) unfollow(ctx context.Context, url vocab.IRI) (err error) {
 				Object: url,
 			},
 		}
-		err = svc.ap.SendActivity(ctx, activity, actor.Inbox.GetLink())
+		err = svc.ap.SendActivity(ctx, activity, actor.Inbox.GetLink(), pubKeyId)
 	}
 	return
 }

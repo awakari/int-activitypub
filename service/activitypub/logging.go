@@ -27,15 +27,15 @@ func (l logging) ResolveActorLink(ctx context.Context, host, name string) (self 
 	return
 }
 
-func (l logging) FetchActor(ctx context.Context, addr vocab.IRI) (actor vocab.Actor, tags util.ObjectTags, err error) {
-	actor, tags, err = l.svc.FetchActor(ctx, addr)
-	l.log.Log(ctx, logLevel(err), fmt.Sprintf("activitypub.FetchActor(addr=%s): {Id;%+v, Inbox:%+v, Tags:%+v}, %s", addr, actor.ID, actor.Inbox, tags, err))
+func (l logging) FetchActor(ctx context.Context, addr vocab.IRI, pubKeyId string) (actor vocab.Actor, tags util.ObjectTags, err error) {
+	actor, tags, err = l.svc.FetchActor(ctx, addr, pubKeyId)
+	l.log.Log(ctx, logLevel(err), fmt.Sprintf("activitypub.FetchActor(addr=%s, pubKeyId=%s): {Id;%+v, Inbox:%+v, Tags:%+v}, %s", addr, pubKeyId, actor.ID, actor.Inbox, tags, err))
 	return
 }
 
-func (l logging) SendActivity(ctx context.Context, a vocab.Activity, inbox vocab.IRI) (err error) {
-	err = l.svc.SendActivity(ctx, a, inbox)
-	l.log.Log(ctx, logLevel(err), fmt.Sprintf("activitypub.SendActivity(a=%+v, inbox=%s): %s", a, inbox, err))
+func (l logging) SendActivity(ctx context.Context, a vocab.Activity, inbox vocab.IRI, pubKeyId string) (err error) {
+	err = l.svc.SendActivity(ctx, a, inbox, pubKeyId)
+	l.log.Log(ctx, logLevel(err), fmt.Sprintf("activitypub.SendActivity(a=%v, inbox=%s, pubKeyId=%s): %s", a, inbox, pubKeyId, err))
 	return
 }
 

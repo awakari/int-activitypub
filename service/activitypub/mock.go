@@ -25,7 +25,7 @@ func (m mock) ResolveActorLink(ctx context.Context, host, name string) (self voc
 	return
 }
 
-func (m mock) FetchActor(ctx context.Context, self vocab.IRI) (a vocab.Actor, tags util.ObjectTags, err error) {
+func (m mock) FetchActor(ctx context.Context, self vocab.IRI, pubKeyId string) (a vocab.Actor, tags util.ObjectTags, err error) {
 	switch self {
 	case "https://fail.social/users/johndoe":
 		err = ErrActorFetch
@@ -53,7 +53,7 @@ func (m mock) FetchActor(ctx context.Context, self vocab.IRI) (a vocab.Actor, ta
 	return
 }
 
-func (m mock) SendActivity(ctx context.Context, a vocab.Activity, inbox vocab.IRI) (err error) {
+func (m mock) SendActivity(ctx context.Context, a vocab.Activity, inbox vocab.IRI, pubKeyId string) (err error) {
 	switch inbox {
 	case "https://host.fail/users/johndoe/inbox":
 		err = ErrActivitySend

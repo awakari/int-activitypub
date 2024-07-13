@@ -21,14 +21,16 @@ import (
 type inboxHandler struct {
 	svcActivityPub activitypub.Service
 	svc            service.Service
+	host           string
 }
 
 const limitReqBodyLen = 262_144
 
-func NewInboxHandler(svcActivityPub activitypub.Service, svc service.Service) Handler {
+func NewInboxHandler(svcActivityPub activitypub.Service, svc service.Service, host string) Handler {
 	return inboxHandler{
 		svcActivityPub: svcActivityPub,
 		svc:            svc,
+		host:           host,
 	}
 }
 
@@ -65,9 +67,18 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 		return
 	}
 
+	actorIdLocal := ctx.Param("id")
+	var pubKeyId string
+	switch actorIdLocal {
+	case "":
+		pubKeyId = fmt.Sprintf("https://%s/actor#main-key", h.host)
+	default:
+		pubKeyId = fmt.Sprintf("https://%s/actor/%s#main-key", h.host, actorIdLocal)
+	}
+
 	var actor vocab.Actor
 	var actorTags util.ObjectTags
-	actor, actorTags, err = h.svcActivityPub.FetchActor(ctx, activity.Actor.GetLink())
+	actor, actorTags, err = h.svcActivityPub.FetchActor(ctx, activity.Actor.GetLink(), pubKeyId)
 	if err != nil {
 		ctx.String(http.StatusInternalServerError, err.Error())
 		return
@@ -80,9 +91,8 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 		return
 	}
 
-	actorIdLocal := ctx.Param("id")
 	var post func()
-	post, err = h.svc.HandleActivity(ctx, actorIdLocal, actor, actorTags, activity, tags)
+	post, err = h.svc.HandleActivity(ctx, actorIdLocal, pubKeyId, actor, actorTags, activity, tags)
 	switch {
 	case errors.Is(err, reader.ErrConflict):
 		ctx.String(http.StatusConflict, err.Error())

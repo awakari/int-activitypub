@@ -25,6 +25,7 @@ type CallbackHandler interface {
 
 type callbackHandler struct {
 	topicPrefixBase string
+	host            string
 	svcConv         converter.Service
 	svcAp           activitypub.Service
 }
@@ -34,9 +35,10 @@ const keyHubTopic = "hub.topic"
 const linkSelfSuffix = ">; rel=\"self\""
 const keyAckCount = "X-Ack-Count"
 
-func NewCallbackHandler(topicPrefixBase string, svcConv converter.Service, svcAp activitypub.Service) CallbackHandler {
+func NewCallbackHandler(topicPrefixBase, host string, svcConv converter.Service, svcAp activitypub.Service) CallbackHandler {
 	return callbackHandler{
 		topicPrefixBase: topicPrefixBase,
+		host:            host,
 		svcConv:         svcConv,
 		svcAp:           svcAp,
 	}
@@ -80,6 +82,7 @@ func (ch callbackHandler) Deliver(ctx *gin.Context) {
 		ctx.String(http.StatusBadRequest, fmt.Sprintf("invalid self link header value in the request: %s", topic))
 		return
 	}
+	pubKeyId := fmt.Sprintf("https://%s/actor/%s#main-key", ch.host, interestId)
 
 	followerUrl, err := url.QueryUnescape(ctx.Query(reader.QueryParamFollower))
 	if err != nil || followerUrl == "" {
@@ -88,7 +91,7 @@ func (ch callbackHandler) Deliver(ctx *gin.Context) {
 	}
 
 	var follower vocab.Actor
-	follower, _, err = ch.svcAp.FetchActor(ctx, vocab.IRI(followerUrl))
+	follower, _, err = ch.svcAp.FetchActor(ctx, vocab.IRI(followerUrl), pubKeyId)
 	if err != nil {
 		ctx.String(http.StatusInternalServerError, fmt.Sprintf("failed to resolve the follower %s: %s", follower, err))
 		return
@@ -120,7 +123,7 @@ func (ch callbackHandler) Deliver(ctx *gin.Context) {
 			a, err = ch.svcConv.ConvertEventToActivity(ctx, evtProto, interestId, &follower)
 		}
 		if err == nil {
-			err = ch.svcAp.SendActivity(ctx, a, follower.Inbox.GetLink())
+			err = ch.svcAp.SendActivity(ctx, a, follower.Inbox.GetLink(), pubKeyId)
 		}
 		if err != nil {
 			break

@@ -209,7 +209,7 @@ func main() {
 	ha := handler.NewActorHandler(actor, actorExtraAttrs, clientAwk, "https://awakari.com/sub-details.html?id=", cfg.Api)
 
 	// WebFinger
-	wf := apiHttp.WebFinger{
+	wfDefault := apiHttp.WebFinger{
 		Subject: fmt.Sprintf("acct:%s@%s", cfg.Api.Actor.Name, cfg.Api.Http.Host),
 		Links: []apiHttp.WebFingerLink{
 			{
@@ -219,10 +219,10 @@ func main() {
 			},
 		},
 	}
-	hwf := handler.NewWebFingerHandler(wf, cfg.Api.Http.Host, clientAwk)
+	hwf := handler.NewWebFingerHandler(wfDefault, cfg.Api.Http.Host, clientAwk)
 
 	// handlers for inbox, outbox, following, followers
-	hi := handler.NewInboxHandler(svcActivityPub, svc)
+	hi := handler.NewInboxHandler(svcActivityPub, svc, cfg.Api.Http.Host)
 	ho := handler.NewOutboxHandler(svcReader, svcConv, fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host))
 	hoDummy := handler.NewDummyCollectionHandler(vocab.OrderedCollectionPage{
 		ID:      vocab.IRI(fmt.Sprintf("https://%s/outbox", cfg.Api.Http.Host)),
@@ -266,7 +266,7 @@ func main() {
 		}
 	}()
 
-	hc := handler.NewCallbackHandler(cfg.Api.Reader.Uri, svcConv, svcActivityPub)
+	hc := handler.NewCallbackHandler(cfg.Api.Reader.Uri, cfg.Api.Http.Host, svcConv, svcActivityPub)
 
 	log.Info(fmt.Sprintf("starting to listen the HTTP API @ port #%d...", cfg.Api.Reader.CallBack.Port))
 	internalCallbacks := gin.Default()

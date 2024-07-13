@@ -23,8 +23,8 @@ import (
 
 type Service interface {
 	ResolveActorLink(ctx context.Context, host, name string) (self vocab.IRI, err error)
-	FetchActor(ctx context.Context, addr vocab.IRI) (a vocab.Actor, tags util.ObjectTags, err error)
-	SendActivity(ctx context.Context, a vocab.Activity, inbox vocab.IRI) (err error)
+	FetchActor(ctx context.Context, addr vocab.IRI, pubKeyId string) (a vocab.Actor, tags util.ObjectTags, err error)
+	SendActivity(ctx context.Context, a vocab.Activity, inbox vocab.IRI, pubKeyId string) (err error)
 	nodeinfo.Resolver
 }
 
@@ -94,7 +94,7 @@ func (svc service) ResolveActorLink(ctx context.Context, host, name string) (sel
 	return
 }
 
-func (svc service) FetchActor(ctx context.Context, addr vocab.IRI) (actor vocab.Actor, tags util.ObjectTags, err error) {
+func (svc service) FetchActor(ctx context.Context, addr vocab.IRI, pubKeyId string) (actor vocab.Actor, tags util.ObjectTags, err error) {
 	//
 	var req *http.Request
 	req, err = http.NewRequestWithContext(ctx, http.MethodGet, string(addr), nil)
@@ -112,7 +112,7 @@ func (svc service) FetchActor(ctx context.Context, addr vocab.IRI) (actor vocab.
 		req.Header.Set("Date", now.Format(http.TimeFormat))
 	}
 	//
-	err = svc.signRequest(req, []byte{})
+	err = svc.signRequest(req, []byte{}, pubKeyId)
 	//
 	if err == nil {
 		resp, err = svc.clientHttp.Do(req)
@@ -137,7 +137,7 @@ func (svc service) FetchActor(ctx context.Context, addr vocab.IRI) (actor vocab.
 	return
 }
 
-func (svc service) SendActivity(ctx context.Context, a vocab.Activity, inbox vocab.IRI) (err error) {
+func (svc service) SendActivity(ctx context.Context, a vocab.Activity, inbox vocab.IRI, pubKeyId string) (err error) {
 	//
 	aFixed, _ := apiHttp.FixContext(a)
 	var d []byte
@@ -160,7 +160,7 @@ func (svc service) SendActivity(ctx context.Context, a vocab.Activity, inbox voc
 		req.Header.Set("Date", now.Format(http.TimeFormat))
 	}
 	//
-	err = svc.signRequest(req, d)
+	err = svc.signRequest(req, d, pubKeyId)
 	//
 	var resp *http.Response
 	if err == nil {
@@ -182,7 +182,7 @@ func (svc service) SendActivity(ctx context.Context, a vocab.Activity, inbox voc
 	return
 }
 
-func (svc service) signRequest(req *http.Request, data []byte) (err error) {
+func (svc service) signRequest(req *http.Request, data []byte, pubKeyId string) (err error) {
 	var signer httpsig.Signer
 	signer, _, err = httpsig.NewSigner(prefs, digestAlgorithm, headersToSign, httpsig.Signature, 120)
 	var privKey any
@@ -193,7 +193,8 @@ func (svc service) signRequest(req *http.Request, data []byte) (err error) {
 		}
 	}
 	if err == nil {
-		err = signer.SignRequest(privKey, fmt.Sprintf("https://%s/actor#main-key", svc.hostname), req, data)
+		//err = signer.SignRequest(privKey, fmt.Sprintf("https://%s/actor#main-key", svc.hostname), req, data)
+		err = signer.SignRequest(privKey, pubKeyId, req, data)
 		if err != nil {
 			err = fmt.Errorf("failed to sign the follow request: %w", err)
 		}

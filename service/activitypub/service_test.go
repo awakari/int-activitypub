@@ -25,7 +25,7 @@ func TestService_FetchActor(t *testing.T) {
 		t.Skip()
 	}
 	svc := NewService(http.DefaultClient, "activitypub.awakari.com", []byte{}, nil)
-	actor, _, err := svc.FetchActor(context.TODO(), "https://mastodon.social/users/akurilov")
+	actor, _, err := svc.FetchActor(context.TODO(), "https://mastodon.social/users/akurilov", "https://activitypub.awakari.com/actor#main-key")
 	assert.Equal(t, "https://mastodon.social/users/akurilov/inbox", actor.Inbox.GetLink().String())
 	assert.Nil(t, err)
 }
@@ -45,6 +45,7 @@ func TestService_RequestFollow(t *testing.T) {
 			Object:  vocab.IRI("https://mastodon.social/users/akurilov"),
 		},
 		"https://mastodon.social/users/akurilov/inbox",
+		"foo.bar#main.key",
 	)
 	assert.Nil(t, err)
 }
