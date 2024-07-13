@@ -122,6 +122,8 @@ func (ah actorHandler) handleInterest(ctx *gin.Context, accept, id string) {
 			actor.Endpoints = &vocab.Endpoints{
 				SharedInbox: vocab.IRI(fmt.Sprintf("https://%s/inbox/%s", ah.cfgApi.Http.Host, id)),
 			}
+			actor.PublicKey.ID = actor.ID + "#main-key"
+			actor.PublicKey.Owner = actor.ID
 			actor.Attachment = vocab.ItemCollection{
 				vocab.Page{
 					Name: vocab.DefaultNaturalLanguageValue("homepage"),
