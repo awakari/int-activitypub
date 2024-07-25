@@ -2,6 +2,7 @@ package converter
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/awakari/int-activitypub/model"
@@ -12,8 +13,10 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"net/url"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 type Service interface {
@@ -52,6 +55,9 @@ const CeKeyTo = "to"
 const CeKeyUpdated = "updated"
 
 const asPublic = "https://www.w3.org/ns/activitystreams#Public"
+
+const fmtLenMaxAttrVal = 80
+const fmtLenMaxBodyTxt = 240
 
 var ErrFail = errors.New("failed to convert")
 
@@ -505,21 +511,94 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 			follower.ID,
 		})
 	}
+	txt := evt.GetTextData()
+	var ceObj string
 	var objType vocab.ActivityVocabularyType
 	attrObj, objPresent := evt.Attributes[CeKeyObject]
 	if objPresent {
-		objType = vocab.ActivityVocabularyType(attrObj.GetCeString())
-		if objType == "" {
-			objType = vocab.ActivityVocabularyType(attrObj.GetCeUri())
+		ceObj = attrObj.GetCeString()
+		if ceObj == "" {
+			ceObj = attrObj.GetCeUri()
 		}
 	}
-	if !vocab.ObjectTypes.Contains(objType) {
+	switch vocab.ObjectTypes.Contains(vocab.ActivityVocabularyType(ceObj)) {
+	case true:
+		objType = vocab.ActivityVocabularyType(ceObj)
+	default:
 		objType = vocab.NoteType
 	}
 	obj := vocab.ObjectNew(objType)
 	a.Object = obj
 	obj.ID = vocab.ID(svc.urlBase + "/" + evt.Id)
-	obj.URL = obj.ID
+	switch {
+	case strings.HasPrefix("http://", ceObj):
+		fallthrough
+	case strings.HasPrefix("https://", ceObj):
+		obj.URL = vocab.IRI(ceObj)
+	default:
+		obj.URL = obj.ID
+	}
+	attrObjUrl, attrObjUrlPresent := evt.Attributes[CeKeyObjectUrl]
+	if attrObjUrlPresent {
+		objUrl := attrObjUrl.GetCeString()
+		if objUrl == "" {
+			objUrl = attrObjUrl.GetCeUri()
+		}
+		obj.URL = vocab.IRI(objUrl)
+	}
+	txt += fmt.Sprintf(
+		"<p><a href=\"%s\">%s</a></p><p><u>id</u>: %s\n<u>source</u>: %s\n<u>type</u>: %s\n",
+		obj.URL.GetLink().String(),
+		obj.URL.GetLink().String(),
+		evt.Id,
+		evt.Source,
+		evt.Type,
+	)
+	var attrNames []string
+	for attrName, _ := range evt.Attributes {
+		attrNames = append(attrNames, attrName)
+	}
+	sort.Strings(attrNames)
+	for _, attrName := range attrNames {
+		switch attrName {
+		case "awakarimatchfound": // internal
+		case "awakariuserid": // do not expose
+		case "awkinternal": // internal
+		default:
+			attrVal := evt.Attributes[attrName]
+			switch vt := attrVal.Attr.(type) {
+			case *pb.CloudEventAttributeValue_CeBoolean:
+				switch vt.CeBoolean {
+				case true:
+					txt += fmt.Sprintf("<u>%s</u>: true\n", attrName)
+				default:
+					txt += fmt.Sprintf("<u>%s</u>: false\n", attrName)
+				}
+			case *pb.CloudEventAttributeValue_CeInteger:
+				txt += fmt.Sprintf("<u>%s</u>: %d\n", attrName, vt.CeInteger)
+			case *pb.CloudEventAttributeValue_CeString:
+				if vt.CeString != evt.Source { // "object"/"objecturl" might the same value as the source
+					v := truncateStringUtf8(vt.CeString, fmtLenMaxAttrVal)
+					txt += fmt.Sprintf("<u>%s</u>: %s\n", attrName, v)
+				}
+			case *pb.CloudEventAttributeValue_CeUri:
+				v := truncateStringUtf8(vt.CeUri, fmtLenMaxAttrVal)
+				txt += fmt.Sprintf("<u>%s</u>: %s\n", attrName, v)
+			case *pb.CloudEventAttributeValue_CeUriRef:
+				v := truncateStringUtf8(vt.CeUriRef, fmtLenMaxAttrVal)
+				txt += fmt.Sprintf("<u>%s</u>: %s\n", attrName, v)
+			case *pb.CloudEventAttributeValue_CeTimestamp:
+				v := vt.CeTimestamp
+				txt += fmt.Sprintf("<u>%s</u>: %s\n", attrName, v.AsTime().Format(time.RFC3339))
+			case *pb.CloudEventAttributeValue_CeBytes:
+				v := base64.StdEncoding.EncodeToString(vt.CeBytes)
+				v = truncateStringUtf8(v, fmtLenMaxAttrVal)
+				txt += fmt.Sprintf("<u>%s</u>: %s\n", attrName, v)
+			}
+		}
+	}
+	txt += "</p>"
+	obj.Content = vocab.DefaultNaturalLanguageValue(txt)
 	attrTs, tsPresent := evt.Attributes[CeKeyTime]
 	if tsPresent {
 		obj.Published = attrTs.GetCeTimestamp().AsTime()
@@ -528,19 +607,10 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	if tsUpdPresent {
 		obj.Updated = attrTsUpd.GetCeTimestamp().AsTime()
 	}
-	obj.Content = vocab.DefaultNaturalLanguageValue(evt.GetTextData())
 	obj.To = a.To
 	obj.CC = a.CC
 	obj.AttributedTo = vocab.ItemCollection{
 		a.Actor,
-	}
-	attrObjUrl, attrObjUrlPresent := evt.Attributes[CeKeyObjectUrl]
-	if attrObjUrlPresent {
-		objUrl := attrObjUrl.GetCeString()
-		if objUrl == "" {
-			objUrl = attrObjUrl.GetCeUri()
-		}
-		obj.URL = vocab.LinkNew(vocab.ID(objUrl), vocab.LinkType)
 	}
 	attrAttType, attrAttTypePresent := evt.Attributes[CeKeyAttachmentType]
 	attrAttUrl, attrAttUrlPresent := evt.Attributes[CeKeyAttachmentUrl]
@@ -603,4 +673,17 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 		obj.Image = vocab.LinkNew(vocab.ID(previewUrl), vocab.LinkType)
 	}
 	return
+}
+
+func truncateStringUtf8(s string, lenMax int) string {
+	if len(s) <= lenMax {
+		return s
+	}
+	// Ensure we don't split a UTF-8 character in the middle.
+	for i := lenMax - 3; i > 0; i-- {
+		if utf8.RuneStart(s[i]) {
+			return s[:i] + "..."
+		}
+	}
+	return ""
 }

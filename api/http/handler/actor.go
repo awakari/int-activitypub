@@ -97,9 +97,10 @@ func (ah actorHandler) handleDefault(ctx *gin.Context, accept string) {
 }
 
 func (ah actorHandler) handleInterest(ctx *gin.Context, accept, id string) {
+	urlDetails := ah.urlPrefixInterestDetails + id
 	switch accept {
 	case "text/html", "application/xhtml+xml", "text/xml", "application/xml":
-		ctx.Redirect(http.StatusMovedPermanently, ah.urlPrefixInterestDetails+id)
+		ctx.Redirect(http.StatusMovedPermanently, urlDetails)
 	default:
 		ctxAwk := metadata.AppendToOutgoingContext(ctx, model.KeyGroupId, model.GroupIdDefault)
 		d, err := ah.clientAwk.ReadSubscription(ctxAwk, model.UserIdDefault, id)
@@ -112,8 +113,15 @@ func (ah actorHandler) handleInterest(ctx *gin.Context, accept, id string) {
 			}
 			actor.ID = vocab.ID(fmt.Sprintf("https://%s/actor/%s", ah.cfgApi.Http.Host, id))
 			actor.Name = vocab.DefaultNaturalLanguageValue(id)
-			actor.Summary = vocab.DefaultNaturalLanguageValue(fmt.Sprintf("Awakari Interest: %s", d.Description))
-			actor.URL = vocab.IRI(ah.urlPrefixInterestDetails + id)
+			actor.Summary = vocab.DefaultNaturalLanguageValue(
+				fmt.Sprintf(
+					`<p>Awakari Interest: <b>%s</b></p>
+<p><a href="%s">Details link</a></p>`,
+					d.Description,
+					urlDetails,
+				),
+			)
+			actor.URL = vocab.IRI(urlDetails)
 			actor.Inbox = vocab.IRI(fmt.Sprintf("https://%s/inbox/%s", ah.cfgApi.Http.Host, id))
 			actor.Outbox = vocab.IRI(fmt.Sprintf("https://%s/outbox/%s", ah.cfgApi.Http.Host, id))
 			actor.Following = vocab.IRI(fmt.Sprintf("https://%s/following/%s", ah.cfgApi.Http.Host, id))
@@ -127,8 +135,8 @@ func (ah actorHandler) handleInterest(ctx *gin.Context, accept, id string) {
 			actor.Attachment = vocab.ItemCollection{
 				vocab.Page{
 					Name: vocab.DefaultNaturalLanguageValue("homepage"),
-					ID:   vocab.ID(ah.urlPrefixInterestDetails + id),
-					URL:  vocab.IRI(ah.urlPrefixInterestDetails + id),
+					ID:   vocab.ID(urlDetails),
+					URL:  vocab.IRI(urlDetails),
 				},
 			}
 			aFixed, cs := apiHttp.FixContext(actor)
