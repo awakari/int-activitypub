@@ -9,7 +9,7 @@ import (
 	"github.com/awakari/int-activitypub/util"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	vocab "github.com/go-ap/activitypub"
-	"github.com/google/uuid"
+	"github.com/segmentio/ksuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"net/url"
 	"reflect"
@@ -73,7 +73,7 @@ func NewService(ceType, urlBase string, actorType vocab.ActivityVocabularyType) 
 func (svc service) ConvertActivityToEvent(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (evt *pb.CloudEvent, err error) {
 	//
 	evt = &pb.CloudEvent{
-		Id:          uuid.NewString(),
+		Id:          ksuid.New().String(),
 		Source:      actor.ID.String(),
 		SpecVersion: CeSpecVersion,
 		Type:        svc.ceType,
