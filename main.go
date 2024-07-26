@@ -205,8 +205,7 @@ func main() {
 		"indexable":                 true,
 		"memorial":                  false,
 	}
-	// TODO get the url prefix from config
-	ha := handler.NewActorHandler(actor, actorExtraAttrs, clientAwk, "https://awakari.com/sub-details.html?id=", cfg.Api)
+	ha := handler.NewActorHandler(actor, actorExtraAttrs, clientAwk, cfg.Api.Interests.DetailsUriPrefix, cfg.Api)
 
 	// WebFinger
 	wfDefault := apiHttp.WebFinger{

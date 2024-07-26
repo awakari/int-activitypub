@@ -102,6 +102,7 @@ api:
     type: "awakari.activitypub.v1"
   interests:
     uri: "subscriptions-proxy:50051"
+    detailsUriPrefix: "https://awakari.com/sub-details.html?id="
   reader:
     uri: "http://reader:8080/v1"
     callback:
