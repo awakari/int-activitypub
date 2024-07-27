@@ -183,7 +183,7 @@ func main() {
 		},
 		Attachment: vocab.ItemCollection{
 			vocab.Page{
-				Name: vocab.DefaultNaturalLanguageValue("Home"),
+				Name: vocab.DefaultNaturalLanguageValue("homepage"),
 				ID:   vocab.ID("https://awakari.com/activitypub"),
 				URL:  vocab.IRI("https://awakari.com/activitypub"),
 			},
