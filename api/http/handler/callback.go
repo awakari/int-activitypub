@@ -120,7 +120,7 @@ func (ch callbackHandler) Deliver(ctx *gin.Context) {
 		}
 		var a vocab.Activity
 		if err == nil {
-			a, err = ch.svcConv.ConvertEventToActivity(ctx, evtProto, interestId, &follower)
+			a, err = ch.svcConv.ConvertEventToActivity(ctx, evtProto, interestId, &follower, nil)
 		}
 		if err == nil {
 			err = ch.svcAp.SendActivity(ctx, a, follower.Inbox.GetLink(), pubKeyId)

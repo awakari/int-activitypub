@@ -57,7 +57,7 @@ func (oh outboxHandler) Handle(ctx *gin.Context) {
 		resultCollPage.Prev = vocab.IRI(uPage)
 		resultCollPage.Next = resultCollPage.Prev
 		for _, evt := range evts {
-			a, err := oh.svcConv.ConvertEventToActivity(ctx, evt, id, nil)
+			a, err := oh.svcConv.ConvertEventToActivity(ctx, evt, id, nil, nil)
 			switch err {
 			case nil:
 				resultCollPage.OrderedItems = append(resultCollPage.OrderedItems, a)

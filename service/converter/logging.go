@@ -7,6 +7,7 @@ import (
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	vocab "github.com/go-ap/activitypub"
 	"log/slog"
+	"time"
 )
 
 type logging struct {
@@ -32,8 +33,8 @@ func (l logging) ConvertActivityToEvent(ctx context.Context, actor vocab.Actor, 
 	return
 }
 
-func (l logging) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent, interestId string, follower *vocab.Actor) (a vocab.Activity, err error) {
-	a, err = l.svc.ConvertEventToActivity(ctx, evt, interestId, follower)
+func (l logging) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent, interestId string, follower *vocab.Actor, t *time.Time) (a vocab.Activity, err error) {
+	a, err = l.svc.ConvertEventToActivity(ctx, evt, interestId, follower, t)
 	l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.ConvertEventToActivity(evtId=%s, interestId=%s, follower=%v): err=%s", evt.Id, interestId, follower, err))
 	return
 }

@@ -21,7 +21,7 @@ import (
 
 type Service interface {
 	ConvertActivityToEvent(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (evt *pb.CloudEvent, err error)
-	ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent, interestId string, follower *vocab.Actor) (a vocab.Activity, err error)
+	ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent, interestId string, follower *vocab.Actor, t *time.Time) (a vocab.Activity, err error)
 }
 
 type service struct {
@@ -225,6 +225,9 @@ func (svc service) convertActivity(a vocab.Activity, evt *pb.CloudEvent, tags ut
 	}
 	var tagNames []string
 	for _, t := range tags.Tag {
+		tagNames = append(tagNames, t.Name)
+	}
+	for _, t := range tags.Object.Tag {
 		tagNames = append(tagNames, t.Name)
 	}
 	if len(tagNames) > 0 {
@@ -492,7 +495,8 @@ func convertLocation(loc vocab.Item, evt *pb.CloudEvent) (err error) {
 	return
 }
 
-func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent, interestId string, follower *vocab.Actor) (a vocab.Activity, err error) {
+func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent, interestId string, follower *vocab.Actor, t *time.Time) (a vocab.Activity, err error) {
+
 	a.ID = vocab.ID(svc.urlBase + "/" + evt.Id)
 	a.Context = vocab.IRI(model.NsAs)
 	attrAction, actionPresent := evt.Attributes[CeKeyAction]
@@ -503,14 +507,17 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 		a.Type = vocab.CreateType
 	}
 	a.Actor = vocab.ID(fmt.Sprintf("%s/actor/%s", svc.urlBase, interestId))
-	a.Published = time.Now().UTC()
+	switch t {
+	case nil:
+		a.Published = time.Now().UTC()
+	default:
+		a.Published = *t
+	}
 	a.To = vocab.ItemCollection{
 		vocab.IRI(asPublic),
 	}
 	if follower != nil {
-		a.To = append(a.To, vocab.ItemCollection{
-			follower.ID,
-		})
+		a.To = append(a.To, follower.ID)
 	}
 
 	var txt string
@@ -565,6 +572,7 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 		}
 		obj.URL = vocab.IRI(objUrl)
 	}
+	obj.AttributedTo = vocab.IRI(evt.Source)
 	txt += fmt.Sprintf(
 		"<p><a href=\"%s\">%s</a></p><p><u>id</u>: %s<br/><u>source</u>: %s<br/><u>type</u>: %s<br/>",
 		obj.URL.GetLink().String(),
@@ -583,6 +591,23 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 		case "awakarimatchfound": // internal
 		case "awakariuserid": // do not expose
 		case "awkinternal": // internal
+		case CeKeyCategories:
+			attrCats, _ := evt.Attributes[CeKeyCategories]
+			cats := strings.Split(attrCats.GetCeString(), " ")
+			var catsFormatted []string
+			for _, cat := range cats {
+				tag := vocab.LinkNew("", "")
+				tag.Type = "Hashtag"
+				tag.Name = vocab.DefaultNaturalLanguageValue("#" + cat)
+				tag.Href = vocab.IRI("https://mastodon.socail/tags/" + cat)
+				obj.Tag = append(obj.Tag, tag)
+				catFormatted := fmt.Sprintf(
+					"<a rel=\"tag\" lass=\"mention hashtag\" href=\"%s\">#%s</a>",
+					tag.Href, cat,
+				)
+				catsFormatted = append(catsFormatted, catFormatted)
+			}
+			txt += fmt.Sprintf("<u>%s</u>: %s<br/>", CeKeyCategories, strings.Join(catsFormatted, " "))
 		default:
 			attrVal := evt.Attributes[attrName]
 			switch vt := attrVal.Attr.(type) {
@@ -618,39 +643,7 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	}
 	txt += "</p>"
 	obj.Content = vocab.DefaultNaturalLanguageValue(txt)
-	attrTs, tsPresent := evt.Attributes[CeKeyTime]
-	if tsPresent {
-		obj.Published = attrTs.GetCeTimestamp().AsTime()
-	}
-	attrTsUpd, tsUpdPresent := evt.Attributes[CeKeyUpdated]
-	if tsUpdPresent {
-		obj.Updated = attrTsUpd.GetCeTimestamp().AsTime()
-	}
-	obj.To = a.To
-	obj.CC = a.CC
-	obj.AttributedTo = vocab.ItemCollection{
-		a.Actor,
-	}
-	attrAttType, attrAttTypePresent := evt.Attributes[CeKeyAttachmentType]
-	attrAttUrl, attrAttUrlPresent := evt.Attributes[CeKeyAttachmentUrl]
-	if attrAttTypePresent && attrAttUrlPresent {
-		objAtt := vocab.ObjectNew(vocab.ObjectType)
-		objAtt.MediaType = vocab.MimeType(attrAttType.GetCeString())
-		objAttUrl := attrAttUrl.GetCeUri()
-		if objAttUrl == "" {
-			objAttUrl = attrAttUrl.GetCeString()
-		}
-		objAtt.URL = vocab.LinkNew(vocab.ID(objAttUrl), vocab.LinkType)
-		obj.Attachment = objAtt
-	}
-	attrCats, attrCatsPresent := evt.Attributes[CeKeyCategories]
-	if attrCatsPresent {
-		for _, cat := range strings.Split(attrCats.GetCeString(), " ") {
-			t := vocab.ObjectNew(vocab.ObjectType)
-			t.Name = vocab.DefaultNaturalLanguageValue(cat)
-			obj.Tag = append(obj.Tag, t)
-		}
-	}
+
 	if follower != nil {
 		followerMention := "@" + follower.PreferredUsername.First().Value.String()
 		followerUrl, _ := url.Parse(follower.URL.GetLink().String())
@@ -662,11 +655,24 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 		tMention.Href = follower.ID
 		obj.Tag = append(obj.Tag, tMention)
 	}
+
+	attrTs, tsPresent := evt.Attributes[CeKeyTime]
+	if tsPresent {
+		obj.Published = attrTs.GetCeTimestamp().AsTime()
+	}
+	attrTsUpd, tsUpdPresent := evt.Attributes[CeKeyUpdated]
+	if tsUpdPresent {
+		obj.Updated = attrTsUpd.GetCeTimestamp().AsTime()
+	}
+	obj.To = a.To
+	obj.CC = a.CC
 	replies := vocab.CollectionNew(obj.ID + "/replies")
 	obj.Replies = replies
 	repliesPageFirst := vocab.CollectionPageNew(replies)
 	replies.First = repliesPageFirst
 	repliesPageFirst.Next = repliesPageFirst.PartOf
+
+	attachments := vocab.ItemCollection{}
 	attrIco, attrIcoPresent := evt.Attributes[CeKeyIcon]
 	if attrIcoPresent {
 		icoUrl := attrIco.GetCeString()
@@ -682,6 +688,10 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 			imgUrl = attrIco.GetCeUri()
 		}
 		obj.Image = vocab.LinkNew(vocab.ID(imgUrl), vocab.LinkType)
+		attachments = append(attachments, &vocab.Object{
+			Type: vocab.ImageType,
+			URL:  vocab.IRI(imgUrl),
+		})
 	}
 	attrPreview, attrPreviewPresent := evt.Attributes[CeKeyPreview]
 	if attrPreviewPresent {
@@ -691,6 +701,21 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 		}
 		obj.Image = vocab.LinkNew(vocab.ID(previewUrl), vocab.LinkType)
 	}
+	attrAttType, attrAttTypePresent := evt.Attributes[CeKeyAttachmentType]
+	attrAttUrl, attrAttUrlPresent := evt.Attributes[CeKeyAttachmentUrl]
+	if attrAttTypePresent && attrAttUrlPresent {
+		objAttUrl := attrAttUrl.GetCeString()
+		if objAttUrl == "" {
+			objAttUrl = attrAttUrl.GetCeUri()
+		}
+		attachments = append(attachments, &vocab.Object{
+			Type:      vocab.DocumentType,
+			MediaType: vocab.MimeType(attrAttType.GetCeString()),
+			URL:       vocab.IRI(objAttUrl),
+		})
+	}
+	obj.Attachment = attachments
+
 	return
 }
 
