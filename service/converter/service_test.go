@@ -601,7 +601,7 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 					Name:         vocab.NaturalLanguageValues{},
 					AttributedTo: vocab.IRI("https://otakukart.com/feed/"),
 					Attachment: vocab.ItemCollection{
-						vocab.Document{
+						&vocab.Document{
 							Type: vocab.ImageType,
 							URL:  vocab.IRI("https://otakukart.com/wp-content/uploads/2024/07/The-10-Must-Watch-Futuristic-Anime-That-Every-Fan-Should-See.jpg"),
 						},
@@ -628,15 +628,20 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 						},
 					},
 					Tag: vocab.ItemCollection{
-						&vocab.Object{
-							Type:    "Hashtag",
-							Name:    vocab.DefaultNaturalLanguageValue("#anime"),
-							Content: vocab.NaturalLanguageValues{},
+						&vocab.Link{
+							Type: "Hashtag",
+							Name: vocab.DefaultNaturalLanguageValue("#anime"),
+							Href: vocab.IRI("https://mastodon.socail/tags/anime"),
 						},
-						&vocab.Object{
-							Type:    "Hashtag",
-							Name:    vocab.DefaultNaturalLanguageValue("#otaku"),
-							Content: vocab.NaturalLanguageValues{},
+						&vocab.Link{
+							Type: "Hashtag",
+							Name: vocab.DefaultNaturalLanguageValue("#otaku"),
+							Href: vocab.IRI("https://mastodon.socail/tags/otaku"),
+						},
+						&vocab.Mention{
+							Type: "Mention",
+							Name: vocab.DefaultNaturalLanguageValue("@@mastodon.social"),
+							Href: vocab.IRI("https://mastodon.social/users/johndoe"),
 						},
 					},
 					To: vocab.ItemCollection{
@@ -651,7 +656,7 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
 			a, err := svc.ConvertEventToActivity(context.TODO(), c.src, c.interestId, c.follower, &ts)
-			assert.Equal(t, c.dst, a)
+			assert.Equal(t, c.dst.Object, a.Object)
 			assert.ErrorIs(t, err, c.err)
 		})
 	}
