@@ -598,12 +598,17 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 			for _, cat := range cats {
 				tag := vocab.LinkNew("", "")
 				tag.Type = "Hashtag"
-				tag.Name = vocab.DefaultNaturalLanguageValue("#" + cat)
+				switch strings.HasPrefix(cat, "#") {
+				case true:
+					tag.Name = vocab.DefaultNaturalLanguageValue(cat)
+				default:
+					tag.Name = vocab.DefaultNaturalLanguageValue("#" + cat)
+				}
 				tag.Href = vocab.IRI("https://mastodon.socail/tags/" + cat)
 				obj.Tag = append(obj.Tag, tag)
 				catFormatted := fmt.Sprintf(
-					"<a rel=\"tag\" lass=\"mention hashtag\" href=\"%s\">#%s</a>",
-					tag.Href, cat,
+					"<a rel=\"tag\" lass=\"mention hashtag\" href=\"%s\">%s</a>",
+					tag.Href, tag.Name,
 				)
 				catsFormatted = append(catsFormatted, catFormatted)
 			}
