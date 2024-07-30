@@ -59,6 +59,7 @@ const asPublic = "https://www.w3.org/ns/activitystreams#Public"
 
 const fmtLenMaxAttrVal = 80
 const fmtLenMaxBodyTxt = 240
+const ceTypePrefixFollowersOnly = "com.awakari.mastodon."
 
 var ErrFail = errors.New("failed to convert")
 
@@ -513,11 +514,12 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	default:
 		a.Published = *t
 	}
-	a.To = vocab.ItemCollection{
-		vocab.IRI(asPublic),
-	}
+	a.To = vocab.ItemCollection{}
 	if follower != nil {
 		a.To = append(a.To, follower.ID)
+	}
+	if evt.Type != svc.ceType && !strings.HasPrefix(evt.Type, ceTypePrefixFollowersOnly) {
+		a.To = append(a.To, vocab.IRI(asPublic))
 	}
 
 	var txt string
@@ -596,21 +598,24 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 			cats := strings.Split(attrCats.GetCeString(), " ")
 			var catsFormatted []string
 			for _, cat := range cats {
-				tag := vocab.LinkNew("", "")
-				tag.Type = "Hashtag"
-				switch strings.HasPrefix(cat, "#") {
-				case true:
-					tag.Name = vocab.DefaultNaturalLanguageValue(cat)
-				default:
-					tag.Name = vocab.DefaultNaturalLanguageValue("#" + cat)
+				if len(cat) > 0 {
+					tag := vocab.LinkNew("", "")
+					tag.Type = "Hashtag"
+					switch strings.HasPrefix(cat, "#") {
+					case true:
+						tag.Name = vocab.DefaultNaturalLanguageValue(cat)
+						tag.Href = vocab.IRI("/tags/" + cat[1:])
+					default:
+						tag.Name = vocab.DefaultNaturalLanguageValue("#" + cat)
+						tag.Href = vocab.IRI("/tags/" + cat)
+					}
+					obj.Tag = append(obj.Tag, tag)
+					catFormatted := fmt.Sprintf(
+						"<a rel=\"tag\" class=\"mention hashtag status-link\" href=\"%s\">%s</a>",
+						tag.Href, tag.Name.First(),
+					)
+					catsFormatted = append(catsFormatted, catFormatted)
 				}
-				tag.Href = vocab.IRI("https://mastodon.socail/tags/" + cat)
-				obj.Tag = append(obj.Tag, tag)
-				catFormatted := fmt.Sprintf(
-					"<a rel=\"tag\" lass=\"mention hashtag\" href=\"%s\">%s</a>",
-					tag.Href, tag.Name,
-				)
-				catsFormatted = append(catsFormatted, catFormatted)
 			}
 			txt += fmt.Sprintf("<u>%s</u>: %s<br/>", CeKeyCategories, strings.Join(catsFormatted, " "))
 		default:
