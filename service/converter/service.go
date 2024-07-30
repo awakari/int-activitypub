@@ -598,21 +598,22 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 			cats := strings.Split(attrCats.GetCeString(), " ")
 			var catsFormatted []string
 			for _, cat := range cats {
-				if len(cat) > 0 {
+				var tagName string
+				switch strings.HasPrefix(cat, "#") {
+				case true:
+					tagName = cat[1:]
+				default:
+					tagName = cat
+				}
+				if len(tagName) > 0 {
 					tag := vocab.LinkNew("", "")
+					tag.Name = vocab.DefaultNaturalLanguageValue("#" + tagName)
 					tag.Type = "Hashtag"
-					switch strings.HasPrefix(cat, "#") {
-					case true:
-						tag.Name = vocab.DefaultNaturalLanguageValue(cat)
-						tag.Href = vocab.IRI("/tags/" + cat[1:])
-					default:
-						tag.Name = vocab.DefaultNaturalLanguageValue("#" + cat)
-						tag.Href = vocab.IRI("/tags/" + cat)
-					}
+					tag.Href = vocab.IRI("https://mastodon.social/tags/" + tagName)
 					obj.Tag = append(obj.Tag, tag)
 					catFormatted := fmt.Sprintf(
-						"<a rel=\"tag\" class=\"mention hashtag status-link\" href=\"%s\">%s</a>",
-						tag.Href, tag.Name.First(),
+						"<a rel=\"tag\" class=\"mention hashtag status-link\" href=\"https://mastodon.social/tags/%s\">%s</a>",
+						tagName, tagName,
 					)
 					catsFormatted = append(catsFormatted, catFormatted)
 				}
