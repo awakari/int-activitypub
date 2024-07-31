@@ -527,7 +527,7 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	var txt string
 	attrTitle, titlePresent := evt.Attributes[CeKeyTitle]
 	if titlePresent {
-		txt = attrTitle.GetCeString() + "<br/><br/>"
+		txt = "<b>" + attrTitle.GetCeString() + "</b><br/><br/>"
 	}
 	attrSummary, summaryPresent := evt.Attributes[CeKeySummary]
 	if summaryPresent {
