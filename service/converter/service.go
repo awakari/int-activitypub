@@ -586,7 +586,7 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	}
 	obj.AttributedTo = vocab.IRI(evt.Source)
 	txt += fmt.Sprintf(
-		"<p><a href=\"%s\">%s</a></p><p><u>id</u>: %s<br/><u>source</u>: %s<br/><u>type</u>: %s<br/>",
+		"<p><a href=\"%s\">%s</a></p><p>id<: %s<br/>source: %s<br/>type<: %s<br/>",
 		obj.URL.GetLink().String(),
 		obj.URL.GetLink().String(),
 		evt.Id,
@@ -628,7 +628,7 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 					catsFormatted = append(catsFormatted, catFormatted)
 				}
 			}
-			txt += fmt.Sprintf("<u>%s</u>: %s<br/>", CeKeyCategories, strings.Join(catsFormatted, " "))
+			txt += fmt.Sprintf("%s: %s<br/>", CeKeyCategories, strings.Join(catsFormatted, " "))
 		default:
 			attrVal := evt.Attributes[attrName]
 			switch vt := attrVal.Attr.(type) {
