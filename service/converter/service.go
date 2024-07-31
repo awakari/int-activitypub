@@ -47,6 +47,7 @@ const CeKeyLongitude = "longitude"
 const CeKeyObject = "object"
 const CeKeyObjectUrl = "objecturl"
 const CeKeyPreview = "preview"
+const CeKeySrcImageUrl = "sourceimageurl"
 const CeKeyStarts = "starts"
 const CeKeySubject = "subject"
 const CeKeySummary = "summary"
@@ -692,25 +693,19 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 		}
 		obj.Icon = vocab.LinkNew(vocab.ID(icoUrl), vocab.LinkType)
 	}
-	attrImg, attrImgPresent := evt.Attributes[CeKeyImageUrl]
-	if attrImgPresent {
-		imgUrl := attrImg.GetCeString()
-		if imgUrl == "" {
-			imgUrl = attrIco.GetCeUri()
+	for _, k := range []string{CeKeyPreview, CeKeySrcImageUrl, CeKeyImageUrl} {
+		attrImg, attrImgPresent := evt.Attributes[k]
+		if attrImgPresent {
+			imgUrl := attrImg.GetCeString()
+			if imgUrl == "" {
+				imgUrl = attrIco.GetCeUri()
+			}
+			obj.Image = vocab.LinkNew(vocab.ID(imgUrl), vocab.LinkType)
+			attachments = append(attachments, &vocab.Object{
+				Type: vocab.ImageType,
+				URL:  vocab.IRI(imgUrl),
+			})
 		}
-		obj.Image = vocab.LinkNew(vocab.ID(imgUrl), vocab.LinkType)
-		attachments = append(attachments, &vocab.Object{
-			Type: vocab.ImageType,
-			URL:  vocab.IRI(imgUrl),
-		})
-	}
-	attrPreview, attrPreviewPresent := evt.Attributes[CeKeyPreview]
-	if attrPreviewPresent {
-		previewUrl := attrPreview.GetCeString()
-		if previewUrl == "" {
-			previewUrl = attrIco.GetCeUri()
-		}
-		obj.Image = vocab.LinkNew(vocab.ID(previewUrl), vocab.LinkType)
 	}
 	attrAttType, attrAttTypePresent := evt.Attributes[CeKeyAttachmentType]
 	attrAttUrl, attrAttUrlPresent := evt.Attributes[CeKeyAttachmentUrl]
