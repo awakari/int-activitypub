@@ -44,6 +44,7 @@ const CeKeyImageUrl = "imageurl"
 const CeKeyInReplyTo = "inreplyto"
 const CeKeyLatitude = "latitude"
 const CeKeyLongitude = "longitude"
+const CeKeyName = "name"
 const CeKeyObject = "object"
 const CeKeyObjectUrl = "objecturl"
 const CeKeyPreview = "preview"
@@ -59,7 +60,7 @@ const CeKeyUpdated = "updated"
 const asPublic = "https://www.w3.org/ns/activitystreams#Public"
 
 const fmtLenMaxAttrVal = 80
-const fmtLenMaxBodyTxt = 240
+const fmtLenMaxBodyTxt = 250
 const ceTypePrefixFollowersOnly = "com.awakari.mastodon."
 
 var ErrFail = errors.New("failed to convert")
@@ -533,12 +534,20 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 		if txt != "" {
 			txt += "<br/><br/>"
 		}
-		txt = attrSummary.GetCeString()
+		txt += attrSummary.GetCeString()
 	}
-	if txt != "" && evt.GetTextData() != "" {
-		txt += "<br/><br/>"
+	if evt.GetTextData() != "" {
+		if txt != "" {
+			txt += "<br/><br/>"
+		}
+		txt += evt.GetTextData()
 	}
-	txt += evt.GetTextData()
+	if txt == "" {
+		attrName, namePresent := evt.Attributes[CeKeyName]
+		if namePresent {
+			txt = attrName.GetCeString() + "<br/><br/>"
+		}
+	}
 	txt = truncateStringUtf8(txt, fmtLenMaxBodyTxt)
 
 	var ceObj string
@@ -626,30 +635,30 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 			case *pb.CloudEventAttributeValue_CeBoolean:
 				switch vt.CeBoolean {
 				case true:
-					txt += fmt.Sprintf("<u>%s</u>: true<br/>", attrName)
+					txt += fmt.Sprintf("%s: true<br/>", attrName)
 				default:
-					txt += fmt.Sprintf("<u>%s</u>: false<br/>", attrName)
+					txt += fmt.Sprintf("%s: false<br/>", attrName)
 				}
 			case *pb.CloudEventAttributeValue_CeInteger:
-				txt += fmt.Sprintf("<u>%s</u>: %d<br/>", attrName, vt.CeInteger)
+				txt += fmt.Sprintf("%s: %d<br/>", attrName, vt.CeInteger)
 			case *pb.CloudEventAttributeValue_CeString:
 				if vt.CeString != evt.Source { // "object"/"objecturl" might the same value as the source
-					v := truncateStringUtf8(vt.CeString, fmtLenMaxAttrVal)
-					txt += fmt.Sprintf("<u>%s</u>: %s<br/>", attrName, v)
+					txt += truncateStringUtf8(fmt.Sprintf("%s: %s", attrName, vt.CeString), fmtLenMaxAttrVal)
+					txt += "<br/>"
 				}
 			case *pb.CloudEventAttributeValue_CeUri:
-				v := truncateStringUtf8(vt.CeUri, fmtLenMaxAttrVal)
-				txt += fmt.Sprintf("<u>%s</u>: %s<br/>", attrName, v)
+				txt += truncateStringUtf8(fmt.Sprintf("%s: %s", attrName, vt.CeUri), fmtLenMaxAttrVal)
+				txt += "<br/>"
 			case *pb.CloudEventAttributeValue_CeUriRef:
-				v := truncateStringUtf8(vt.CeUriRef, fmtLenMaxAttrVal)
-				txt += fmt.Sprintf("<u>%s</u>: %s<br/>", attrName, v)
+				txt += truncateStringUtf8(fmt.Sprintf("%s: %s", attrName, vt.CeUriRef), fmtLenMaxAttrVal)
+				txt += "<br/>"
 			case *pb.CloudEventAttributeValue_CeTimestamp:
 				v := vt.CeTimestamp
-				txt += fmt.Sprintf("<u>%s</u>: %s<br/>", attrName, v.AsTime().Format(time.RFC3339))
+				txt += fmt.Sprintf("%s: %s<br/>", attrName, v.AsTime().Format(time.RFC3339))
 			case *pb.CloudEventAttributeValue_CeBytes:
 				v := base64.StdEncoding.EncodeToString(vt.CeBytes)
-				v = truncateStringUtf8(v, fmtLenMaxAttrVal)
-				txt += fmt.Sprintf("<u>%s</u>: %s<br/>", attrName, v)
+				txt += truncateStringUtf8(fmt.Sprintf("%s: %s", attrName, v), fmtLenMaxAttrVal)
+				txt += "<br/>"
 			}
 		}
 	}
