@@ -115,7 +115,8 @@ func (ah actorHandler) handleInterest(ctx *gin.Context, accept, id string) {
 			actor.Name = vocab.DefaultNaturalLanguageValue(id)
 			actor.Summary = vocab.DefaultNaturalLanguageValue(
 				fmt.Sprintf(
-					`<p>Awakari Interest: <b>%s</b></p><p><a href="%s">Details link</a></p>`,
+					`<p><a href="https://awakari.com" target="_blank">Awakari</a> Interest: %s (<a href="%s">details</a>)</p>
+<p><a href="https://awakari.com/sub.html" target="_blank">Create</a> your own interest and get updates from unlimited sources.</p>`,
 					d.Description,
 					urlDetails,
 				),
@@ -132,9 +133,9 @@ func (ah actorHandler) handleInterest(ctx *gin.Context, accept, id string) {
 			actor.PublicKey.ID = actor.ID + "#main-key"
 			actor.PublicKey.Owner = actor.ID
 			actor.Attachment = vocab.ItemCollection{
-				vocab.Page{
+				vocab.Object{
 					Name: vocab.DefaultNaturalLanguageValue("homepage"),
-					ID:   vocab.ID(urlDetails),
+					Type: "PropertyValue",
 					URL:  vocab.IRI(urlDetails),
 				},
 			}
