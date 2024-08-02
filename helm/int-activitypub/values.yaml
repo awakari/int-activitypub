@@ -89,7 +89,16 @@ nodeSelector: {}
 
 tolerations: []
 
-affinity: {}
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+            - key: spot
+              operator: In
+              values:
+                - "true"
 
 api:
   actor:
