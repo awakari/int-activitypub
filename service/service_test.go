@@ -68,6 +68,21 @@ func TestService_RequestFollow(t *testing.T) {
 			url:  "https://privacy.social/users/nobot2",
 			err:  ErrNoBot,
 		},
+		"self-hosted actor 1": {
+			addr: "actor1@test.social",
+			url:  "https://test.social/users/actor1",
+			err:  ErrInvalid,
+		},
+		"self-hosted actor 2": {
+			addr: "@actor2@test.social",
+			url:  "https://test.social/users/actor2",
+			err:  ErrInvalid,
+		},
+		"self-hosted actor 3": {
+			addr: "https://test.social/users/actor3",
+			url:  "https://test.social/users/actor3",
+			err:  ErrInvalid,
+		},
 	}
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {

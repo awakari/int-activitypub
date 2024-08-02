@@ -111,6 +111,13 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 		}
 	}
 
+	if err == nil {
+		addrParsed, err = url.Parse(addrResolved)
+		if err == nil && addrParsed.Host == svc.hostSelf {
+			err = fmt.Errorf("%w: attempt to follow the self hosted actor %s", ErrInvalid, addr)
+		}
+	}
+
 	pubKeyId := fmt.Sprintf("https://%s/actor#main-key", svc.hostSelf)
 
 	var actor vocab.Actor
