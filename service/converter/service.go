@@ -527,25 +527,25 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	var txt string
 	attrTitle, titlePresent := evt.Attributes[CeKeyTitle]
 	if titlePresent {
-		txt = "<b>" + attrTitle.GetCeString() + "</b><br/><br/>"
+		txt = "<b>" + attrTitle.GetCeString() + "</b><br/>"
 	}
 	attrSummary, summaryPresent := evt.Attributes[CeKeySummary]
 	if summaryPresent {
 		if txt != "" {
-			txt += "<br/><br/>"
+			txt += "<br/>"
 		}
 		txt += attrSummary.GetCeString()
 	}
 	if evt.GetTextData() != "" {
 		if txt != "" {
-			txt += "<br/><br/>"
+			txt += "<br/>"
 		}
 		txt += evt.GetTextData()
 	}
 	if txt == "" {
 		attrName, namePresent := evt.Attributes[CeKeyName]
 		if namePresent {
-			txt = attrName.GetCeString() + "<br/><br/>"
+			txt = attrName.GetCeString() + "<br/>"
 		}
 	}
 	txt = truncateStringUtf8(txt, fmtLenMaxBodyTxt)
@@ -586,7 +586,7 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	}
 	obj.AttributedTo = vocab.IRI(evt.Source)
 	txt += fmt.Sprintf(
-		"<p><a href=\"%s\">%s</a></p><p>id<: %s<br/>source: %s<br/>type<: %s<br/>",
+		"<p><a href=\"%s\">%s</a></p><p>id: %s<br/>source: %s<br/>type: %s<br/>",
 		obj.URL.GetLink().String(),
 		obj.URL.GetLink().String(),
 		evt.Id,

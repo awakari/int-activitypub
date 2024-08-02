@@ -610,7 +610,7 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 						ID:   "https://otakukart.com/wp-content/uploads/2024/07/The-10-Must-Watch-Futuristic-Anime-That-Every-Fan-Should-See.jpg",
 						Type: "Link",
 					},
-					Content:   vocab.DefaultNaturalLanguageValue("<b>The 10 Must-Watch Futuristic Anime That Every Fan Should See</b><br/><br/><br/><br/><div><img width=\"1280\" height=\"720\" src=\"https://otakukart.com/wp-content/uploads/2024/07/The-10-Must-Watch-Futuristic-Anime-That-Every-Fan-Should-See.jpg\" clas...<p><a href=\"https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/\">https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/</a></p><p>id<: 2jrVcFeXfGNcExKHLCcrrXBYyLJ<br/>source: https://otakukart.com/feed/<br/>type<: com.awakari.feeds.v1<br/>categories: <a rel=\"tag\" class=\"mention hashtag status-link\" href=\"https://mastodon.social/tags/anime\">anime</a> <a rel=\"tag\" class=\"mention hashtag status-link\" href=\"https://mastodon.social/tags/otaku\">otaku</a><br/>imageurl: https://otakukart.com/wp-content/uploads/2024/07/The-10-Must-Watch-...<br/>language: en<br/>object: https://otakukart.com/?p=1570851<br/>objecturl: https://otakukart.com/the-10-must-watch-futuristic-anime-that-ever...<br/>summary: <div><img width=\"1280\" height=\"720\" src=\"https://otakukart.com/wp-co...<br/>time: 2024-07-27T01:32:21Z<br/>title: The 10 Must-Watch Futuristic Anime That Every Fan Should See<br/></p>"),
+					Content:   vocab.DefaultNaturalLanguageValue("<b>The 10 Must-Watch Futuristic Anime That Every Fan Should See</b><br/><br/><div><img width=\"1280\" height=\"720\" src=\"https://otakukart.com/wp-content/uploads/2024/07/The-10-Must-Watch-Futuristic-Anime-That-Every-Fan-Should-See.jpg\" class=\"attachm...<p><a href=\"https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/\">https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/</a></p><p>id: 2jrVcFeXfGNcExKHLCcrrXBYyLJ<br/>source: https://otakukart.com/feed/<br/>type: com.awakari.feeds.v1<br/>categories: <a rel=\"tag\" class=\"mention hashtag status-link\" href=\"https://mastodon.social/tags/anime\">anime</a> <a rel=\"tag\" class=\"mention hashtag status-link\" href=\"https://mastodon.social/tags/otaku\">otaku</a><br/>imageurl: https://otakukart.com/wp-content/uploads/2024/07/The-10-Must-Watch-...<br/>language: en<br/>object: https://otakukart.com/?p=1570851<br/>objecturl: https://otakukart.com/the-10-must-watch-futuristic-anime-that-ever...<br/>summary: <div><img width=\"1280\" height=\"720\" src=\"https://otakukart.com/wp-co...<br/>time: 2024-07-27T01:32:21Z<br/>title: The 10 Must-Watch Futuristic Anime That Every Fan Should See<br/></p>"),
 					Published: ts,
 					Replies: &vocab.Collection{
 						ID:      "urlBase/2jrVcFeXfGNcExKHLCcrrXBYyLJ/replies",
@@ -656,7 +656,7 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
 			a, err := svc.ConvertEventToActivity(context.TODO(), c.src, c.interestId, c.follower, &ts)
-			assert.Equal(t, c.dst.Object, a.Object)
+			assert.Equal(t, c.dst, a)
 			assert.ErrorIs(t, err, c.err)
 		})
 	}
