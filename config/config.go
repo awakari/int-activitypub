@@ -19,7 +19,7 @@ type ApiConfig struct {
 		Port uint16 `envconfig:"API_HTTP_PORT" default:"8080" required:"true"`
 	}
 	Port      uint16 `envconfig:"API_PORT" default:"50051" required:"true"`
-	EventType string `envconfig:"API_EVENT_TYPE" required:"true" default:"com.awakari.activitypub.v1"`
+	EventType string `envconfig:"API_EVENT_TYPE" required:"true" default:"com_awakari_activitypub_v1"`
 	Interests struct {
 		Uri              string `envconfig:"API_INTERESTS_URI" required:"true" default:"subscriptions-proxy:50051"`
 		DetailsUriPrefix string `envconfig:"API_INTERESTS_DETAILS_URI_PREFIX" required:"true" default:"https://awakari.com/sub-details.html?id="`

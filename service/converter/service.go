@@ -61,7 +61,8 @@ const asPublic = "https://www.w3.org/ns/activitystreams#Public"
 
 const fmtLenMaxAttrVal = 80
 const fmtLenMaxBodyTxt = 250
-const ceTypePrefixFollowersOnly = "com.awakari.mastodon."
+
+const ceTypePrefixFollowersOnly = "com_awakari_mastodon_"
 
 var ErrFail = errors.New("failed to convert")
 

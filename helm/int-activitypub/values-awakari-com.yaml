@@ -1,6 +1,6 @@
 api:
   event:
-    type: "com.awakari.activitypub.v1"
+    type: "com_awakari_activitypub_v1"
   interests:
     detailsUriPrefix: "https://awakari.com/sub-details.html?id="
   writer:
