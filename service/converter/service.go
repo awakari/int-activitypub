@@ -111,6 +111,8 @@ func (svc service) ConvertActivityToEvent(ctx context.Context, actor vocab.Actor
 		switch objT := obj.(type) {
 		case *vocab.Object:
 			publicObj, err = svc.convertObject(objT, evt)
+		case *vocab.Question:
+			publicObj, err = svc.convertQuestion(objT, evt)
 		default:
 			switch obj.IsLink() {
 			case true:
@@ -261,6 +263,123 @@ func (svc service) convertActivity(a vocab.Activity, evt *pb.CloudEvent, tags ut
 }
 
 func (svc service) convertObject(obj *vocab.Object, evt *pb.CloudEvent) (public bool, err error) {
+	evt.Attributes[CeKeyObject] = &pb.CloudEventAttributeValue{
+		Attr: &pb.CloudEventAttributeValue_CeString{
+			CeString: string(obj.Type),
+		},
+	}
+	evt.Attributes[CeKeyObjectUrl] = &pb.CloudEventAttributeValue{
+		Attr: &pb.CloudEventAttributeValue_CeUri{
+			CeUri: obj.ID.String(),
+		},
+	}
+	if att := obj.Attachment; att != nil {
+		err = convertAttachment(att, evt)
+	}
+	if aud := obj.Audience; aud != nil && len(aud) > 0 {
+		var publicAud bool
+		var errAud error
+		publicAud, errAud = convertAsCollectionDetectAsPublic(aud, evt, CeKeyAudience)
+		if publicAud {
+			public = true
+		}
+		err = errors.Join(err, errAud)
+	}
+	if cc := obj.CC; cc != nil && len(cc) > 0 {
+		var publicCc bool
+		var errCc error
+		publicCc, errCc = convertAsCollectionDetectAsPublic(cc, evt, CeKeyCc)
+		if publicCc {
+			public = true
+		}
+		err = errors.Join(err, errCc)
+	}
+	if obj.Content != nil {
+		txt := evt.GetTextData()
+		switch txt {
+		case "":
+			evt.Data = &pb.CloudEvent_TextData{
+				TextData: obj.Content.String(),
+			}
+		default:
+			evt.Data = &pb.CloudEvent_TextData{
+				TextData: fmt.Sprintf("%s\n\n%s", obj.Content.String(), txt),
+			}
+		}
+	}
+	if obj.Duration > 0 {
+		evt.Attributes[CeKeyDuration] = &pb.CloudEventAttributeValue{
+			Attr: &pb.CloudEventAttributeValue_CeInteger{
+				CeInteger: int32(obj.Duration.Seconds()),
+			},
+		}
+	}
+	if !obj.EndTime.IsZero() {
+		evt.Attributes[CeKeyEnds] = &pb.CloudEventAttributeValue{
+			Attr: &pb.CloudEventAttributeValue_CeTimestamp{
+				CeTimestamp: timestamppb.New(obj.EndTime),
+			},
+		}
+	}
+	if ico := obj.Icon; ico != nil {
+		err = errors.Join(err, convertAsLink(ico, evt, CeKeyIcon))
+	}
+	if img := obj.Image; img != nil {
+		err = errors.Join(err, convertAsLink(img, evt, CeKeyImageUrl))
+	}
+	if inReplyTo := obj.InReplyTo; inReplyTo != nil {
+		err = errors.Join(err, convertInReplyTo(inReplyTo, evt))
+	}
+	if loc := obj.Location; loc != nil {
+		err = errors.Join(err, convertLocation(loc, evt))
+	}
+	if preview := obj.Preview; preview != nil {
+		err = errors.Join(err, convertAsLink(preview, evt, CeKeyPreview))
+	}
+	if !obj.StartTime.IsZero() {
+		evt.Attributes[CeKeyStarts] = &pb.CloudEventAttributeValue{
+			Attr: &pb.CloudEventAttributeValue_CeTimestamp{
+				CeTimestamp: timestamppb.New(obj.StartTime),
+			},
+		}
+	}
+	if summ := obj.Summary; summ != nil && len(summ) > 0 {
+		txt := evt.GetTextData()
+		switch txt {
+		case "":
+			evt.Data = &pb.CloudEvent_TextData{
+				TextData: summ.String(),
+			}
+		default:
+			evt.Data = &pb.CloudEvent_TextData{
+				TextData: fmt.Sprintf("%s\n\n%s", summ.String(), txt),
+			}
+		}
+	}
+	if tags := obj.Tag; tags != nil && len(tags) > 0 {
+		err = errors.Join(err, convertAsCollection(tags, evt, CeKeyCategories))
+	}
+	if to := obj.To; to != nil && len(to) > 0 {
+		var publicTo bool
+		var errTo error
+		publicTo, errTo = convertAsCollectionDetectAsPublic(to, evt, CeKeyTo)
+		if publicTo {
+			public = true
+		}
+		err = errors.Join(err, errTo)
+	}
+	if !obj.Updated.IsZero() {
+		evt.Attributes[CeKeyUpdated] = &pb.CloudEventAttributeValue{
+			Attr: &pb.CloudEventAttributeValue_CeTimestamp{
+				CeTimestamp: timestamppb.New(obj.Updated),
+			},
+		}
+	}
+	//
+	return
+}
+
+func (svc service) convertQuestion(obj *vocab.Question, evt *pb.CloudEvent) (public bool, err error) {
 	evt.Attributes[CeKeyObject] = &pb.CloudEventAttributeValue{
 		Attr: &pb.CloudEventAttributeValue_CeString{
 			CeString: string(obj.Type),
