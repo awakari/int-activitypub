@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/golang-lru/v2/expirable"
 	"google.golang.org/grpc/metadata"
 	"io"
+	"log/slog"
 	"sync"
 	"time"
 )
@@ -28,6 +29,7 @@ type service struct {
 	cacheLock        *sync.Mutex
 	clientAwk        api.Client
 	backoffTimeLimit time.Duration
+	log              *slog.Logger
 }
 
 const accSep = ":"
@@ -38,7 +40,7 @@ const cacheWriterTtl = 24 * time.Hour
 var ErrWrite = errors.New("failed to write event")
 var errNoAck = errors.New("event is not accepted")
 
-func NewService(clientAwk api.Client, backoffTimeLimit time.Duration) Service {
+func NewService(clientAwk api.Client, backoffTimeLimit time.Duration, log *slog.Logger) Service {
 	funcEvict := func(_ string, w model.Writer[*pb.CloudEvent]) {
 		_ = w.Close()
 	}
@@ -47,6 +49,7 @@ func NewService(clientAwk api.Client, backoffTimeLimit time.Duration) Service {
 		cacheLock:        &sync.Mutex{},
 		clientAwk:        clientAwk,
 		backoffTimeLimit: backoffTimeLimit,
+		log:              log,
 	}
 }
 
@@ -82,6 +85,10 @@ func (svc service) getWriterAndPublish(ctx context.Context, evt *pb.CloudEvent, 
 	if err == nil {
 		err = svc.publish(w, evt)
 		switch {
+		case errors.Is(err, limits.ErrReached):
+			svc.log.Debug(fmt.Sprintf("Publish failure: evt.Id=%s, userId=%s, err=%s", evt.Id, userId, err))
+			err = nil   // don't retry this time
+			fallthrough // reopen the writer the next time
 		case errors.Is(err, limits.ErrUnavailable):
 			fallthrough
 		case errors.Is(err, permits.ErrUnavailable):
@@ -91,6 +98,7 @@ func (svc service) getWriterAndPublish(ctx context.Context, evt *pb.CloudEvent, 
 		case errors.Is(err, resolver.ErrInternal):
 			fallthrough
 		case errors.Is(err, io.EOF):
+			// close and remove the writer from the cache
 			k := writerKey(groupId, userId)
 			svc.cacheLock.Lock()
 			defer svc.cacheLock.Unlock()
@@ -118,21 +126,10 @@ func (svc service) getWriter(ctx context.Context, groupId, userId string) (w mod
 
 func (svc service) publish(w model.Writer[*pb.CloudEvent], evt *pb.CloudEvent) (err error) {
 	err = svc.tryPublish(w, evt)
-	if err != nil {
-		switch {
-		case errors.Is(err, limits.ErrUnavailable):
-			fallthrough
-		case errors.Is(err, permits.ErrUnavailable):
-			fallthrough
-		case errors.Is(err, resolver.ErrUnavailable):
-			fallthrough
-		case errors.Is(err, resolver.ErrInternal):
-			// avoid retrying this and above cases before reopening the writer
-		default:
-			err = svc.retryBackoff(func() error {
-				return svc.tryPublish(w, evt)
-			})
-		}
+	if err == errNoAck {
+		err = svc.retryBackoff(func() error {
+			return svc.tryPublish(w, evt)
+		})
 	}
 	return
 }
@@ -141,7 +138,7 @@ func (svc service) tryPublish(w model.Writer[*pb.CloudEvent], evt *pb.CloudEvent
 	var ackCount uint32
 	ackCount, err = w.WriteBatch([]*pb.CloudEvent{evt})
 	if err == nil && ackCount < 1 {
-		err = errNoAck // it's an error to retry
+		err = errNoAck //  error to retry w/o reopening the writer
 	}
 	return
 }

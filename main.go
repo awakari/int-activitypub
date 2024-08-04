@@ -81,7 +81,7 @@ func main() {
 	svcConv := converter.NewService(cfg.Api.EventType, fmt.Sprintf("https://%s", cfg.Api.Http.Host), vocab.ActivityVocabularyType(cfg.Api.Actor.Type))
 	svcConv = converter.NewLogging(svcConv, log)
 
-	svcWriter := writer.NewService(clientAwk, cfg.Api.Writer.Backoff)
+	svcWriter := writer.NewService(clientAwk, cfg.Api.Writer.Backoff, log)
 	svcWriter = writer.NewLogging(svcWriter, log)
 
 	// init websub reader
