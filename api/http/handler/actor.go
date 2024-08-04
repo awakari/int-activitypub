@@ -116,7 +116,8 @@ func (ah actorHandler) handleInterest(ctx *gin.Context, accept, id string) {
 			actor.Summary = vocab.DefaultNaturalLanguageValue(
 				fmt.Sprintf(
 					`<p>Interest: %s (<a href="%s">details</a>)</p>
-<p>Get rid of spam. <a href="https://awakari.com/sub.html" target="_blank">Create</a> your own interest in Awakari and get filtered updates from unlimited sources.</p>`,
+<p>Awakari <i>interest</i> is an automated account publishing a relevant only content.</p>
+<p><a href="https://awakari.com/sub.html" target="_blank">Create</a> your own interest in Awakari and get filtered updates from unlimited sources.</p>`,
 					d.Description,
 					urlDetails,
 				),
