@@ -108,7 +108,10 @@ api:
     description: "Awakari Fediverse Integration"
     name: "awakari.com"
   event:
-    type: "awakari.activitypub.v1"
+    type:
+      self: "awakari_activitypub_v1"
+      interestsUpdated: "interests-updated"
+      interestsDeleted: "interests-deleted"
   interests:
     uri: "subscriptions-proxy:50051"
     detailsUriPrefix: "https://awakari.com/sub-details.html?id="

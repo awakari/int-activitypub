@@ -78,7 +78,7 @@ func main() {
 	svcActivityPub := activitypub.NewService(clientHttp, cfg.Api.Http.Host, []byte(cfg.Api.Key.Private), ap)
 	svcActivityPub = activitypub.NewServiceLogging(svcActivityPub, log)
 
-	svcConv := converter.NewService(cfg.Api.EventType, fmt.Sprintf("https://%s", cfg.Api.Http.Host), vocab.ActivityVocabularyType(cfg.Api.Actor.Type))
+	svcConv := converter.NewService(cfg.Api.EventType.Self, fmt.Sprintf("https://%s", cfg.Api.Http.Host), vocab.ActivityVocabularyType(cfg.Api.Actor.Type))
 	svcConv = converter.NewLogging(svcConv, log)
 
 	svcWriter := writer.NewService(clientAwk, cfg.Api.Writer.Backoff, log)
@@ -265,7 +265,7 @@ func main() {
 		}
 	}()
 
-	hc := handler.NewCallbackHandler(cfg.Api.Reader.Uri, cfg.Api.Http.Host, svcConv, svcActivityPub)
+	hc := handler.NewCallbackHandler(cfg.Api.Reader.Uri, cfg.Api.Http.Host, svcConv, svcActivityPub, cfg.Api.EventType)
 
 	log.Info(fmt.Sprintf("starting to listen the HTTP API @ port #%d...", cfg.Api.Reader.CallBack.Port))
 	internalCallbacks := gin.Default()

@@ -19,7 +19,7 @@ type ApiConfig struct {
 		Port uint16 `envconfig:"API_HTTP_PORT" default:"8080" required:"true"`
 	}
 	Port      uint16 `envconfig:"API_PORT" default:"50051" required:"true"`
-	EventType string `envconfig:"API_EVENT_TYPE" required:"true" default:"com_awakari_activitypub_v1"`
+	EventType EventTypeConfig
 	Interests struct {
 		Uri              string `envconfig:"API_INTERESTS_URI" required:"true" default:"subscriptions-proxy:50051"`
 		DetailsUriPrefix string `envconfig:"API_INTERESTS_DETAILS_URI_PREFIX" required:"true" default:"https://awakari.com/sub-details.html?id="`
@@ -83,6 +83,12 @@ type ReaderConfig struct {
 		Port     uint16 `envconfig:"API_READER_CALLBACK_PORT" default:"8081" required:"true"`
 		Path     string `envconfig:"API_READER_CALLBACK_PATH" default:"/v1/callback" required:"true"`
 	}
+}
+
+type EventTypeConfig struct {
+	Self             string `envconfig:"API_EVENT_TYPE_SELF" required:"true" default:"com_awakari_activitypub_v1"`
+	InterestsUpdated string `envconfig:"API_EVENT_TYPE_INTERESTS_UPDATED" required:"true" default:"interests-updated"`
+	InterestsDeleted string `envconfig:"API_EVENT_TYPE_INTERESTS_DELETED" required:"true" default:"interests-deleted"`
 }
 
 func NewConfigFromEnv() (cfg Config, err error) {

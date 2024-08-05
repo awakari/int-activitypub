@@ -22,6 +22,7 @@ import (
 type Service interface {
 	ConvertActivityToEvent(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (evt *pb.CloudEvent, err error)
 	ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent, interestId string, follower *vocab.Actor, t *time.Time) (a vocab.Activity, err error)
+	ConvertEventToActorUpdate(ctx context.Context, evt *pb.CloudEvent, interestId string, follower *vocab.Actor, t *time.Time) (a vocab.Activity, err error)
 }
 
 type service struct {
@@ -620,26 +621,7 @@ func convertLocation(loc vocab.Item, evt *pb.CloudEvent) (err error) {
 
 func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent, interestId string, follower *vocab.Actor, t *time.Time) (a vocab.Activity, err error) {
 
-	a.ID = vocab.ID(svc.urlBase + "/" + evt.Id)
-	a.Context = vocab.IRI(model.NsAs)
-	attrAction, actionPresent := evt.Attributes[CeKeyAction]
-	switch actionPresent {
-	case true:
-		a.Type = vocab.ActivityVocabularyType(attrAction.GetCeString())
-	default:
-		a.Type = vocab.CreateType
-	}
-	a.Actor = vocab.ID(fmt.Sprintf("%s/actor/%s", svc.urlBase, interestId))
-	switch t {
-	case nil:
-		a.Published = time.Now().UTC()
-	default:
-		a.Published = *t
-	}
-	a.To = vocab.ItemCollection{}
-	if follower != nil {
-		a.To = append(a.To, follower.ID)
-	}
+	svc.initActivity(evt, interestId, follower, t, &a)
 	if evt.Type != svc.ceType && !strings.HasPrefix(evt.Type, ceTypePrefixFollowersOnly) {
 		a.To = append(a.To, vocab.IRI(asPublic))
 	}
@@ -851,6 +833,40 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	}
 	obj.Attachment = attachments
 
+	attrAction, actionPresent := evt.Attributes[CeKeyAction]
+	switch actionPresent {
+	case true:
+		a.Type = vocab.ActivityVocabularyType(attrAction.GetCeString())
+	default:
+		a.Type = vocab.CreateType
+	}
+
+	return
+}
+
+func (svc service) ConvertEventToActorUpdate(ctx context.Context, evt *pb.CloudEvent, interestId string, follower *vocab.Actor, t *time.Time) (a vocab.Activity, err error) {
+	svc.initActivity(evt, interestId, follower, t, &a)
+	a.To = append(a.To, vocab.IRI(asPublic))
+	a.Type = vocab.UpdateType
+	a.Object = a.Actor
+	a.Summary = vocab.DefaultNaturalLanguageValue(evt.GetTextData())
+	return
+}
+
+func (svc service) initActivity(evt *pb.CloudEvent, interestId string, follower *vocab.Actor, t *time.Time, a *vocab.Activity) {
+	a.ID = vocab.ID(svc.urlBase + "/" + evt.Id)
+	a.Context = vocab.IRI(model.NsAs)
+	a.Actor = vocab.ID(fmt.Sprintf("%s/actor/%s", svc.urlBase, interestId))
+	switch t {
+	case nil:
+		a.Published = time.Now().UTC()
+	default:
+		a.Published = *t
+	}
+	a.To = vocab.ItemCollection{}
+	if follower != nil {
+		a.To = append(a.To, follower.ID)
+	}
 	return
 }
 

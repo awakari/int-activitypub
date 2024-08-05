@@ -2,8 +2,10 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/awakari/int-activitypub/api/http/reader"
+	"github.com/awakari/int-activitypub/config"
 	"github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/service/converter"
 	"github.com/bytedance/sonic/utf8"
@@ -28,6 +30,7 @@ type callbackHandler struct {
 	host            string
 	svcConv         converter.Service
 	svcAp           activitypub.Service
+	cfgEvtType      config.EventTypeConfig
 }
 
 const keyHubChallenge = "hub.challenge"
@@ -35,12 +38,13 @@ const keyHubTopic = "hub.topic"
 const linkSelfSuffix = ">; rel=\"self\""
 const keyAckCount = "X-Ack-Count"
 
-func NewCallbackHandler(topicPrefixBase, host string, svcConv converter.Service, svcAp activitypub.Service) CallbackHandler {
+func NewCallbackHandler(topicPrefixBase, host string, svcConv converter.Service, svcAp activitypub.Service, cfgEvtType config.EventTypeConfig) CallbackHandler {
 	return callbackHandler{
 		topicPrefixBase: topicPrefixBase,
 		host:            host,
 		svcConv:         svcConv,
 		svcAp:           svcAp,
+		cfgEvtType:      cfgEvtType,
 	}
 }
 
@@ -118,12 +122,30 @@ func (ch callbackHandler) Deliver(ctx *gin.Context) {
 				TextData: dataTxt,
 			}
 		}
-		var a vocab.Activity
 		if err == nil {
-			a, err = ch.svcConv.ConvertEventToActivity(ctx, evtProto, interestId, &follower, nil)
-		}
-		if err == nil {
-			err = ch.svcAp.SendActivity(ctx, a, follower.Inbox.GetLink(), pubKeyId)
+			switch evtProto.Type {
+			case ch.cfgEvtType.InterestsUpdated:
+				var a vocab.Activity
+				var errUpdate error
+				a, errUpdate = ch.svcConv.ConvertEventToActorUpdate(ctx, evtProto, interestId, &follower, nil)
+				if errUpdate == nil {
+					errUpdate = ch.svcAp.SendActivity(ctx, a, follower.Inbox.GetLink(), pubKeyId)
+				}
+				if errUpdate != nil {
+					err = errors.Join(err, errUpdate)
+				}
+				fallthrough
+			default:
+				var a vocab.Activity
+				var errNotify error
+				a, errNotify = ch.svcConv.ConvertEventToActivity(ctx, evtProto, interestId, &follower, nil)
+				if errNotify == nil {
+					errNotify = ch.svcAp.SendActivity(ctx, a, follower.Inbox.GetLink(), pubKeyId)
+				}
+				if errNotify != nil {
+					err = errors.Join(err, errNotify)
+				}
+			}
 		}
 		if err != nil {
 			break
