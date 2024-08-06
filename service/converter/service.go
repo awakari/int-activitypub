@@ -684,8 +684,8 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	obj.URL = vocab.IRI(addrOrigin)
 
 	txt += fmt.Sprintf(
-		"<br/>Original: <a href=\"%s\">%s</a><br/>Attributes: <a href=\"%s\">%s</a>",
-		addrOrigin, addrOrigin, a.URL, a.URL,
+		"<br/>Original: <a href=\"%s\">%s</a><br/><a href=\"%s\">All Event Attributes</a>",
+		addrOrigin, addrOrigin, a.URL,
 	)
 	obj.Content = vocab.DefaultNaturalLanguageValue(txt)
 
