@@ -76,8 +76,9 @@ type PrometheusConfig struct {
 }
 
 type ReaderConfig struct {
-	Uri      string `envconfig:"API_READER_URI" default:"http://reader:8080/v1" required:"true"`
-	CallBack struct {
+	Uri          string `envconfig:"API_READER_URI" default:"http://reader:8080/v1" required:"true"`
+	UriEventBase string `envconfig:"API_READER_URI_EVT_BASE" default:"https://reader.awakari.com/v1/evt" required:"true"`
+	CallBack     struct {
 		Protocol string `envconfig:"API_READER_CALLBACK_PROTOCOL" default:"http" required:"true"`
 		Host     string `envconfig:"API_READER_CALLBACK_HOST" default:"int-activitypub" required:"true"`
 		Port     uint16 `envconfig:"API_READER_CALLBACK_PORT" default:"8081" required:"true"`

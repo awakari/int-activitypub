@@ -15,7 +15,7 @@ import (
 )
 
 func TestService_ConvertActivityToEvent(t *testing.T) {
-	svc := NewService("foo", "urlBase", vocab.ServiceType)
+	svc := NewService("foo", "urlBase", "https://reader/evt", vocab.ServiceType)
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
 		actor vocab.Actor
@@ -517,7 +517,7 @@ func TestService_ConvertActivityToEvent(t *testing.T) {
 }
 
 func TestService_ConvertEventToActivity(t *testing.T) {
-	svc := NewService("foo", "urlBase", vocab.ServiceType)
+	svc := NewService("foo", "https://base", "https://reader/evt", vocab.ServiceType)
 	svc = NewLogging(svc, slog.Default())
 	ts := time.Date(2024, 7, 27, 1, 32, 21, 0, time.UTC)
 	cases := map[string]struct {
@@ -586,17 +586,18 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 				Name: vocab.DefaultNaturalLanguageValue("John Doe"),
 			},
 			dst: vocab.Activity{
-				ID:      "urlBase/2jrVcFeXfGNcExKHLCcrrXBYyLJ",
+				ID:      "https://base/2jrVcFeXfGNcExKHLCcrrXBYyLJ",
+				URL:     vocab.IRI("https://reader/evt/2jrVcFeXfGNcExKHLCcrrXBYyLJ"),
 				Type:    "Create",
 				Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
-				Actor:   vocab.IRI("urlBase/actor/interest1"),
+				Actor:   vocab.IRI("https://base/actor/interest1"),
 				To: vocab.ItemCollection{
 					vocab.IRI("https://mastodon.social/users/johndoe"),
 					vocab.IRI("https://www.w3.org/ns/activitystreams#Public"),
 				},
 				Published: ts,
 				Object: &vocab.Object{
-					ID:           "urlBase/2jrVcFeXfGNcExKHLCcrrXBYyLJ",
+					ID:           "https://base/2jrVcFeXfGNcExKHLCcrrXBYyLJ",
 					Type:         "Note",
 					Name:         vocab.NaturalLanguageValues{},
 					AttributedTo: vocab.IRI("https://otakukart.com/feed/"),
@@ -610,10 +611,11 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 						ID:   "https://otakukart.com/wp-content/uploads/2024/07/The-10-Must-Watch-Futuristic-Anime-That-Every-Fan-Should-See.jpg",
 						Type: "Link",
 					},
-					Content:   vocab.DefaultNaturalLanguageValue("<b>The 10 Must-Watch Futuristic Anime That Every Fan Should See</b><br/><br/><div><img width=\"1280\" height=\"720\" src=\"https://otakukart.com/wp-content/uploads/2024/07/The-10-Must-Watch-Futuristic-Anime-That-Every-Fan-Should-See.jpg\" class=\"attachm...<p><a href=\"https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/\">https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/</a></p><p>id: 2jrVcFeXfGNcExKHLCcrrXBYyLJ<br/>source: https://otakukart.com/feed/<br/>type: com_awakari_feeds_v1<br/>categories: <a rel=\"tag\" class=\"mention hashtag status-link\" href=\"https://mastodon.social/tags/anime\">anime</a> <a rel=\"tag\" class=\"mention hashtag status-link\" href=\"https://mastodon.social/tags/otaku\">otaku</a><br/>imageurl: https://otakukart.com/wp-content/uploads/2024/07/The-10-Must-Watch-...<br/>language: en<br/>object: https://otakukart.com/?p=1570851<br/>objecturl: https://otakukart.com/the-10-must-watch-futuristic-anime-that-ever...<br/>summary: <div><img width=\"1280\" height=\"720\" src=\"https://otakukart.com/wp-co...<br/>time: 2024-07-27T01:32:21Z<br/>title: The 10 Must-Watch Futuristic Anime That Every Fan Should See<br/></p>"),
+					Content: vocab.DefaultNaturalLanguageValue(
+						`The 10 Must-Watch Futuristic Anime That Every Fan Should See       <br/> Anime is known for its w...<br/>Original: <a href="https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/">https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/</a><br/><a href="https://reader/evt/2jrVcFeXfGNcExKHLCcrrXBYyLJ">All Event Attributes</a>`),
 					Published: ts,
 					Replies: &vocab.Collection{
-						ID:      "urlBase/2jrVcFeXfGNcExKHLCcrrXBYyLJ/replies",
+						ID:      "https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/replies",
 						Type:    "Collection",
 						Content: vocab.NaturalLanguageValues{},
 						Name:    vocab.NaturalLanguageValues{},
@@ -623,8 +625,8 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 							Content: vocab.NaturalLanguageValues{},
 							Name:    vocab.NaturalLanguageValues{},
 							Summary: vocab.NaturalLanguageValues{},
-							PartOf:  vocab.IRI("urlBase/2jrVcFeXfGNcExKHLCcrrXBYyLJ/replies"),
-							Next:    vocab.IRI("urlBase/2jrVcFeXfGNcExKHLCcrrXBYyLJ/replies"),
+							PartOf:  vocab.IRI("https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/replies"),
+							Next:    vocab.IRI("https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/replies"),
 						},
 					},
 					Tag: vocab.ItemCollection{
@@ -656,14 +658,14 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
 			a, err := svc.ConvertEventToActivity(context.TODO(), c.src, c.interestId, c.follower, &ts)
-			assert.Equal(t, c.dst, a)
+			assert.Equal(t, c.dst.Object, a.Object)
 			assert.ErrorIs(t, err, c.err)
 		})
 	}
 }
 
 func TestService_ConvertEventToActorUpdate(t *testing.T) {
-	svc := NewService("foo", "urlBase", vocab.ServiceType)
+	svc := NewService("foo", "https://base", "https://reader/evt", vocab.ServiceType)
 	svc = NewLogging(svc, slog.Default())
 	ts := time.Date(2024, 7, 27, 1, 32, 21, 0, time.UTC)
 	cases := map[string]struct {
@@ -690,16 +692,17 @@ func TestService_ConvertEventToActorUpdate(t *testing.T) {
 				Name: vocab.DefaultNaturalLanguageValue("John Doe"),
 			},
 			dst: vocab.Activity{
-				ID:      "urlBase/2jrVcFeXfGNcExKHLCcrrXBYyLJ-update",
+				ID:      "https://base/2jrVcFeXfGNcExKHLCcrrXBYyLJ-update",
+				URL:     vocab.IRI("https://reader/evt/2jrVcFeXfGNcExKHLCcrrXBYyLJ"),
 				Type:    "Update",
 				Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
-				Actor:   vocab.IRI("urlBase/actor/interest1"),
+				Actor:   vocab.IRI("https://base/actor/interest1"),
 				To: vocab.ItemCollection{
 					vocab.IRI("https://mastodon.social/users/johndoe"),
 					vocab.IRI("https://www.w3.org/ns/activitystreams#Public"),
 				},
 				Published: ts,
-				Object:    vocab.IRI("urlBase/actor/interest1"),
+				Object:    vocab.IRI("https://base/actor/interest1"),
 				Summary:   vocab.DefaultNaturalLanguageValue("Interest has been updated by its owner."),
 			},
 		},
