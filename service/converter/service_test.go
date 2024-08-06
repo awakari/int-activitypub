@@ -661,3 +661,54 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 		})
 	}
 }
+
+func TestService_ConvertEventToActorUpdate(t *testing.T) {
+	svc := NewService("foo", "urlBase", vocab.ServiceType)
+	svc = NewLogging(svc, slog.Default())
+	ts := time.Date(2024, 7, 27, 1, 32, 21, 0, time.UTC)
+	cases := map[string]struct {
+		src        *pb.CloudEvent
+		interestId string
+		follower   *vocab.Actor
+		dst        vocab.Activity
+		err        error
+	}{
+		"1": {
+			src: &pb.CloudEvent{
+				Id:          "2jrVcFeXfGNcExKHLCcrrXBYyLJ",
+				SpecVersion: CeSpecVersion,
+				Source:      "https://awakari.com/reader",
+				Type:        "interests-updated",
+				Data: &pb.CloudEvent_TextData{
+					TextData: "Interest has been updated by its owner.",
+				},
+			},
+			interestId: "interest1",
+			follower: &vocab.Actor{
+				ID:   "https://mastodon.social/users/johndoe",
+				URL:  vocab.IRI("https://mastodon.social/users/johndoe"),
+				Name: vocab.DefaultNaturalLanguageValue("John Doe"),
+			},
+			dst: vocab.Activity{
+				ID:      "urlBase/2jrVcFeXfGNcExKHLCcrrXBYyLJ-update",
+				Type:    "Update",
+				Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
+				Actor:   vocab.IRI("urlBase/actor/interest1"),
+				To: vocab.ItemCollection{
+					vocab.IRI("https://mastodon.social/users/johndoe"),
+					vocab.IRI("https://www.w3.org/ns/activitystreams#Public"),
+				},
+				Published: ts,
+				Object:    vocab.IRI("urlBase/actor/interest1"),
+				Summary:   vocab.DefaultNaturalLanguageValue("Interest has been updated by its owner."),
+			},
+		},
+	}
+	for k, c := range cases {
+		t.Run(k, func(t *testing.T) {
+			a, err := svc.ConvertEventToActorUpdate(context.TODO(), c.src, c.interestId, c.follower, &ts)
+			assert.Equal(t, c.dst, a)
+			assert.ErrorIs(t, err, c.err)
+		})
+	}
+}

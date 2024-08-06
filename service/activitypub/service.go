@@ -142,7 +142,6 @@ func (svc service) SendActivity(ctx context.Context, a vocab.Activity, inbox voc
 	aFixed, _ := apiHttp.FixContext(a)
 	var d []byte
 	d, err = json.Marshal(aFixed)
-	fmt.Printf("SendActivity: %s\n", string(d))
 	var req *http.Request
 	if err == nil {
 		req, err = http.NewRequestWithContext(ctx, http.MethodPost, string(inbox), bytes.NewReader(d))

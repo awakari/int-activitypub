@@ -845,11 +845,14 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 }
 
 func (svc service) ConvertEventToActorUpdate(ctx context.Context, evt *pb.CloudEvent, interestId string, follower *vocab.Actor, t *time.Time) (a vocab.Activity, err error) {
+	a = vocab.Update{
+		Summary: vocab.DefaultNaturalLanguageValue(evt.GetTextData()),
+		Type:    vocab.UpdateType,
+	}
 	svc.initActivity(evt, interestId, follower, t, &a)
+	a.ID = a.ID + "-update"
 	a.To = append(a.To, vocab.IRI(asPublic))
-	a.Type = vocab.UpdateType
 	a.Object = a.Actor
-	a.Summary = vocab.DefaultNaturalLanguageValue(evt.GetTextData())
 	return
 }
 

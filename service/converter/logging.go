@@ -40,7 +40,7 @@ func (l logging) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent,
 }
 
 func (l logging) ConvertEventToActorUpdate(ctx context.Context, evt *pb.CloudEvent, interestId string, follower *vocab.Actor, t *time.Time) (a vocab.Activity, err error) {
-	a, err = l.svc.ConvertEventToActivity(ctx, evt, interestId, follower, t)
+	a, err = l.svc.ConvertEventToActorUpdate(ctx, evt, interestId, follower, t)
 	l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.ConvertEventToActorUpdate(evtId=%s, interestId=%s, follower=%v): err=%s", evt.Id, interestId, follower, err))
 	return
 }
