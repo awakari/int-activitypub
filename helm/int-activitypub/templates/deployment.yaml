@@ -119,7 +119,7 @@ spec:
             - name: API_NODE_NAME
               value: "{{ .Values.api.node.name }}"
             - name: API_EVENT_TYPE_SELF
-              value: "{{ .Values.api.event.type.self }}"
+              value: "{{ .Values.api.event.type.activityPub }}"
             - name: API_EVENT_TYPE_INTERESTS_UPDATED
               value: "{{ .Values.api.event.type.interestsUpdated }}"
             - name: API_EVENT_TYPE_INTERESTS_DELETED
