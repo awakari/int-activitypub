@@ -52,6 +52,8 @@ spec:
               value: "{{ .Values.api.writer.uri }}"
             - name: API_READER_URI
               value: "{{ .Values.api.reader.uri }}"
+            - name: API_READER_URI_EVT_BASE
+              value: "{{ .Values.api.reader.uriEvtBase }}"
             - name: API_READER_CALLBACK_PROTOCOL
               value: "{{ .Values.api.reader.callback.protocol }}"
             - name: API_READER_CALLBACK_HOST

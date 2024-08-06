@@ -78,7 +78,12 @@ func main() {
 	svcActivityPub := activitypub.NewService(clientHttp, cfg.Api.Http.Host, []byte(cfg.Api.Key.Private), ap)
 	svcActivityPub = activitypub.NewServiceLogging(svcActivityPub, log)
 
-	svcConv := converter.NewService(cfg.Api.EventType.Self, fmt.Sprintf("https://%s", cfg.Api.Http.Host), vocab.ActivityVocabularyType(cfg.Api.Actor.Type))
+	svcConv := converter.NewService(
+		cfg.Api.EventType.Self,
+		fmt.Sprintf("https://%s", cfg.Api.Http.Host),
+		cfg.Api.Reader.UriEventBase,
+		vocab.ActivityVocabularyType(cfg.Api.Actor.Type),
+	)
 	svcConv = converter.NewLogging(svcConv, log)
 
 	svcWriter := writer.NewService(clientAwk, cfg.Api.Writer.Backoff, log)

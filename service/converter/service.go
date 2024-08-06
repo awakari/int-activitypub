@@ -2,18 +2,17 @@ package converter
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/util"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	vocab "github.com/go-ap/activitypub"
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/segmentio/ksuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"net/url"
 	"reflect"
-	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -26,9 +25,10 @@ type Service interface {
 }
 
 type service struct {
-	ceType    string
-	urlBase   string
-	actorType vocab.ActivityVocabularyType
+	ceType           string
+	urlBase          string
+	urlReaderEvtBase string
+	actorType        vocab.ActivityVocabularyType
 }
 
 const CeSpecVersion = "1.0"
@@ -38,8 +38,10 @@ const CeKeyAttachmentType = "attachmenttype"
 const CeKeyAudience = "audience"
 const CeKeyCategories = "categories"
 const CeKeyCc = "cc"
+const CeKeyDescription = "description"
 const CeKeyDuration = "duration"
 const CeKeyEnds = "ends"
+const CeKeyHeadline = "headline"
 const CeKeyIcon = "icon"
 const CeKeyImageUrl = "imageurl"
 const CeKeyInReplyTo = "inreplyto"
@@ -60,18 +62,18 @@ const CeKeyUpdated = "updated"
 
 const asPublic = "https://www.w3.org/ns/activitystreams#Public"
 
-const fmtLenMaxAttrVal = 80
-const fmtLenMaxBodyTxt = 250
+const fmtLenMaxBodyTxt = 100
 
 const ceTypePrefixFollowersOnly = "com_awakari_mastodon_"
 
 var ErrFail = errors.New("failed to convert")
 
-func NewService(ceType, urlBase string, actorType vocab.ActivityVocabularyType) Service {
+func NewService(ceType, urlBase, evtReaderBase string, actorType vocab.ActivityVocabularyType) Service {
 	return service{
-		ceType:    ceType,
-		urlBase:   urlBase,
-		actorType: actorType,
+		ceType:           ceType,
+		urlBase:          urlBase,
+		urlReaderEvtBase: evtReaderBase,
+		actorType:        actorType,
 	}
 }
 
@@ -626,30 +628,9 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 		a.To = append(a.To, vocab.IRI(asPublic))
 	}
 
-	var txt string
-	attrTitle, titlePresent := evt.Attributes[CeKeyTitle]
-	if titlePresent {
-		txt = "<b>" + attrTitle.GetCeString() + "</b><br/>"
-	}
-	attrSummary, summaryPresent := evt.Attributes[CeKeySummary]
-	if summaryPresent {
-		if txt != "" {
-			txt += "<br/>"
-		}
-		txt += attrSummary.GetCeString()
-	}
-	if evt.GetTextData() != "" {
-		if txt != "" {
-			txt += "<br/>"
-		}
-		txt += evt.GetTextData()
-	}
-	if txt == "" {
-		attrName, namePresent := evt.Attributes[CeKeyName]
-		if namePresent {
-			txt = attrName.GetCeString() + "<br/>"
-		}
-	}
+	txt := eventSummaryText(evt)
+	txt = bluemonday.StrictPolicy().Sanitize(txt)
+	txt = strings.ReplaceAll(txt, "\n", "<br/>")
 	txt = truncateStringUtf8(txt, fmtLenMaxBodyTxt)
 
 	var ceObj string
@@ -667,105 +648,61 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	default:
 		objType = vocab.NoteType
 	}
+
+	var addrOrigin string
 	obj := vocab.ObjectNew(objType)
 	a.Object = obj
-	obj.ID = vocab.ID(svc.urlBase + "/" + evt.Id)
 	switch {
 	case strings.HasPrefix("http://", ceObj):
 		fallthrough
 	case strings.HasPrefix("https://", ceObj):
-		obj.URL = vocab.IRI(ceObj)
-	default:
-		obj.URL = obj.ID
+		fallthrough
+	case strings.HasPrefix("ipfs://", ceObj):
+		addrOrigin = ceObj
 	}
+
 	attrObjUrl, attrObjUrlPresent := evt.Attributes[CeKeyObjectUrl]
 	if attrObjUrlPresent {
-		objUrl := attrObjUrl.GetCeString()
-		if objUrl == "" {
-			objUrl = attrObjUrl.GetCeUri()
+		addrOrigin = attrObjUrl.GetCeString()
+		if addrOrigin == "" {
+			addrOrigin = attrObjUrl.GetCeUri()
 		}
-		obj.URL = vocab.IRI(objUrl)
 	}
+	if strings.HasPrefix(addrOrigin, "@") { // telegram source
+		addrOrigin = "https://t.me/" + addrOrigin[1:]
+	}
+
 	obj.AttributedTo = vocab.IRI(evt.Source)
-	txt += fmt.Sprintf(
-		"<p><a href=\"%s\">%s</a></p><p>id: %s<br/>source: %s<br/>type: %s<br/>",
-		obj.URL.GetLink().String(),
-		obj.URL.GetLink().String(),
-		evt.Id,
-		evt.Source,
-		evt.Type,
-	)
-	var attrNames []string
-	for attrName, _ := range evt.Attributes {
-		attrNames = append(attrNames, attrName)
+	if addrOrigin == "" {
+		addrOrigin = evt.Source
 	}
-	sort.Strings(attrNames)
-	for _, attrName := range attrNames {
-		switch attrName {
-		case "awakarimatchfound": // internal
-		case "awakariuserid": // do not expose
-		case "awkinternal": // internal
-		case CeKeyCategories:
-			attrCats, _ := evt.Attributes[CeKeyCategories]
-			cats := strings.Split(attrCats.GetCeString(), " ")
-			var catsFormatted []string
-			for _, cat := range cats {
-				var tagName string
-				switch strings.HasPrefix(cat, "#") {
-				case true:
-					tagName = cat[1:]
-				default:
-					tagName = cat
-				}
-				if len(tagName) > 0 {
-					tag := vocab.LinkNew("", "")
-					tag.Name = vocab.DefaultNaturalLanguageValue("#" + tagName)
-					tag.Type = "Hashtag"
-					tag.Href = vocab.IRI("https://mastodon.social/tags/" + tagName)
-					obj.Tag = append(obj.Tag, tag)
-					catFormatted := fmt.Sprintf(
-						"<a rel=\"tag\" class=\"mention hashtag status-link\" href=\"https://mastodon.social/tags/%s\">%s</a>",
-						tagName, tagName,
-					)
-					catsFormatted = append(catsFormatted, catFormatted)
-				}
-			}
-			txt += fmt.Sprintf("%s: %s<br/>", CeKeyCategories, strings.Join(catsFormatted, " "))
+	obj.ID = vocab.ID(addrOrigin)
+	obj.URL = vocab.IRI(addrOrigin)
+
+	txt += fmt.Sprintf(
+		"<br/><br/><a href=\"%s\">%s</a><br/><br/><a href=\"%s\">Attributes</a>",
+		addrOrigin, addrOrigin, a.ID,
+	)
+	obj.Content = vocab.DefaultNaturalLanguageValue(txt)
+
+	attrCats, _ := evt.Attributes[CeKeyCategories]
+	cats := strings.Split(attrCats.GetCeString(), " ")
+	for _, cat := range cats {
+		var tagName string
+		switch strings.HasPrefix(cat, "#") {
+		case true:
+			tagName = cat[1:]
 		default:
-			attrVal := evt.Attributes[attrName]
-			switch vt := attrVal.Attr.(type) {
-			case *pb.CloudEventAttributeValue_CeBoolean:
-				switch vt.CeBoolean {
-				case true:
-					txt += fmt.Sprintf("%s: true<br/>", attrName)
-				default:
-					txt += fmt.Sprintf("%s: false<br/>", attrName)
-				}
-			case *pb.CloudEventAttributeValue_CeInteger:
-				txt += fmt.Sprintf("%s: %d<br/>", attrName, vt.CeInteger)
-			case *pb.CloudEventAttributeValue_CeString:
-				if vt.CeString != evt.Source { // "object"/"objecturl" might the same value as the source
-					txt += truncateStringUtf8(fmt.Sprintf("%s: %s", attrName, vt.CeString), fmtLenMaxAttrVal)
-					txt += "<br/>"
-				}
-			case *pb.CloudEventAttributeValue_CeUri:
-				txt += truncateStringUtf8(fmt.Sprintf("%s: %s", attrName, vt.CeUri), fmtLenMaxAttrVal)
-				txt += "<br/>"
-			case *pb.CloudEventAttributeValue_CeUriRef:
-				txt += truncateStringUtf8(fmt.Sprintf("%s: %s", attrName, vt.CeUriRef), fmtLenMaxAttrVal)
-				txt += "<br/>"
-			case *pb.CloudEventAttributeValue_CeTimestamp:
-				v := vt.CeTimestamp
-				txt += fmt.Sprintf("%s: %s<br/>", attrName, v.AsTime().Format(time.RFC3339))
-			case *pb.CloudEventAttributeValue_CeBytes:
-				v := base64.StdEncoding.EncodeToString(vt.CeBytes)
-				txt += truncateStringUtf8(fmt.Sprintf("%s: %s", attrName, v), fmtLenMaxAttrVal)
-				txt += "<br/>"
-			}
+			tagName = cat
+		}
+		if len(tagName) > 0 {
+			tag := vocab.LinkNew("", "")
+			tag.Name = vocab.DefaultNaturalLanguageValue("#" + tagName)
+			tag.Type = "Hashtag"
+			tag.Href = vocab.IRI("https://mastodon.social/tags/" + tagName)
+			obj.Tag = append(obj.Tag, tag)
 		}
 	}
-	txt += "</p>"
-	obj.Content = vocab.DefaultNaturalLanguageValue(txt)
 
 	if follower != nil {
 		followerMention := "@" + follower.PreferredUsername.First().Value.String()
@@ -789,7 +726,14 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	}
 	obj.To = a.To
 	obj.CC = a.CC
-	replies := vocab.CollectionNew(obj.ID + "/replies")
+	var addrReplies vocab.ID
+	switch strings.HasSuffix(obj.ID.String(), "/") {
+	case true:
+		addrReplies = obj.ID + "replies"
+	default:
+		addrReplies = obj.ID + "/replies"
+	}
+	replies := vocab.CollectionNew(addrReplies)
 	obj.Replies = replies
 	repliesPageFirst := vocab.CollectionPageNew(replies)
 	replies.First = repliesPageFirst
@@ -857,7 +801,8 @@ func (svc service) ConvertEventToActorUpdate(ctx context.Context, evt *pb.CloudE
 }
 
 func (svc service) initActivity(evt *pb.CloudEvent, interestId string, follower *vocab.Actor, t *time.Time, a *vocab.Activity) {
-	a.ID = vocab.ID(svc.urlBase + "/" + evt.Id)
+	a.ID = vocab.ID(svc.urlReaderEvtBase + "/" + evt.Id)
+	a.URL = a.ID
 	a.Context = vocab.IRI(model.NsAs)
 	a.Actor = vocab.ID(fmt.Sprintf("%s/actor/%s", svc.urlBase, interestId))
 	switch t {
@@ -870,6 +815,53 @@ func (svc service) initActivity(evt *pb.CloudEvent, interestId string, follower 
 	if follower != nil {
 		a.To = append(a.To, follower.ID)
 	}
+	return
+}
+
+func eventSummaryText(evt *pb.CloudEvent) (txt string) {
+
+	attrHead, headPresent := evt.Attributes[CeKeyHeadline]
+	if headPresent {
+		txt = strings.TrimSpace(attrHead.GetCeString())
+	}
+
+	attrTitle, titlePresent := evt.Attributes[CeKeyTitle]
+	if titlePresent {
+		if txt != "" {
+			txt += " "
+		}
+		txt += strings.TrimSpace(attrTitle.GetCeString())
+	}
+
+	attrDescr, descrPresent := evt.Attributes[CeKeyDescription]
+	if descrPresent {
+		if txt != "" {
+			txt += " "
+		}
+		txt += strings.TrimSpace(attrDescr.GetCeString())
+	}
+
+	attrSummary, summaryPresent := evt.Attributes[CeKeySummary]
+	if summaryPresent {
+		if txt != "" {
+			txt += " "
+		}
+		txt += strings.TrimSpace(attrSummary.GetCeString())
+	}
+
+	if evt.GetTextData() != "" {
+		if txt != "" {
+			txt += " "
+		}
+		txt += strings.TrimSpace(evt.GetTextData())
+	}
+	if txt == "" {
+		attrName, namePresent := evt.Attributes[CeKeyName]
+		if namePresent {
+			txt = strings.TrimSpace(attrName.GetCeString()) + "<br/>"
+		}
+	}
+
 	return
 }
 
