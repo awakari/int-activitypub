@@ -68,6 +68,10 @@ const ceTypePrefixFollowersOnly = "com_awakari_mastodon_"
 
 var ErrFail = errors.New("failed to convert")
 
+var htmlStripTags = bluemonday.
+	StrictPolicy().
+	AddSpaceWhenStrippingTag(true)
+
 func NewService(ceType, urlBase, evtReaderBase string, actorType vocab.ActivityVocabularyType) Service {
 	return service{
 		ceType:           ceType,
@@ -629,7 +633,7 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	}
 
 	txt := eventSummaryText(evt)
-	txt = bluemonday.StrictPolicy().Sanitize(txt)
+	txt = htmlStripTags.Sanitize(txt)
 	txt = strings.ReplaceAll(txt, "\n", "<br/>")
 	txt = truncateStringUtf8(txt, fmtLenMaxBodyTxt)
 
@@ -676,12 +680,12 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	if addrOrigin == "" {
 		addrOrigin = evt.Source
 	}
-	obj.ID = vocab.ID(addrOrigin)
+	obj.ID = a.ID
 	obj.URL = vocab.IRI(addrOrigin)
 
 	txt += fmt.Sprintf(
-		"<br/><br/><a href=\"%s\">%s</a><br/><br/><a href=\"%s\">Attributes</a>",
-		addrOrigin, addrOrigin, a.ID,
+		"<br/>Original: <a href=\"%s\">%s</a><br/>Attributes: <a href=\"%s\">%s</a>",
+		addrOrigin, addrOrigin, a.URL, a.URL,
 	)
 	obj.Content = vocab.DefaultNaturalLanguageValue(txt)
 
@@ -727,11 +731,11 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	obj.To = a.To
 	obj.CC = a.CC
 	var addrReplies vocab.ID
-	switch strings.HasSuffix(obj.ID.String(), "/") {
+	switch strings.HasSuffix(obj.URL.GetLink().String(), "/") {
 	case true:
-		addrReplies = obj.ID + "replies"
+		addrReplies = obj.URL.GetLink() + "replies"
 	default:
-		addrReplies = obj.ID + "/replies"
+		addrReplies = obj.URL.GetLink() + "/replies"
 	}
 	replies := vocab.CollectionNew(addrReplies)
 	obj.Replies = replies
@@ -801,8 +805,8 @@ func (svc service) ConvertEventToActorUpdate(ctx context.Context, evt *pb.CloudE
 }
 
 func (svc service) initActivity(evt *pb.CloudEvent, interestId string, follower *vocab.Actor, t *time.Time, a *vocab.Activity) {
-	a.ID = vocab.ID(svc.urlReaderEvtBase + "/" + evt.Id)
-	a.URL = a.ID
+	a.ID = vocab.ID(svc.urlBase + "/" + evt.Id)
+	a.URL = vocab.IRI(svc.urlReaderEvtBase + "/" + evt.Id)
 	a.Context = vocab.IRI(model.NsAs)
 	a.Actor = vocab.ID(fmt.Sprintf("%s/actor/%s", svc.urlBase, interestId))
 	switch t {

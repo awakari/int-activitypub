@@ -586,7 +586,7 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 				Name: vocab.DefaultNaturalLanguageValue("John Doe"),
 			},
 			dst: vocab.Activity{
-				ID:      "https://reader/evt/2jrVcFeXfGNcExKHLCcrrXBYyLJ",
+				ID:      "https://base/2jrVcFeXfGNcExKHLCcrrXBYyLJ",
 				URL:     vocab.IRI("https://reader/evt/2jrVcFeXfGNcExKHLCcrrXBYyLJ"),
 				Type:    "Create",
 				Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
@@ -597,7 +597,7 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 				},
 				Published: ts,
 				Object: &vocab.Object{
-					ID:           "https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/",
+					ID:           "https://base/2jrVcFeXfGNcExKHLCcrrXBYyLJ",
 					Type:         "Note",
 					Name:         vocab.NaturalLanguageValues{},
 					AttributedTo: vocab.IRI("https://otakukart.com/feed/"),
@@ -612,7 +612,7 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 						Type: "Link",
 					},
 					Content: vocab.DefaultNaturalLanguageValue(
-						`The 10 Must-Watch Futuristic Anime That Every Fan Should See <br/>Anime is known for its wide ran...<br/><br/><a href="https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/">https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/</a><br/><br/><a href="https://reader/evt/2jrVcFeXfGNcExKHLCcrrXBYyLJ">Attributes</a>`),
+						`The 10 Must-Watch Futuristic Anime That Every Fan Should See       <br/> Anime is known for its w...<br/>Original: <a href="https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/">https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/</a><br/>Attributes: <a href="https://reader/evt/2jrVcFeXfGNcExKHLCcrrXBYyLJ">https://reader/evt/2jrVcFeXfGNcExKHLCcrrXBYyLJ</a>`),
 					Published: ts,
 					Replies: &vocab.Collection{
 						ID:      "https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/replies",
@@ -692,7 +692,7 @@ func TestService_ConvertEventToActorUpdate(t *testing.T) {
 				Name: vocab.DefaultNaturalLanguageValue("John Doe"),
 			},
 			dst: vocab.Activity{
-				ID:      "https://reader/evt/2jrVcFeXfGNcExKHLCcrrXBYyLJ-update",
+				ID:      "https://base/2jrVcFeXfGNcExKHLCcrrXBYyLJ-update",
 				URL:     vocab.IRI("https://reader/evt/2jrVcFeXfGNcExKHLCcrrXBYyLJ"),
 				Type:    "Update",
 				Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
