@@ -119,11 +119,11 @@ spec:
             - name: API_NODE_NAME
               value: "{{ .Values.api.node.name }}"
             - name: API_EVENT_TYPE_SELF
-              value: "{{ .Values.api.event.type.activityPub }}"
+              value: "{{ .Values.api.event.typ.self }}"
             - name: API_EVENT_TYPE_INTERESTS_UPDATED
-              value: "{{ .Values.api.event.type.interestsUpdated }}"
+              value: "{{ .Values.api.event.typ.interestsUpdated }}"
             - name: API_EVENT_TYPE_INTERESTS_DELETED
-              value: "{{ .Values.api.event.type.interestsDeleted }}"
+              value: "{{ .Values.api.event.typ.interestsDeleted }}"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

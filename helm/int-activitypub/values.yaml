@@ -108,8 +108,8 @@ api:
     description: "Awakari Fediverse Integration"
     name: "awakari.com"
   event:
-    type:
-      activityPub: "awakari_activitypub_v1"
+    typ:
+      self: "awakari_activitypub_v1"
       interestsUpdated: "interests-updated"
       interestsDeleted: "interests-deleted"
   interests:
