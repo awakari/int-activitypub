@@ -683,7 +683,7 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	obj.URL = vocab.IRI(addrOrigin)
 
 	txt += fmt.Sprintf(
-		"<br/><br/>Original: <a href=\"%s\">%s</a><br/><br/><a href=\"%s?format=html\">All Event Attributes</a>",
+		"<br/><br/>Original: <a href=\"%s\">%s</a><br/><br/><a href=\"%s\">Event Attributes</a>",
 		addrOrigin, addrOrigin, a.URL,
 	)
 	obj.Content = vocab.DefaultNaturalLanguageValue(txt)
@@ -815,7 +815,7 @@ func (svc service) ConvertEventToActorUpdate(ctx context.Context, evt *pb.CloudE
 
 func (svc service) initActivity(evt *pb.CloudEvent, interestId string, follower *vocab.Actor, t *time.Time, a *vocab.Activity) {
 	a.ID = vocab.ID(svc.urlBase + "/" + evt.Id)
-	a.URL = vocab.IRI(svc.urlReaderEvtBase + "/" + evt.Id)
+	a.URL = vocab.IRI(svc.urlReaderEvtBase + evt.Id)
 	a.Context = vocab.IRI(model.NsAs)
 	a.Actor = vocab.ID(fmt.Sprintf("%s/actor/%s", svc.urlBase, interestId))
 	switch t {

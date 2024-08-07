@@ -117,7 +117,7 @@ api:
     detailsUriPrefix: "https://awakari.com/sub-details.html?id="
   reader:
     uri: "http://reader:8080/v1"
-    uriEvtBase: "https://reader.awakari.com/v1/evt"
+    uriEvtBase: "https://awakari.com/pub-msg.html?id="
     callback:
       protocol: "http"
       path: "/v1/callback"
