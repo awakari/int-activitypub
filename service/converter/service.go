@@ -664,6 +664,8 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	case strings.HasPrefix("ipfs://", ceObj):
 		addrOrigin = ceObj
 	}
+	obj.ID = a.ID
+	obj.AttributedTo = vocab.IRI(evt.Source)
 
 	attrObjUrl, attrObjUrlPresent := evt.Attributes[CeKeyObjectUrl]
 	if attrObjUrlPresent {
@@ -672,15 +674,12 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 			addrOrigin = attrObjUrl.GetCeUri()
 		}
 	}
-	if strings.HasPrefix(addrOrigin, "@") { // telegram source
-		addrOrigin = "https://t.me/" + addrOrigin[1:]
-	}
-
-	obj.AttributedTo = vocab.IRI(evt.Source)
 	if addrOrigin == "" {
 		addrOrigin = evt.Source
 	}
-	obj.ID = a.ID
+	if strings.HasPrefix(addrOrigin, "@") { // telegram source
+		addrOrigin = "https://t.me/" + addrOrigin[1:]
+	}
 	obj.URL = vocab.IRI(addrOrigin)
 
 	txt += fmt.Sprintf(
@@ -752,20 +751,6 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 		}
 		obj.Icon = vocab.LinkNew(vocab.ID(icoUrl), vocab.LinkType)
 	}
-	for _, k := range []string{CeKeyPreview, CeKeySrcImageUrl, CeKeyImageUrl} {
-		attrImg, attrImgPresent := evt.Attributes[k]
-		if attrImgPresent {
-			imgUrl := attrImg.GetCeString()
-			if imgUrl == "" {
-				imgUrl = attrIco.GetCeUri()
-			}
-			obj.Image = vocab.LinkNew(vocab.ID(imgUrl), vocab.LinkType)
-			attachments = append(attachments, &vocab.Object{
-				Type: vocab.ImageType,
-				URL:  vocab.IRI(imgUrl),
-			})
-		}
-	}
 	attrAttType, attrAttTypePresent := evt.Attributes[CeKeyAttachmentType]
 	attrAttUrl, attrAttUrlPresent := evt.Attributes[CeKeyAttachmentUrl]
 	if attrAttTypePresent && attrAttUrlPresent {
@@ -778,6 +763,30 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 			MediaType: vocab.MimeType(attrAttType.GetCeString()),
 			URL:       vocab.IRI(objAttUrl),
 		})
+	}
+	for _, k := range []string{CeKeyPreview, CeKeySrcImageUrl, CeKeyImageUrl} {
+		attrImg, attrImgPresent := evt.Attributes[k]
+		if attrImgPresent {
+			imgUrl := attrImg.GetCeString()
+			if imgUrl == "" {
+				imgUrl = attrIco.GetCeUri()
+			}
+			if imgUrl != "" {
+				for _, att := range attachments {
+					if att.(*vocab.Object).URL == vocab.IRI(imgUrl) {
+						imgUrl = "" // discard duplicate
+						break
+					}
+				}
+			}
+			if imgUrl != "" {
+				obj.Image = vocab.LinkNew(vocab.ID(imgUrl), vocab.LinkType)
+				attachments = append(attachments, &vocab.Object{
+					Type: vocab.ImageType,
+					URL:  vocab.IRI(imgUrl),
+				})
+			}
+		}
 	}
 	obj.Attachment = attachments
 
