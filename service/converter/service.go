@@ -68,9 +68,7 @@ const ceTypePrefixFollowersOnly = "com_awakari_mastodon_"
 
 var ErrFail = errors.New("failed to convert")
 
-var htmlStripTags = bluemonday.
-	StrictPolicy().
-	AddSpaceWhenStrippingTag(true)
+var htmlStripTags = bluemonday.StrictPolicy()
 
 func NewService(ceType, urlBase, evtReaderBase string, actorType vocab.ActivityVocabularyType) Service {
 	return service{
@@ -682,14 +680,9 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	}
 	obj.URL = vocab.IRI(addrOrigin)
 
-	txt += fmt.Sprintf(
-		"<br/><br/>Original: <a href=\"%s\">%s</a><br/><br/><a href=\"%s\">Event Attributes</a>",
-		addrOrigin, addrOrigin, a.URL,
-	)
-	obj.Content = vocab.DefaultNaturalLanguageValue(txt)
-
 	attrCats, _ := evt.Attributes[CeKeyCategories]
 	cats := strings.Split(attrCats.GetCeString(), " ")
+	var tagsFormatted []string
 	for _, cat := range cats {
 		var tagName string
 		switch strings.HasPrefix(cat, "#") {
@@ -704,8 +697,23 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 			tag.Type = "Hashtag"
 			tag.Href = vocab.IRI("https://mastodon.social/tags/" + tagName)
 			obj.Tag = append(obj.Tag, tag)
+			tagFormatted := fmt.Sprintf(
+				"<a rel=\"tag\" class=\"mention hashtag\" href=\"%s\">%s</a>",
+				tag.Href, tag.Name.String(),
+			)
+			tagsFormatted = append(tagsFormatted, tagFormatted)
 		}
 	}
+
+	var tagsFormattedStr string
+	if len(tagsFormatted) > 0 {
+		tagsFormattedStr = fmt.Sprintf("<br/><br/>%s", strings.Join(tagsFormatted, " "))
+	}
+	txt += fmt.Sprintf(
+		"<br/><br/><a href=\"%s\">%s</a>%s<br/><br/><a href=\"%s\">Event Attributes</a>",
+		addrOrigin, addrOrigin, tagsFormattedStr, a.URL,
+	)
+	obj.Content = vocab.DefaultNaturalLanguageValue(txt)
 
 	if follower != nil {
 		followerMention := "@" + follower.PreferredUsername.First().Value.String()

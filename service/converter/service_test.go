@@ -612,7 +612,7 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 						Type: "Link",
 					},
 					Content: vocab.DefaultNaturalLanguageValue(
-						`The 10 Must-Watch Futuristic Anime That Every Fan Should See       <br/> Anime is known for its w...<br/><br/>Original: <a href="https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/">https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/</a><br/><br/><a href="https://reader/evt2jrVcFeXfGNcExKHLCcrrXBYyLJ">Event Attributes</a>`),
+						`The 10 Must-Watch Futuristic Anime That Every Fan Should See <br/>Anime is known for its wide ran...<br/><br/><a href="https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/">https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/</a><br/><br/><a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/anime">#anime</a> <a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/otaku">#otaku</a><br/><br/><a href="https://reader/evt2jrVcFeXfGNcExKHLCcrrXBYyLJ">Event Attributes</a>`),
 					Published: ts,
 					Replies: &vocab.Collection{
 						ID:      "https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/replies",
@@ -658,6 +658,7 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
 			a, err := svc.ConvertEventToActivity(context.TODO(), c.src, c.interestId, c.follower, &ts)
+			assert.Equal(t, c.dst.Object, a.Object)
 			assert.Equal(t, c.dst, a)
 			assert.ErrorIs(t, err, c.err)
 		})
