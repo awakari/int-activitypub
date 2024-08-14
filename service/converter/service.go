@@ -683,6 +683,7 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	attrCats, _ := evt.Attributes[CeKeyCategories]
 	cats := strings.Split(attrCats.GetCeString(), " ")
 	var tagsFormatted []string
+	var tagCount int
 	for _, cat := range cats {
 		var tagName string
 		switch strings.HasPrefix(cat, "#") {
@@ -702,6 +703,10 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 				tag.Href, tag.Name.String(),
 			)
 			tagsFormatted = append(tagsFormatted, tagFormatted)
+		}
+		tagCount++
+		if tagCount > 10 {
+			break
 		}
 	}
 
