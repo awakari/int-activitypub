@@ -23,3 +23,12 @@ ingressHttpV1:
     - secretName: secret-activitypub-tls-server
       hosts:
         - activitypub.awakari.com
+
+db:
+  tls:
+    enabled: true
+    insecure: true
+  table:
+    shard:
+      followers: false
+      following: false

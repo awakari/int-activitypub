@@ -71,4 +71,4 @@ jobs:
         run: |
           helm upgrade --install ${COMPONENT} helm/package/${COMPONENT}-0.0.0.tgz \
             --values helm/int-activitypub/values-awakari-com.yaml \
-            --set podAnnotations.commit=$(git rev-parse --short HEAD),db.password.secret.enabled=false,db.protocol=mongodb+srv,db.tls.enabled=true,db.tls.insecure=true,db.hostname=${{ secrets.DB_HOST_DEMO }},db.username=${{ secrets.DB_USERNAME_DEMO }},db.password.raw=${{ secrets.DB_PASSWORD_DEMO }}
+            --set-string podAnnotations.commit=$(git rev-parse --short HEAD)

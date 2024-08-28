@@ -136,17 +136,14 @@ cert:
   issuer:
     name: letsencrypt-staging
 db:
-  protocol: mongodb
-  hostname: "mongodb:27017"
   # Database name to use.
   name: int-activitypub
-  username: ""
-  password:
-    raw: "" # used if db.password.secret.enabled is false
-    secret:
-      enabled: false
-      name: "mongodb"
-      key: "mongodb-root-password"
+  secret:
+    name: "db-mongo"
+    keys:
+      url: "url"
+      username: "username"
+      password: "password"
   table:
     cache:
       following:

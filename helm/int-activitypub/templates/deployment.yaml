@@ -64,22 +64,23 @@ spec:
               value: "{{ .Values.api.reader.callback.path }}"
             - name: API_PROMETHEUS_URI
               value: "{{ .Values.api.prometheus.protocol}}://{{ .Values.api.prometheus.host }}:{{ .Values.api.prometheus.port }}"
-            - name: DB_URI
-              value: "{{ .Values.db.protocol }}://{{ .Values.db.hostname }}/?retryWrites=true&w=majority"
             - name: DB_NAME
               value: {{ .Values.db.name }}
+            - name: DB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.db.secret.name }}"
+                  key: "{{ .Values.db.secret.keys.url }}"
             - name: DB_USERNAME
-              value: {{ .Values.db.username }}
-            {{- if .Values.db.password.secret.enabled }}
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.db.secret.name }}"
+                  key: "{{ .Values.db.secret.keys.username }}"
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: "{{ .Values.db.password.secret.name }}"
-                  key: "{{ .Values.db.password.secret.key }}"
-            {{- else }}
-            - name: DB_PASSWORD
-              value: "{{ .Values.db.password.raw }}"
-            {{- end }}
+                  name: "{{ .Values.db.secret.name }}"
+                  key: "{{ .Values.db.secret.keys.password }}"
             - name: DB_TABLE_NAME_FOLLOWERS
               value: {{ .Values.db.table.name.followers }}
             - name: DB_TABLE_SHARD_FOLLOWERS
