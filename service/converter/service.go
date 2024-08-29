@@ -68,7 +68,8 @@ const ceTypePrefixFollowersOnly = "com_awakari_mastodon_"
 
 var ErrFail = errors.New("failed to convert")
 
-var htmlStripTags = bluemonday.StrictPolicy()
+var htmlStripTags = bluemonday.
+	StrictPolicy()
 
 func NewService(ceType, urlBase, evtReaderBase string, actorType vocab.ActivityVocabularyType) Service {
 	return service{
