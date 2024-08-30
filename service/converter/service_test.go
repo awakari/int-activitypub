@@ -612,7 +612,7 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 						Type: "Link",
 					},
 					Content: vocab.DefaultNaturalLanguageValue(
-						`The 10 Must-Watch Futuristic Anime That Every Fan Should See <br/>Anime is known for its wide ran...<br/><br/><a href="https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/">https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/</a><br/><br/><a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/anime">#anime</a> <a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/otaku">#otaku</a><br/><br/><a href="https://reader/evt2jrVcFeXfGNcExKHLCcrrXBYyLJ">Event Attributes</a>`),
+						`The 10 Must-Watch Futuristic Anime That Every Fan Should See Anime is known for its wide range of...<br/><br/><a href="https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/">https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/</a><br/><br/><a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/anime">#anime</a> <a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/otaku">#otaku</a><br/><br/><a href="https://reader/evt2jrVcFeXfGNcExKHLCcrrXBYyLJ">Event Attributes</a>`),
 					Published: ts,
 					Replies: &vocab.Collection{
 						ID:      "https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/replies",

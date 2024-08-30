@@ -13,6 +13,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"net/url"
 	"reflect"
+	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -69,7 +70,10 @@ const ceTypePrefixFollowersOnly = "com_awakari_mastodon_"
 var ErrFail = errors.New("failed to convert")
 
 var htmlStripTags = bluemonday.
-	StrictPolicy()
+	StrictPolicy().
+	AddSpaceWhenStrippingTag(true)
+
+var reMultiSpace = regexp.MustCompile(`\s+`)
 
 func NewService(ceType, urlBase, evtReaderBase string, actorType vocab.ActivityVocabularyType) Service {
 	return service{
@@ -633,7 +637,7 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 
 	txt := eventSummaryText(evt)
 	txt = htmlStripTags.Sanitize(txt)
-	txt = strings.ReplaceAll(txt, "\n", "<br/>")
+	txt = reMultiSpace.ReplaceAllString(txt, " ")
 	txt = truncateStringUtf8(txt, fmtLenMaxBodyTxt)
 
 	var ceObj string
