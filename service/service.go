@@ -284,9 +284,7 @@ func (svc service) List(ctx context.Context, filter model.Filter, limit uint32, 
 
 func (svc service) Unfollow(ctx context.Context, url vocab.IRI, groupId, userId string) (err error) {
 	err = svc.unfollow(ctx, url, fmt.Sprintf("https://%s/actor#main-key", svc.hostSelf))
-	if err == nil {
-		err = svc.stor.Delete(ctx, url.String(), groupId, userId)
-	}
+	err = errors.Join(err, svc.stor.Delete(ctx, url.String(), groupId, userId))
 	return
 }
 
