@@ -1,4 +1,4 @@
-FROM golang:1.23.0-alpine3.20 AS builder
+FROM golang:1.23.1-alpine3.20 AS builder
 WORKDIR /go/src/int-activitypub
 COPY . .
 RUN \

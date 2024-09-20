@@ -27,6 +27,7 @@ spec:
       serviceAccountName: {{ include "int-activitypub.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      priorityClassName: "{{ .Values.priority.class }}"
       containers:
         - name: {{ .Chart.Name }}
           env:
