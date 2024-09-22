@@ -49,6 +49,10 @@ spec:
               value: "{{ .Values.api.writer.backoff }}"
             - name: API_WRITER_BATCH_SIZE
               value: "{{ .Values.api.writer.batchSize }}"
+            - name: API_WRITER_CACHE_SIZE
+              value: "{{ .Values.api.writer.cache.size }}"
+            - name: API_WRITER_CACHE_TTL
+              value: "{{ .Values.api.writer.cache.ttl }}"
             - name: API_WRITER_URI
               value: "{{ .Values.api.writer.uri }}"
             - name: API_READER_URI

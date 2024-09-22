@@ -9,6 +9,7 @@ import (
 	"github.com/awakari/client-sdk-go/api/grpc/permits"
 	"github.com/awakari/client-sdk-go/api/grpc/resolver"
 	"github.com/awakari/client-sdk-go/model"
+	"github.com/awakari/int-activitypub/config"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"github.com/hashicorp/golang-lru/v2/expirable"
@@ -34,18 +35,16 @@ type service struct {
 
 const accSep = ":"
 const backoffInitDelay = 100 * time.Millisecond
-const cacheWriterSize = 1024
-const cacheWriterTtl = 24 * time.Hour
 
 var ErrWrite = errors.New("failed to write event")
 var errNoAck = errors.New("event is not accepted")
 
-func NewService(clientAwk api.Client, backoffTimeLimit time.Duration, log *slog.Logger) Service {
+func NewService(clientAwk api.Client, backoffTimeLimit time.Duration, cfgCache config.WriterCacheConfig, log *slog.Logger) Service {
 	funcEvict := func(_ string, w model.Writer[*pb.CloudEvent]) {
 		_ = w.Close()
 	}
 	return service{
-		cache:            expirable.NewLRU[string, model.Writer[*pb.CloudEvent]](cacheWriterSize, funcEvict, cacheWriterTtl),
+		cache:            expirable.NewLRU[string, model.Writer[*pb.CloudEvent]](int(cfgCache.Size), funcEvict, cfgCache.Ttl),
 		cacheLock:        &sync.Mutex{},
 		clientAwk:        clientAwk,
 		backoffTimeLimit: backoffTimeLimit,

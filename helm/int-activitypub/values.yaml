@@ -127,6 +127,9 @@ api:
   writer:
     backoff: "10s"
     batchSize: 16
+    cache:
+      size: 100
+      ttl: "24h"
     uri: "resolver:50051"
   prometheus:
     protocol: "http"
