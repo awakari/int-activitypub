@@ -135,6 +135,15 @@ api:
     protocol: "http"
     host: "prometheus-server"
     port: "80"
+backup:
+  secrets:
+    image: "alpine:3.20"
+    schedule: "0 0 * * *" # daily at midnight (UTC)
+    restore:
+      image: "alpine:3.20"
+      schedule: "0 0 31 2 *" # never, manually only
+    volume:
+      name: "backup-secrets"
 cert:
   acme:
     email: "awakari@awakari.com"
@@ -170,10 +179,3 @@ db:
 log:
   # https://pkg.go.dev/golang.org/x/exp/slog#Level
   level: -4
-secrets:
-  backup:
-    image: "alpine:3.19"
-    schedule: "0 0 * * *" # daily at midnight (UTC)
-  restore:
-    image: "alpine:3.19"
-    schedule: "0 0 31 2 *" # never, manually only

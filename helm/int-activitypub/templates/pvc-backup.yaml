@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: "{{ include "int-activitypub.fullname" . }}-backup"
+  name: "{{ .Values.backup.secrets.volume.name }}"
 spec:
   accessModes:
     - ReadWriteOnce
