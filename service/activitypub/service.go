@@ -51,6 +51,7 @@ var headersToSign = []string{
 
 var ErrActorWebFinger = errors.New("failed to get the webfinger data for actor")
 var ErrActorFetch = errors.New("failed to get the actor")
+var ErrActorGone = errors.New("actor gone")
 var ErrActivitySend = errors.New("failed to send activity")
 
 func NewService(clientHttp *http.Client, hostname string, privKey []byte, apiProm apiPromV1.API) Service {
@@ -122,7 +123,12 @@ func (svc service) FetchActor(ctx context.Context, addr vocab.IRI, pubKeyId stri
 		data, err = io.ReadAll(io.LimitReader(resp.Body, limitRespBodyLen))
 	}
 	if err == nil && resp.StatusCode > 299 {
-		err = fmt.Errorf("%w %s: response status %d, message: %s", ErrActorFetch, addr, resp.StatusCode, string(data))
+		switch resp.StatusCode {
+		case http.StatusGone:
+			err = fmt.Errorf("%w %s", ErrActorGone, addr)
+		default:
+			err = fmt.Errorf("%w %s: response status %d, message: %s", ErrActorFetch, addr, resp.StatusCode, string(data))
+		}
 	}
 	if err == nil {
 		err = json.Unmarshal(data, &actor)
