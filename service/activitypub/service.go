@@ -126,8 +126,10 @@ func (svc service) FetchActor(ctx context.Context, addr vocab.IRI, pubKeyId stri
 		switch resp.StatusCode {
 		case http.StatusGone:
 			err = fmt.Errorf("%w %s", ErrActorGone, addr)
+			return
 		default:
 			err = fmt.Errorf("%w %s: response status %d, message: %s", ErrActorFetch, addr, resp.StatusCode, string(data))
+			return
 		}
 	}
 	if err == nil {

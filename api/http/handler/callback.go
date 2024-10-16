@@ -99,6 +99,7 @@ func (ch callbackHandler) Deliver(ctx *gin.Context) {
 	switch {
 	case errors.Is(err, activitypub.ErrActorGone):
 		ctx.String(http.StatusGone, err.Error())
+		return
 	case err != nil:
 		ctx.String(http.StatusInternalServerError, fmt.Sprintf("failed to resolve the follower %s: %s", follower, err))
 		return
