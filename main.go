@@ -160,11 +160,11 @@ func main() {
 			URL:       vocab.IRI("https://awakari.com/logo-color-64.png"),
 		},
 		Summary: vocab.DefaultNaturalLanguageValue(
-			"<p>Awakari is a free service that discovers and follows interesting Fediverse publishers on behalf of own users. " +
+			"<p>Awakari is an open-source service that discovers and follows interesting Fediverse publishers on behalf of own users. " +
 				"The service accepts public only messages and filters these to fulfill own user interest queries.</p>" +
-				"<p>Before accepting any publisher's data, Awakari requests to follow them. " +
-				"The acceptance means publisher's <i>explicit consent</i> to process their public messages, like most of other Fediverse servers do. " +
-				"If you don't agree with the following, please don't accept the follow request or remove Awakari from your followers.</p>" +
+				"<p>Before accepting any message, Awakari requests to follow the publisher. " +
+				"The instance where a publisher is logged in sends messages to the approved followers.</p>" +
+				"<p>If you don't agree with the following, please don't accept the follow request or remove Awakari from your followers list.</p>" +
 				"Contact: <a href=\"mailto:awakari@awakari.com\">awakari@awakari.com</a><br/>" +
 				"Donate: <a href=\"https://awakari.com/donation.html\">https://awakari.com/donation.html</a><br/>" +
 				"Opt-Out: <a href=\"https://github.com/awakari/.github/blob/master/OPT-OUT.md\">https://github.com/awakari/.github/blob/master/OPT-OUT.md</a><br/>" +
