@@ -3,13 +3,13 @@ module github.com/awakari/int-activitypub
 go 1.23
 
 require (
-	github.com/awakari/client-sdk-go v1.2.1
-	github.com/bytedance/sonic v1.12.3
+	github.com/awakari/client-sdk-go v1.2.2
+	github.com/bytedance/sonic v1.12.4
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cloudevents/sdk-go/binding/format/protobuf/v2 v2.15.2
 	github.com/cloudevents/sdk-go/v2 v2.15.2
 	github.com/gin-gonic/gin v1.10.0
-	github.com/go-ap/activitypub v0.0.0-20241101101514-bc5248bb8442
+	github.com/go-ap/activitypub v0.0.0-20241104140659-be99a725f9d5
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/kelseyhightower/envconfig v1.4.0
@@ -69,6 +69,6 @@ require (
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20241021214115-324edc3d5d38 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20241104194629-dd2ea8efbc28 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
