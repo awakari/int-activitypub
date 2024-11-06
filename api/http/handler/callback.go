@@ -1,13 +1,13 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/awakari/int-activitypub/api/http/reader"
 	"github.com/awakari/int-activitypub/config"
 	"github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/service/converter"
+	"github.com/bytedance/sonic"
 	"github.com/bytedance/sonic/utf8"
 	ceProto "github.com/cloudevents/sdk-go/binding/format/protobuf/v2"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
@@ -107,7 +107,7 @@ func (ch callbackHandler) Deliver(ctx *gin.Context) {
 
 	defer ctx.Request.Body.Close()
 	var evts []*ce.Event
-	err = json.NewDecoder(ctx.Request.Body).Decode(&evts)
+	err = sonic.ConfigDefault.NewDecoder(ctx.Request.Body).Decode(&evts)
 	if err != nil {
 		ctx.String(http.StatusBadRequest, fmt.Sprintf("failed to deserialize the request payload: %s", err))
 		return
