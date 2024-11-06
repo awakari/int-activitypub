@@ -3,9 +3,9 @@ package reader
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/bytedance/sonic"
 	ceProto "github.com/cloudevents/sdk-go/binding/format/protobuf/v2"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	ce "github.com/cloudevents/sdk-go/v2/event"
@@ -64,7 +64,7 @@ func (svc service) CountByInterest(ctx context.Context, interestId string) (coun
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var cbl CallbackList
-			err = json.NewDecoder(resp.Body).Decode(&cbl)
+			err = sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&cbl)
 			switch err {
 			case nil:
 				count = cbl.Count
@@ -94,7 +94,7 @@ func (svc service) GetCallback(ctx context.Context, subId, url string) (cb Callb
 		defer resp.Body.Close()
 		switch resp.StatusCode {
 		case http.StatusOK:
-			err = json.NewDecoder(resp.Body).Decode(&cb)
+			err = sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&cb)
 			if err != nil {
 				err = fmt.Errorf("%w: %s", ErrInternal, err)
 			}
@@ -156,7 +156,7 @@ func (svc service) Read(ctx context.Context, interestId string, limit int) (last
 	case nil:
 		defer resp.Body.Close()
 		var evts []*ce.Event
-		err = json.NewDecoder(resp.Body).Decode(&evts)
+		err = sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&evts)
 		if err != nil {
 			err = fmt.Errorf("%w: failed to deserialize the request payload: %s", ErrInternal, err)
 			return

@@ -3,12 +3,12 @@ package activitypub
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	apiHttp "github.com/awakari/int-activitypub/api/http"
 	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/util"
+	"github.com/bytedance/sonic"
 	vocab "github.com/go-ap/activitypub"
 	apiPromV1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	modelProm "github.com/prometheus/common/model"
@@ -78,7 +78,7 @@ func (svc service) ResolveActorLink(ctx context.Context, host, name string) (sel
 	}
 	var wf apiHttp.WebFinger
 	if err == nil {
-		err = json.Unmarshal(data, &wf)
+		err = sonic.Unmarshal(data, &wf)
 	}
 	if err == nil {
 		for _, l := range wf.Links {
@@ -133,10 +133,10 @@ func (svc service) FetchActor(ctx context.Context, addr vocab.IRI, pubKeyId stri
 		}
 	}
 	if err == nil {
-		err = json.Unmarshal(data, &actor)
+		err = sonic.Unmarshal(data, &actor)
 	}
 	if err == nil {
-		err = json.Unmarshal(data, &tags)
+		err = sonic.Unmarshal(data, &tags)
 	}
 	//
 	if err != nil {
@@ -149,7 +149,7 @@ func (svc service) SendActivity(ctx context.Context, a vocab.Activity, inbox voc
 	//
 	aFixed, _ := apiHttp.FixContext(a)
 	var d []byte
-	d, err = json.Marshal(aFixed)
+	d, err = sonic.Marshal(aFixed)
 	var req *http.Request
 	if err == nil {
 		req, err = http.NewRequestWithContext(ctx, http.MethodPost, string(inbox), bytes.NewReader(d))

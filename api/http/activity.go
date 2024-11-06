@@ -1,7 +1,7 @@
 package http
 
 import (
-	"encoding/json"
+	"github.com/bytedance/sonic"
 	vocab "github.com/go-ap/activitypub"
 	"hash/crc32"
 )
@@ -67,10 +67,10 @@ var contextExtMastodon = map[string]any{
 }
 
 func FixContext(obj vocab.ActivityObject) (m map[string]any, checkSum uint32) {
-	d, _ := json.Marshal(obj)
+	d, _ := sonic.Marshal(obj)
 	checkSum = crc32.ChecksumIEEE(d)
 	m = make(map[string]any)
-	_ = json.Unmarshal(d, &m)
+	_ = sonic.Unmarshal(d, &m)
 	c, ok := m["context"]
 	switch obj.(type) {
 	case vocab.Actor:

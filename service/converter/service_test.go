@@ -2,8 +2,8 @@ package converter
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/awakari/int-activitypub/util"
+	"github.com/bytedance/sonic"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/stretchr/testify/assert"
@@ -498,7 +498,7 @@ func TestService_ConvertActivityToEvent(t *testing.T) {
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
 			var activity vocab.Activity
-			err := json.Unmarshal([]byte(c.in), &activity)
+			err := sonic.Unmarshal([]byte(c.in), &activity)
 			require.Nil(t, err)
 			evt, err := svc.ConvertActivityToEvent(context.TODO(), c.actor, activity, util.ActivityTags{})
 			if c.out == nil {

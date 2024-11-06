@@ -3,7 +3,6 @@ package handler
 import (
 	"crypto"
 	"crypto/x509"
-	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -11,6 +10,7 @@ import (
 	"github.com/awakari/int-activitypub/service"
 	"github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/util"
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/superseriousbusiness/httpsig"
@@ -46,7 +46,7 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 	}
 
 	var activity vocab.Activity
-	err = json.Unmarshal(data, &activity)
+	err = sonic.Unmarshal(data, &activity)
 	if err != nil {
 		fmt.Printf("Inbox request unmarshal failure: %s\n", err)
 		ctx.String(http.StatusBadRequest, err.Error())
@@ -54,7 +54,7 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 	}
 
 	var tags util.ActivityTags
-	_ = json.Unmarshal(data, &tags)
+	_ = sonic.Unmarshal(data, &tags)
 	if service.ActivityHasNoBotTag(tags) {
 		fmt.Printf("Activity %s contains %s tag\n", activity.ID, service.NoBot)
 		ctx.String(http.StatusUnprocessableEntity, fmt.Sprintf("Activity %s contains %s tag\n", activity.ID, service.NoBot))

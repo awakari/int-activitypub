@@ -1,7 +1,7 @@
 package util
 
 import (
-	"encoding/json"
+	"github.com/bytedance/sonic"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -80,7 +80,7 @@ func TestActivityHasNoBotTag(t *testing.T) {
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
 			var tags ActivityTags
-			err := json.Unmarshal([]byte(c.in), &tags)
+			err := sonic.Unmarshal([]byte(c.in), &tags)
 			require.Nil(t, err)
 			assert.Equal(t, c.tags, tags)
 		})

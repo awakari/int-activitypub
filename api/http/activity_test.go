@@ -1,8 +1,8 @@
 package http
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/bytedance/sonic"
 	vocab "github.com/go-ap/activitypub"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -52,7 +52,7 @@ func Test_FixContext(t *testing.T) {
 		},
 	}
 	m, cs := FixContext(a)
-	data, err := json.Marshal(m)
+	data, err := sonic.ConfigStd.Marshal(m)
 	assert.Nil(t, err)
 	assert.Equal(
 		t,

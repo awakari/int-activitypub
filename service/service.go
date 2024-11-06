@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/awakari/int-activitypub/api/http/reader"
 	"github.com/awakari/int-activitypub/util"
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"net/url"
 	"strings"
@@ -191,7 +191,7 @@ func (svc service) HandleActivity(
 }
 
 func (svc service) handleFollowActivity(ctx context.Context, actorIdLocal, pubKeyId, actorId string, activity vocab.Activity) (post func(), err error) {
-	d, _ := json.Marshal(activity)
+	d, _ := sonic.Marshal(activity)
 	fmt.Printf("Follow activity payload: %s\n", d)
 	cbUrl := svc.makeCallbackUrl(actorId)
 	err = svc.r.CreateCallback(ctx, actorIdLocal, cbUrl)
