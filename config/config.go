@@ -21,7 +21,7 @@ type ApiConfig struct {
 	Port      uint16 `envconfig:"API_PORT" default:"50051" required:"true"`
 	EventType EventTypeConfig
 	Interests struct {
-		Uri              string `envconfig:"API_INTERESTS_URI" required:"true" default:"subscriptions-proxy:50051"`
+		Uri              string `envconfig:"API_INTERESTS_URI" required:"true" default:"interests-api:50051"`
 		DetailsUriPrefix string `envconfig:"API_INTERESTS_DETAILS_URI_PREFIX" required:"true" default:"https://awakari.com/sub-details.html?id="`
 	}
 	Reader ReaderConfig

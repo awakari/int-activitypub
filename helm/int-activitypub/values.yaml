@@ -116,7 +116,7 @@ api:
       interestsUpdated: "interests-updated"
       interestsDeleted: "interests-deleted"
   interests:
-    uri: "subscriptions-proxy:50051"
+    uri: "interests-api:50051"
     detailsUriPrefix: "https://awakari.com/sub-details.html?id="
   reader:
     uri: "http://reader:8080/v1"
