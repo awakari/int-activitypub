@@ -46,6 +46,7 @@ const CeKeyHeadline = "headline"
 const CeKeyIcon = "icon"
 const CeKeyImageUrl = "imageurl"
 const CeKeyInReplyTo = "inreplyto"
+const CeKeyLanguage = "language"
 const CeKeyLatitude = "latitude"
 const CeKeyLongitude = "longitude"
 const CeKeyName = "name"
@@ -177,6 +178,17 @@ func (svc service) convertActivity(a vocab.Activity, evt *pb.CloudEvent, tags ut
 		err = errors.Join(err, errCc)
 	}
 	if a.Content != nil {
+		lang := strings.ToLower(a.Content.First().Ref.String())
+		if lang != "" && lang != "-" {
+			if len(lang) > 2 {
+				lang = lang[:2]
+			}
+			evt.Attributes[CeKeyLanguage] = &pb.CloudEventAttributeValue{
+				Attr: &pb.CloudEventAttributeValue_CeString{
+					CeString: lang,
+				},
+			}
+		}
 		txt := evt.GetTextData()
 		switch txt {
 		case "":
@@ -226,6 +238,17 @@ func (svc service) convertActivity(a vocab.Activity, evt *pb.CloudEvent, tags ut
 		}
 	}
 	if summ := a.Summary; summ != nil && len(summ) > 0 {
+		lang := strings.ToLower(summ.First().Ref.String())
+		if lang != "" && lang != "-" {
+			if len(lang) > 2 {
+				lang = lang[:2]
+			}
+			evt.Attributes[CeKeyLanguage] = &pb.CloudEventAttributeValue{
+				Attr: &pb.CloudEventAttributeValue_CeString{
+					CeString: lang,
+				},
+			}
+		}
 		txt := evt.GetTextData()
 		switch txt {
 		case "":
@@ -305,6 +328,17 @@ func (svc service) convertObject(obj *vocab.Object, evt *pb.CloudEvent) (public 
 		err = errors.Join(err, errCc)
 	}
 	if obj.Content != nil {
+		lang := strings.ToLower(obj.Content.First().Ref.String())
+		if lang != "" && lang != "-" {
+			if len(lang) > 2 {
+				lang = lang[:2]
+			}
+			evt.Attributes[CeKeyLanguage] = &pb.CloudEventAttributeValue{
+				Attr: &pb.CloudEventAttributeValue_CeString{
+					CeString: lang,
+				},
+			}
+		}
 		txt := evt.GetTextData()
 		switch txt {
 		case "":
@@ -354,6 +388,17 @@ func (svc service) convertObject(obj *vocab.Object, evt *pb.CloudEvent) (public 
 		}
 	}
 	if summ := obj.Summary; summ != nil && len(summ) > 0 {
+		lang := strings.ToLower(summ.First().Ref.String())
+		if lang != "" && lang != "-" {
+			if len(lang) > 2 {
+				lang = lang[:2]
+			}
+			evt.Attributes[CeKeyLanguage] = &pb.CloudEventAttributeValue{
+				Attr: &pb.CloudEventAttributeValue_CeString{
+					CeString: lang,
+				},
+			}
+		}
 		txt := evt.GetTextData()
 		switch txt {
 		case "":
@@ -422,6 +467,17 @@ func (svc service) convertQuestion(obj *vocab.Question, evt *pb.CloudEvent) (pub
 		err = errors.Join(err, errCc)
 	}
 	if obj.Content != nil {
+		lang := strings.ToLower(obj.Content.First().Ref.String())
+		if lang != "" && lang != "-" {
+			if len(lang) > 2 {
+				lang = lang[:2]
+			}
+			evt.Attributes[CeKeyLanguage] = &pb.CloudEventAttributeValue{
+				Attr: &pb.CloudEventAttributeValue_CeString{
+					CeString: lang,
+				},
+			}
+		}
 		txt := evt.GetTextData()
 		switch txt {
 		case "":
@@ -471,6 +527,17 @@ func (svc service) convertQuestion(obj *vocab.Question, evt *pb.CloudEvent) (pub
 		}
 	}
 	if summ := obj.Summary; summ != nil && len(summ) > 0 {
+		lang := strings.ToLower(summ.First().Ref.String())
+		if lang != "" && lang != "-" {
+			if len(lang) > 2 {
+				lang = lang[:2]
+			}
+			evt.Attributes[CeKeyLanguage] = &pb.CloudEventAttributeValue{
+				Attr: &pb.CloudEventAttributeValue_CeString{
+					CeString: lang,
+				},
+			}
+		}
 		txt := evt.GetTextData()
 		switch txt {
 		case "":
