@@ -3,8 +3,6 @@ api:
     type: "com_awakari_activitypub_v1"
   interests:
     detailsUriPrefix: "https://awakari.com/sub-details.html?id="
-  writer:
-    uri: "api:50051"
 
 # prod
 cert:

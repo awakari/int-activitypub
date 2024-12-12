@@ -3,17 +3,17 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/awakari/client-sdk-go/api"
 	apiGrpc "github.com/awakari/int-activitypub/api/grpc"
 	apiHttp "github.com/awakari/int-activitypub/api/http"
 	"github.com/awakari/int-activitypub/api/http/handler"
+	"github.com/awakari/int-activitypub/api/http/interests"
+	"github.com/awakari/int-activitypub/api/http/pub"
 	"github.com/awakari/int-activitypub/api/http/reader"
 	"github.com/awakari/int-activitypub/config"
 	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/service"
 	"github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/service/converter"
-	"github.com/awakari/int-activitypub/service/writer"
 	"github.com/awakari/int-activitypub/storage"
 	"github.com/gin-gonic/gin"
 	vocab "github.com/go-ap/activitypub"
@@ -48,18 +48,13 @@ func main() {
 	stor = storage.NewLocalCache(stor, cfg.Db.Table.Following.Cache.Size, cfg.Db.Table.Following.Cache.Ttl)
 	defer stor.Close()
 
-	// awakari API client
-	var clientAwk api.Client
-	clientAwk, err = api.
-		NewClientBuilder().
-		WriterUri(cfg.Api.Writer.Uri).
-		SubscriptionsUri(cfg.Api.Interests.Uri).
-		Build()
-	if err != nil {
-		panic(fmt.Sprintf("failed to initialize the Awakari API client: %s", err))
-	}
-	defer clientAwk.Close()
-	log.Info("initialized the Awakari API client")
+	svcPub := pub.NewService(http.DefaultClient, cfg.Api.Writer.Uri, cfg.Api.Token.Internal)
+	svcPub = pub.NewLogging(svcPub, log)
+	log.Info("initialized the Awakari publish API client")
+
+	svcInterests := interests.NewService(http.DefaultClient, cfg.Api.Interests.Uri, cfg.Api.Token.Internal)
+	svcInterests = interests.NewLogging(svcInterests, log)
+	log.Info("initialized the Awakari interests API client")
 
 	// prometheus client
 	clientProm, err := apiProm.NewClient(apiProm.Config{
@@ -86,9 +81,6 @@ func main() {
 	)
 	svcConv = converter.NewLogging(svcConv, log)
 
-	svcWriter := writer.NewService(clientAwk, cfg.Api.Writer.Backoff, cfg.Api.Writer.Cache, log)
-	svcWriter = writer.NewLogging(svcWriter, log)
-
 	// init websub reader
 	svcReader := reader.NewService(clientHttp, cfg.Api.Reader.Uri)
 	svcReader = reader.NewServiceLogging(svcReader, log)
@@ -100,7 +92,7 @@ func main() {
 		cfg.Api.Reader.CallBack.Path,
 	)
 
-	svc := service.NewService(stor, svcActivityPub, cfg.Api.Http.Host, svcConv, svcWriter, svcReader, urlCallbackBase)
+	svc := service.NewService(stor, svcActivityPub, cfg.Api.Http.Host, svcConv, svcPub, cfg.Api.Writer.Backoff, svcReader, urlCallbackBase)
 	svc = service.NewLogging(svc, log)
 
 	log.Info(fmt.Sprintf("starting to listen the gRPC API @ port #%d...", cfg.Api.Port))
@@ -210,7 +202,7 @@ func main() {
 		"indexable":                 true,
 		"memorial":                  false,
 	}
-	ha := handler.NewActorHandler(actor, actorExtraAttrs, clientAwk, cfg.Api.Interests.DetailsUriPrefix, cfg.Api)
+	ha := handler.NewActorHandler(actor, actorExtraAttrs, svcInterests, cfg.Api.Interests.DetailsUriPrefix, cfg.Api)
 
 	// WebFinger
 	wfDefault := apiHttp.WebFinger{
@@ -223,7 +215,7 @@ func main() {
 			},
 		},
 	}
-	hwf := handler.NewWebFingerHandler(wfDefault, cfg.Api.Http.Host, clientAwk)
+	hwf := handler.NewWebFingerHandler(wfDefault, cfg.Api.Http.Host, svcInterests)
 
 	// handlers for inbox, outbox, following, followers
 	hi := handler.NewInboxHandler(svcActivityPub, svc, cfg.Api.Http.Host)

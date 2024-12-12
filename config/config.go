@@ -21,15 +21,16 @@ type ApiConfig struct {
 	Port      uint16 `envconfig:"API_PORT" default:"50051" required:"true"`
 	EventType EventTypeConfig
 	Interests struct {
-		Uri              string `envconfig:"API_INTERESTS_URI" required:"true" default:"interests-api:50051"`
+		Uri              string `envconfig:"API_INTERESTS_URI" required:"true" default:"http://interests-api:8080/v1"`
 		DetailsUriPrefix string `envconfig:"API_INTERESTS_DETAILS_URI_PREFIX" required:"true" default:"https://awakari.com/sub-details.html?id="`
 	}
 	Reader ReaderConfig
 	Writer struct {
-		Backoff   time.Duration `envconfig:"API_WRITER_BACKOFF" default:"10s" required:"true"`
-		BatchSize uint32        `envconfig:"API_WRITER_BATCH_SIZE" default:"16" required:"true"`
-		Cache     WriterCacheConfig
-		Uri       string `envconfig:"API_WRITER_URI" default:"resolver:50051" required:"true"`
+		Backoff time.Duration `envconfig:"API_WRITER_BACKOFF" default:"10s" required:"true"`
+		Uri     string        `envconfig:"API_WRITER_URI" default:"http://pub:8080/v1" required:"true"`
+	}
+	Token struct {
+		Internal string `envconfig:"API_TOKEN_INTERNAL" required:"true"`
 	}
 	Actor struct {
 		Name string `envconfig:"API_ACTOR_NAME" required:"true" default:"awakari"`

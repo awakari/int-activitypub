@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/awakari/int-activitypub/api/http/pub"
 	"github.com/awakari/int-activitypub/api/http/reader"
 	"github.com/awakari/int-activitypub/util"
 	"github.com/bytedance/sonic"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/google/uuid"
 	"net/url"
 	"strings"
@@ -15,7 +17,6 @@ import (
 	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/service/converter"
-	"github.com/awakari/int-activitypub/service/writer"
 	"github.com/awakari/int-activitypub/storage"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	vocab "github.com/go-ap/activitypub"
@@ -31,7 +32,10 @@ type Service interface {
 		actorTags util.ObjectTags,
 		activity vocab.Activity,
 		activityTags util.ActivityTags,
-	) (post func(), err error)
+	) (
+		post func(),
+		err error,
+	)
 
 	Read(ctx context.Context, url vocab.IRI) (src model.Source, err error)
 
@@ -50,16 +54,18 @@ type Service interface {
 }
 
 type service struct {
-	stor      storage.Storage
-	ap        activitypub.Service
-	hostSelf  string
-	conv      converter.Service
-	w         writer.Service
-	r         reader.Service
-	cbUrlBase string
+	stor             storage.Storage
+	ap               activitypub.Service
+	hostSelf         string
+	conv             converter.Service
+	svcPub           pub.Service
+	backoffTimeLimit time.Duration
+	r                reader.Service
+	cbUrlBase        string
 }
 
 const lastUpdateThreshold = 1 * time.Hour
+const backoffInitDelay = 100 * time.Millisecond
 
 var ErrInvalid = errors.New("invalid argument")
 var ErrNoAccept = errors.New("follow request is not accepted yet")
@@ -70,18 +76,20 @@ func NewService(
 	ap activitypub.Service,
 	hostSelf string,
 	conv converter.Service,
-	w writer.Service,
+	svcPub pub.Service,
+	backoffTimeLimit time.Duration,
 	r reader.Service,
 	cbUrlBase string,
 ) Service {
 	return service{
-		stor:      stor,
-		ap:        ap,
-		hostSelf:  hostSelf,
-		conv:      conv,
-		w:         w,
-		r:         r,
-		cbUrlBase: cbUrlBase,
+		stor:             stor,
+		ap:               ap,
+		hostSelf:         hostSelf,
+		conv:             conv,
+		svcPub:           svcPub,
+		backoffTimeLimit: backoffTimeLimit,
+		r:                r,
+		cbUrlBase:        cbUrlBase,
 	}
 }
 
@@ -261,7 +269,15 @@ func (svc service) handleSourceActivity(
 				if userId == "" {
 					userId = srcId
 				}
-				err = svc.w.Write(ctx, evt, src.GroupId, userId)
+				err = svc.svcPub.Publish(ctx, evt, src.GroupId, userId)
+				if errors.Is(err, pub.ErrNoAck) {
+					b := backoff.NewExponentialBackOff()
+					b.InitialInterval = backoffInitDelay
+					b.MaxElapsedTime = svc.backoffTimeLimit
+					err = backoff.Retry(func() error {
+						return svc.svcPub.Publish(ctx, evt, src.GroupId, userId)
+					}, b)
+				}
 			}
 		default:
 			err = fmt.Errorf("%w: actor=%+v, activity.Type=%s", ErrNoAccept, actor, activity.Type)

@@ -3,14 +3,12 @@ package handler
 import (
 	"errors"
 	"fmt"
-	"github.com/awakari/client-sdk-go/api"
-	"github.com/awakari/client-sdk-go/api/grpc/subscriptions"
 	apiHttp "github.com/awakari/int-activitypub/api/http"
+	"github.com/awakari/int-activitypub/api/http/interests"
 	"github.com/awakari/int-activitypub/config"
 	"github.com/awakari/int-activitypub/model"
 	"github.com/gin-gonic/gin"
 	vocab "github.com/go-ap/activitypub"
-	"google.golang.org/grpc/metadata"
 	"net/http"
 )
 
@@ -19,7 +17,7 @@ type actorHandler struct {
 	actorDefaultFixed        map[string]any
 	actorDefaultChecksum     uint32
 	extraAttrs               map[string]any
-	clientAwk                api.Client
+	svcInterests             interests.Service
 	urlPrefixInterestDetails string
 	cfgApi                   config.ApiConfig
 }
@@ -27,7 +25,7 @@ type actorHandler struct {
 func NewActorHandler(
 	actorDefault vocab.Actor,
 	extraAttrs map[string]any,
-	clientAwk api.Client,
+	svcInterests interests.Service,
 	urlPrefixInterestDetails string,
 	cfgApi config.ApiConfig,
 ) (h Handler) {
@@ -40,7 +38,7 @@ func NewActorHandler(
 		actorDefaultFixed:        aFixed,
 		actorDefaultChecksum:     aCheckSum,
 		extraAttrs:               extraAttrs,
-		clientAwk:                clientAwk,
+		svcInterests:             svcInterests,
 		urlPrefixInterestDetails: urlPrefixInterestDetails,
 		cfgApi:                   cfgApi,
 	}
@@ -102,8 +100,7 @@ func (ah actorHandler) handleInterest(ctx *gin.Context, accept, id string) {
 	case "text/html", "application/xhtml+xml", "text/xml", "application/xml":
 		ctx.Redirect(http.StatusMovedPermanently, urlDetails)
 	default:
-		ctxAwk := metadata.AppendToOutgoingContext(ctx, model.KeyGroupId, model.GroupIdDefault)
-		d, err := ah.clientAwk.ReadSubscription(ctxAwk, model.UserIdDefault, id)
+		d, err := ah.svcInterests.Read(ctx, model.GroupIdDefault, model.UserIdDefault, id)
 		switch {
 		case err == nil:
 			actor := ah.actorDefault // derive the default actor
@@ -147,7 +144,7 @@ func (ah actorHandler) handleInterest(ctx *gin.Context, accept, id string) {
 			ctx.Writer.Header().Set("content-type", apiHttp.ContentTypeActivity)
 			ctx.Writer.Header().Set("etag", fmt.Sprintf("W/\"%x\"", cs))
 			ctx.JSON(http.StatusOK, aFixed)
-		case errors.Is(err, subscriptions.ErrNotFound):
+		case errors.Is(err, interests.ErrNotFound):
 			ctx.String(http.StatusNotFound, "public interest does not exist: %s", id)
 		default:
 			ctx.String(http.StatusInternalServerError, err.Error())

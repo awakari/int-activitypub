@@ -47,12 +47,6 @@ spec:
               value: "{{ .Values.api.interests.detailsUriPrefix }}"
             - name: API_WRITER_BACKOFF
               value: "{{ .Values.api.writer.backoff }}"
-            - name: API_WRITER_BATCH_SIZE
-              value: "{{ .Values.api.writer.batchSize }}"
-            - name: API_WRITER_CACHE_SIZE
-              value: "{{ .Values.api.writer.cache.size }}"
-            - name: API_WRITER_CACHE_TTL
-              value: "{{ .Values.api.writer.cache.ttl }}"
             - name: API_WRITER_URI
               value: "{{ .Values.api.writer.uri }}"
             - name: API_READER_URI
@@ -130,6 +124,11 @@ spec:
               value: "{{ .Values.api.event.typ.interestsUpdated }}"
             - name: API_EVENT_TYPE_INTERESTS_DELETED
               value: "{{ .Values.api.event.typ.interestsDeleted }}"
+            - name: API_TOKEN_INTERNAL
+              valueFrom:
+                secretKeyRef:
+                  key: "{{ .Values.api.token.internal.key }}"
+                  name: "{{ .Values.api.token.internal.name }}"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

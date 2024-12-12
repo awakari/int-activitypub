@@ -116,7 +116,7 @@ api:
       interestsUpdated: "interests-updated"
       interestsDeleted: "interests-deleted"
   interests:
-    uri: "interests-api:50051"
+    uri: "http://interests-api:8080/v1"
     detailsUriPrefix: "https://awakari.com/sub-details.html?id="
   reader:
     uri: "http://reader:8080/v1"
@@ -126,11 +126,11 @@ api:
       path: "/v1/callback"
   writer:
     backoff: "10s"
-    batchSize: 16
-    cache:
-      size: 100
-      ttl: "24h"
-    uri: "resolver:50051"
+    uri: "http://pub:8080/v1"
+  token:
+    internal:
+      key: "api-token-internal"
+      name: "auth"
   prometheus:
     protocol: "http"
     host: "prometheus-server"

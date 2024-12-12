@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package awakari.interests.api;
+
+option go_package = "api/grpc/interests";
+
+import "google/protobuf/timestamp.proto";
+
+// Read
+
+message ReadRequest {
+  string id = 1;
+}
+
+message ReadResponse {
+  string description = 1;
+  bool enabled = 2;
+  google.protobuf.Timestamp expires = 4;
+  google.protobuf.Timestamp created = 5;
+  google.protobuf.Timestamp updated = 6;
+  bool public = 7;
+  int64 followers = 8;
+}

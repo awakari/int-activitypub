@@ -3,27 +3,25 @@ package handler
 import (
 	"errors"
 	"fmt"
-	"github.com/awakari/client-sdk-go/api"
-	"github.com/awakari/client-sdk-go/api/grpc/subscriptions"
 	apiHttp "github.com/awakari/int-activitypub/api/http"
+	"github.com/awakari/int-activitypub/api/http/interests"
 	"github.com/awakari/int-activitypub/model"
 	"github.com/gin-gonic/gin"
-	"google.golang.org/grpc/metadata"
 	"net/http"
 	"strings"
 )
 
 type webFingerHandler struct {
-	wfDefault apiHttp.WebFinger
-	hostSelf  string
-	clientAwk api.Client
+	wfDefault    apiHttp.WebFinger
+	hostSelf     string
+	svcInterests interests.Service
 }
 
-func NewWebFingerHandler(wf apiHttp.WebFinger, hostSelf string, clientAwk api.Client) Handler {
+func NewWebFingerHandler(wf apiHttp.WebFinger, hostSelf string, svcInterests interests.Service) Handler {
 	return webFingerHandler{
-		wfDefault: wf,
-		hostSelf:  hostSelf,
-		clientAwk: clientAwk,
+		wfDefault:    wf,
+		hostSelf:     hostSelf,
+		svcInterests: svcInterests,
 	}
 }
 
@@ -53,8 +51,7 @@ func (w webFingerHandler) handleNonDefault(ctx *gin.Context, r string) {
 		return
 	}
 	interestId := rParts[0][len(model.WebFingerPrefixAcct):]
-	ctxAwk := metadata.AppendToOutgoingContext(ctx, model.KeyGroupId, model.GroupIdDefault)
-	_, err := w.clientAwk.ReadSubscription(ctxAwk, model.UserIdDefault, interestId)
+	_, err := w.svcInterests.Read(ctx, model.GroupIdDefault, model.UserIdDefault, interestId)
 	switch {
 	case err == nil:
 		wf := apiHttp.WebFinger{
@@ -68,7 +65,7 @@ func (w webFingerHandler) handleNonDefault(ctx *gin.Context, r string) {
 			},
 		}
 		respond(ctx, wf)
-	case errors.Is(err, subscriptions.ErrNotFound):
+	case errors.Is(err, interests.ErrNotFound):
 		ctx.String(http.StatusBadRequest, "interest doesn't exist: %s", interestId)
 	default:
 		ctx.String(http.StatusInternalServerError, err.Error())

@@ -26,31 +26,21 @@ func (l logging) ConvertActivityToEvent(ctx context.Context, actor vocab.Actor, 
 	evt, err = l.svc.ConvertActivityToEvent(ctx, actor, activity, tags)
 	switch evt {
 	case nil:
-		l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.ConvertActivityToEvent(actor=%s, activity=%s, tags=%d): <nil>, %s", actor.ID, activity.ID, len(tags.Tag), err))
+		l.log.Log(ctx, util.LogLevel(err), fmt.Sprintf("converter.ConvertActivityToEvent(actor=%s, activity=%s, tags=%d): <nil>, %s", actor.ID, activity.ID, len(tags.Tag), err))
 	default:
-		l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.ConvertActivityToEvent(actor=%s, activity=%s, tags=%d): %s, %s", actor.ID, activity.ID, len(tags.Tag), evt.Id, err))
+		l.log.Log(ctx, util.LogLevel(err), fmt.Sprintf("converter.ConvertActivityToEvent(actor=%s, activity=%s, tags=%d): %s, %s", actor.ID, activity.ID, len(tags.Tag), evt.Id, err))
 	}
 	return
 }
 
 func (l logging) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent, interestId string, follower *vocab.Actor, t *time.Time) (a vocab.Activity, err error) {
 	a, err = l.svc.ConvertEventToActivity(ctx, evt, interestId, follower, t)
-	l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.ConvertEventToActivity(evtId=%s, interestId=%s, follower=%v): err=%s", evt.Id, interestId, follower, err))
+	l.log.Log(ctx, util.LogLevel(err), fmt.Sprintf("converter.ConvertEventToActivity(evtId=%s, interestId=%s, follower=%v): err=%s", evt.Id, interestId, follower, err))
 	return
 }
 
 func (l logging) ConvertEventToActorUpdate(ctx context.Context, evt *pb.CloudEvent, interestId string, follower *vocab.Actor, t *time.Time) (a vocab.Activity, err error) {
 	a, err = l.svc.ConvertEventToActorUpdate(ctx, evt, interestId, follower, t)
-	l.log.Log(ctx, logLevel(err), fmt.Sprintf("converter.ConvertEventToActorUpdate(evtId=%s, interestId=%s, follower=%v): err=%s", evt.Id, interestId, follower, err))
-	return
-}
-
-func logLevel(err error) (lvl slog.Level) {
-	switch err {
-	case nil:
-		lvl = slog.LevelDebug
-	default:
-		lvl = slog.LevelError
-	}
+	l.log.Log(ctx, util.LogLevel(err), fmt.Sprintf("converter.ConvertEventToActorUpdate(evtId=%s, interestId=%s, follower=%v): err=%s", evt.Id, interestId, follower, err))
 	return
 }
