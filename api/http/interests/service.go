@@ -22,6 +22,11 @@ type service struct {
 	token      string
 }
 
+var protoJsonUnmarshalOpts = protojson.UnmarshalOptions{
+	DiscardUnknown: true,
+	AllowPartial:   true,
+}
+
 var ErrNoAuth = errors.New("unauthenticated request")
 var ErrNotFound = errors.New("interest not found")
 
@@ -64,7 +69,7 @@ func (svc service) Read(ctx context.Context, groupId, userId, subId string) (sub
 
 	var respProto apiGrpc.ReadResponse
 	if err == nil {
-		err = protojson.Unmarshal(respData, &respProto)
+		err = protoJsonUnmarshalOpts.Unmarshal(respData, &respProto)
 	}
 
 	if err == nil {
