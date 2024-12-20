@@ -8,7 +8,6 @@ import (
 	"github.com/awakari/int-activitypub/model"
 	"github.com/bytedance/sonic"
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
-	"google.golang.org/protobuf/encoding/protojson"
 	"io"
 	"net/http"
 )
@@ -45,7 +44,7 @@ func NewService(clientHttp *http.Client, url, token string) Service {
 func (svc service) Publish(ctx context.Context, evt *pb.CloudEvent, groupId, userId string) (err error) {
 
 	var reqData []byte
-	reqData, err = protojson.Marshal(evt)
+	reqData, err = MarshalEvent(evt)
 
 	var req *http.Request
 	if err == nil {
