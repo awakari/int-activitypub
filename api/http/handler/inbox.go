@@ -6,6 +6,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"github.com/awakari/int-activitypub/api/http/pub"
 	"github.com/awakari/int-activitypub/api/http/reader"
 	"github.com/awakari/int-activitypub/service"
 	"github.com/awakari/int-activitypub/service/activitypub"
@@ -102,6 +103,9 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 		return
 	case errors.Is(err, service.ErrInvalid):
 		ctx.String(http.StatusBadRequest, err.Error())
+		return
+	case errors.Is(err, pub.ErrLimitReached):
+		ctx.Status(http.StatusOK)
 		return
 	case err != nil:
 		ctx.String(http.StatusInternalServerError, err.Error())

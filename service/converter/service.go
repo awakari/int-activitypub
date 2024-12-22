@@ -11,7 +11,6 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/segmentio/ksuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"net/url"
 	"reflect"
 	"regexp"
 	"strings"
@@ -792,17 +791,17 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 	)
 	obj.Content = vocab.DefaultNaturalLanguageValue(txt)
 
-	if follower != nil {
-		followerMention := "@" + follower.PreferredUsername.First().Value.String()
-		followerUrl, _ := url.Parse(follower.URL.GetLink().String())
-		if followerUrl != nil {
-			followerMention += "@" + followerUrl.Hostname()
-		}
-		tMention := vocab.MentionNew("")
-		tMention.Name = vocab.DefaultNaturalLanguageValue(followerMention)
-		tMention.Href = follower.ID
-		obj.Tag = append(obj.Tag, tMention)
-	}
+	//if follower != nil {
+	//	followerMention := "@" + follower.PreferredUsername.First().Value.String()
+	//	followerUrl, _ := url.Parse(follower.URL.GetLink().String())
+	//	if followerUrl != nil {
+	//		followerMention += "@" + followerUrl.Hostname()
+	//	}
+	//	tMention := vocab.MentionNew("")
+	//	tMention.Name = vocab.DefaultNaturalLanguageValue(followerMention)
+	//	tMention.Href = follower.ID
+	//	obj.Tag = append(obj.Tag, tMention)
+	//}
 
 	attrTs, tsPresent := evt.Attributes[CeKeyTime]
 	if tsPresent {
