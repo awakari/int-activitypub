@@ -640,11 +640,6 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 							Name: vocab.DefaultNaturalLanguageValue("#otaku"),
 							Href: vocab.IRI("https://mastodon.social/tags/otaku"),
 						},
-						&vocab.Mention{
-							Type: "Mention",
-							Name: vocab.DefaultNaturalLanguageValue("@@mastodon.social"),
-							Href: vocab.IRI("https://mastodon.social/users/johndoe"),
-						},
 					},
 					To: vocab.ItemCollection{
 						vocab.IRI("https://mastodon.social/users/johndoe"),
