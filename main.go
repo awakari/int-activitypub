@@ -48,7 +48,7 @@ func main() {
 	stor = storage.NewLocalCache(stor, cfg.Db.Table.Following.Cache.Size, cfg.Db.Table.Following.Cache.Ttl)
 	defer stor.Close()
 
-	svcPub := pub.NewService(http.DefaultClient, cfg.Api.Writer.Uri, cfg.Api.Token.Internal)
+	svcPub := pub.NewService(http.DefaultClient, cfg.Api.Writer.Uri, cfg.Api.Token.Internal, cfg.Api.Writer.Timeout)
 	svcPub = pub.NewLogging(svcPub, log)
 	log.Info("initialized the Awakari publish API client")
 

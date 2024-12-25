@@ -10,6 +10,7 @@ import (
 	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"io"
 	"net/http"
+	"time"
 )
 
 type Service interface {
@@ -20,6 +21,7 @@ type service struct {
 	clientHttp *http.Client
 	url        string
 	token      string
+	timeout    time.Duration
 }
 
 type payloadResp struct {
@@ -33,11 +35,12 @@ var ErrNoAuth = errors.New("unauthenticated request")
 var ErrInvalid = errors.New("invalid request")
 var ErrLimitReached = errors.New("publishing limit reached")
 
-func NewService(clientHttp *http.Client, url, token string) Service {
+func NewService(clientHttp *http.Client, url, token string, timeout time.Duration) Service {
 	return service{
 		clientHttp: clientHttp,
 		url:        url,
 		token:      token,
+		timeout:    timeout,
 	}
 }
 
@@ -48,7 +51,9 @@ func (svc service) Publish(ctx context.Context, evt *pb.CloudEvent, groupId, use
 
 	var req *http.Request
 	if err == nil {
-		req, err = http.NewRequestWithContext(ctx, http.MethodPost, svc.url, bytes.NewReader(reqData))
+		ctxTimeout, cancel := context.WithTimeout(ctx, svc.timeout)
+		defer cancel()
+		req, err = http.NewRequestWithContext(ctxTimeout, http.MethodPost, svc.url, bytes.NewReader(reqData))
 	}
 
 	var resp *http.Response

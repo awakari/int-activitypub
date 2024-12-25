@@ -126,6 +126,7 @@ api:
       path: "/v1/callback"
   writer:
     backoff: "10s"
+    timeout: "10s"
     uri: "http://pub:8080/v1"
   token:
     internal:
