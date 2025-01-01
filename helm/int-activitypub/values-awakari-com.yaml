@@ -23,6 +23,8 @@ ingressHttpV1:
         - activitypub.awakari.com
 
 db:
+  secret:
+    name: "db-mongo-external-0"
   tls:
     enabled: true
     insecure: true
