@@ -21,9 +21,9 @@ func NewLogging(svc Service, log *slog.Logger) Service {
 	}
 }
 
-func (l logging) RequestFollow(ctx context.Context, addr, groupId, userId, subId, term string) (url string, err error) {
-	url, err = l.svc.RequestFollow(ctx, addr, groupId, userId, subId, term)
-	l.log.Log(ctx, util.LogLevel(err), fmt.Sprintf("service.RequestFollow(addr=%s, groupId=%s, userId=%s, subId=%s, term=%s): %s, %s", addr, groupId, userId, subId, term, url, err))
+func (l logging) RequestFollow(ctx context.Context, addr, groupId, userId, subId, term string, defaultActor bool) (url string, err error) {
+	url, err = l.svc.RequestFollow(ctx, addr, groupId, userId, subId, term, defaultActor)
+	l.log.Log(ctx, util.LogLevel(err), fmt.Sprintf("service.RequestFollow(addr=%s, groupId=%s, userId=%s, subId=%s, term=%s, defaultActor=%t): %s, %s", addr, groupId, userId, subId, term, defaultActor, url, err))
 	return
 }
 

@@ -114,7 +114,6 @@ api:
     typ:
       self: "com_awakari_activitypub_v1"
       interestsUpdated: "interests-updated"
-      interestsDeleted: "interests-deleted"
   interests:
     uri: "http://interests-api:8080/v1"
     detailsUriPrefix: "https://awakari.com/sub-details.html?id="
@@ -180,3 +179,13 @@ db:
 log:
   # https://pkg.go.dev/golang.org/x/exp/slog#Level
   level: -4
+queue:
+  uri: "queue:50051"
+  interestsCreated:
+    batchSize: 1
+    name: "int-mastodon"
+    subj: "interests-created"
+  interestsUpdated:
+    batchSize: 1
+    name: "int-mastodon"
+    subj: "interests-updated"

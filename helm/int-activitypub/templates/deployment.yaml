@@ -124,13 +124,25 @@ spec:
               value: "{{ .Values.api.event.typ.self }}"
             - name: API_EVENT_TYPE_INTERESTS_UPDATED
               value: "{{ .Values.api.event.typ.interestsUpdated }}"
-            - name: API_EVENT_TYPE_INTERESTS_DELETED
-              value: "{{ .Values.api.event.typ.interestsDeleted }}"
             - name: API_TOKEN_INTERNAL
               valueFrom:
                 secretKeyRef:
                   key: "{{ .Values.api.token.internal.key }}"
                   name: "{{ .Values.api.token.internal.name }}"
+            - name: API_QUEUE_URI
+              value: "{{ .Values.queue.uri }}"
+            - name: API_QUEUE_INTERESTS_CREATED_BATCH_SIZE
+              value: "{{ .Values.queue.interestsCreated.batchSize }}"
+            - name: API_QUEUE_INTERESTS_CREATED_NAME
+              value: "{{ .Values.queue.interestsCreated.name }}"
+            - name: API_QUEUE_INTERESTS_CREATED_SUBJ
+              value: "{{ .Values.queue.interestsCreated.subj }}"
+            - name: API_QUEUE_INTERESTS_UPDATED_BATCH_SIZE
+              value: "{{ .Values.queue.interestsUpdated.batchSize }}"
+            - name: API_QUEUE_INTERESTS_UPDATED_NAME
+              value: "{{ .Values.queue.interestsUpdated.name }}"
+            - name: API_QUEUE_INTERESTS_UPDATED_SUBJ
+              value: "{{ .Values.queue.interestsUpdated.subj }}"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package awakari.queue;
+
+option go_package = "github.com/awakari/int-activitypub/api/grpc/queue";
+
+import "google/protobuf/empty.proto";
+import "api/grpc/cloudevents/cloudevent.proto";
+
+service Service {
+
+  // Creates a new queue or updates the existing one's length limit.
+  rpc SetQueue(SetQueueRequest) returns (google.protobuf.Empty);
+
+  // Start receiving a messages for the certain queue.
+  rpc ReceiveMessages(stream ReceiveMessagesRequest) returns (stream ReceiveMessagesResponse);
+}
+
+message SetQueueRequest {
+  string name = 1;
+  string subj = 3;
+}
+
+message ReceiveMessagesRequest {
+  oneof command {
+    ReceiveMessagesCommandStart start = 1;
+    ReceiveMessagesCommandAck ack = 2;
+  }
+}
+
+message ReceiveMessagesCommandStart {
+  string queue = 1;
+  uint32 batchSize = 2;
+  string subj = 3;
+}
+
+message ReceiveMessagesCommandAck {
+  uint32 count = 1;
+}
+
+message ReceiveMessagesResponse {
+  repeated pb.CloudEvent msgs = 1;
+}

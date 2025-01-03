@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	apiGrpc "github.com/awakari/int-activitypub/api/grpc"
+	"github.com/awakari/int-activitypub/api/grpc/queue"
 	apiHttp "github.com/awakari/int-activitypub/api/http"
 	"github.com/awakari/int-activitypub/api/http/handler"
 	"github.com/awakari/int-activitypub/api/http/interests"
@@ -15,15 +16,21 @@ import (
 	"github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/service/converter"
 	"github.com/awakari/int-activitypub/storage"
+	"github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"github.com/gin-gonic/gin"
 	vocab "github.com/go-ap/activitypub"
 	apiProm "github.com/prometheus/client_golang/api"
 	apiPromV1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/writeas/go-nodeinfo"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"log/slog"
 	"net/http"
 	"os"
 )
+
+const ceKeyGroupId = "awakarigroupid"
+const ceKeyPublic = "public"
 
 func main() {
 
@@ -98,6 +105,60 @@ func main() {
 	log.Info(fmt.Sprintf("starting to listen the gRPC API @ port #%d...", cfg.Api.Port))
 	go func() {
 		if err = apiGrpc.Serve(cfg.Api.Port, svc); err != nil {
+			panic(err)
+		}
+	}()
+
+	// init queues
+	connQueue, err := grpc.NewClient(cfg.Api.Queue.Uri, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		panic(err)
+	}
+	log.Info("connected to the queue service")
+	clientQueue := queue.NewServiceClient(connQueue)
+	svcQueue := queue.NewService(clientQueue)
+	svcQueue = queue.NewLoggingMiddleware(svcQueue, log)
+
+	err = svcQueue.SetConsumer(context.TODO(), cfg.Api.Queue.InterestsCreated.Name, cfg.Api.Queue.InterestsCreated.Subj)
+	if err != nil {
+		panic(err)
+	}
+	log.Info(fmt.Sprintf("initialized the %s queue", cfg.Api.Queue.InterestsCreated.Name))
+	go func() {
+		err = consumeQueue(
+			context.Background(),
+			svc,
+			svcQueue,
+			cfg.Api.Queue.InterestsCreated.Name,
+			cfg.Api.Queue.InterestsCreated.Subj,
+			cfg.Api.Queue.InterestsCreated.BatchSize,
+			func(ctx context.Context, svc service.Service, evts []*pb.CloudEvent) {
+				consumeInterestEvents(ctx, svc, evts, cfg, log)
+			},
+		)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	err = svcQueue.SetConsumer(context.TODO(), cfg.Api.Queue.InterestsUpdated.Name, cfg.Api.Queue.InterestsUpdated.Subj)
+	if err != nil {
+		panic(err)
+	}
+	log.Info(fmt.Sprintf("initialized the %s queue", cfg.Api.Queue.InterestsUpdated.Name))
+	go func() {
+		err = consumeQueue(
+			context.Background(),
+			svc,
+			svcQueue,
+			cfg.Api.Queue.InterestsUpdated.Name,
+			cfg.Api.Queue.InterestsUpdated.Subj,
+			cfg.Api.Queue.InterestsUpdated.BatchSize,
+			func(ctx context.Context, svc service.Service, evts []*pb.CloudEvent) {
+				consumeInterestEvents(ctx, svc, evts, cfg, log)
+			},
+		)
+		if err != nil {
 			panic(err)
 		}
 	}()
@@ -273,4 +334,56 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func consumeQueue(
+	ctx context.Context,
+	svc service.Service,
+	svcQueue queue.Service,
+	name, subj string,
+	batchSize uint32,
+	consumeEvents func(ctx context.Context, svc service.Service, evts []*pb.CloudEvent),
+) (err error) {
+	for {
+		err = svcQueue.ReceiveMessages(ctx, name, subj, batchSize, func(evts []*pb.CloudEvent) (err error) {
+			consumeEvents(ctx, svc, evts)
+			return
+		})
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func consumeInterestEvents(
+	ctx context.Context,
+	svc service.Service,
+	evts []*pb.CloudEvent,
+	cfg config.Config,
+	log *slog.Logger,
+) {
+	log.Debug(fmt.Sprintf("consumeInterestEvents(%d))\n", len(evts)))
+	for _, evt := range evts {
+
+		interestId := evt.GetTextData()
+		var groupId string
+		if groupIdAttr, groupIdIdPresent := evt.Attributes[ceKeyGroupId]; groupIdIdPresent {
+			groupId = groupIdAttr.GetCeString()
+		}
+		if groupId == "" {
+			log.Error(fmt.Sprintf("interest %s event: empty group id, skipping", interestId))
+			continue
+		}
+
+		publicAttr, publicAttrPresent := evt.Attributes[ceKeyPublic]
+		switch publicAttrPresent && publicAttr.GetCeBoolean() {
+		case true:
+			actor := interestId + "@" + cfg.Api.Http.Host
+			// TODO request follow on behalf of interest
+			_, _ = svc.RequestFollow(ctx, "@bsky.brid.gy@bsky.brid.gy", groupId, actor, interestId, "", false)
+		default:
+			log.Debug(fmt.Sprintf("interest %s event: public: %t/%t", interestId, publicAttrPresent, publicAttr.GetCeBoolean()))
+		}
+	}
+	return
 }

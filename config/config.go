@@ -46,6 +46,7 @@ type ApiConfig struct {
 		Description string `envconfig:"API_NODE_DESCRIPTION" required:"true" default:"Awakari Fediverse Integration"`
 	}
 	Prometheus PrometheusConfig
+	Queue      QueueConfig
 }
 
 type WriterCacheConfig struct {
@@ -97,7 +98,20 @@ type ReaderConfig struct {
 type EventTypeConfig struct {
 	Self             string `envconfig:"API_EVENT_TYPE_SELF" required:"true" default:"com_awakari_activitypub_v1"`
 	InterestsUpdated string `envconfig:"API_EVENT_TYPE_INTERESTS_UPDATED" required:"true" default:"interests-updated"`
-	InterestsDeleted string `envconfig:"API_EVENT_TYPE_INTERESTS_DELETED" required:"true" default:"interests-deleted"`
+}
+
+type QueueConfig struct {
+	Uri              string `envconfig:"API_QUEUE_URI" default:"queue:50051" required:"true"`
+	InterestsCreated struct {
+		BatchSize uint32 `envconfig:"API_QUEUE_INTERESTS_CREATED_BATCH_SIZE" default:"1" required:"true"`
+		Name      string `envconfig:"API_QUEUE_INTERESTS_CREATED_NAME" default:"int-mastodon" required:"true"`
+		Subj      string `envconfig:"API_QUEUE_INTERESTS_CREATED_SUBJ" default:"interests-created" required:"true"`
+	}
+	InterestsUpdated struct {
+		BatchSize uint32 `envconfig:"API_QUEUE_INTERESTS_UPDATED_BATCH_SIZE" default:"1" required:"true"`
+		Name      string `envconfig:"API_QUEUE_INTERESTS_UPDATED_NAME" default:"int-mastodon" required:"true"`
+		Subj      string `envconfig:"API_QUEUE_INTERESTS_UPDATED_SUBJ" default:"interests-updated" required:"true"`
+	}
 }
 
 func NewConfigFromEnv() (cfg Config, err error) {

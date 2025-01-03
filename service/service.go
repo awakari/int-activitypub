@@ -23,7 +23,7 @@ import (
 )
 
 type Service interface {
-	RequestFollow(ctx context.Context, addr, groupId, userId, subId, term string) (url string, err error)
+	RequestFollow(ctx context.Context, addr, groupId, userId, interestId, term string, defaultActor bool) (url string, err error)
 
 	HandleActivity(
 		ctx context.Context,
@@ -93,7 +93,7 @@ func NewService(
 	}
 }
 
-func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, subId, term string) (addrResolved string, err error) {
+func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, interestId, term string, defaultActor bool) (addrResolved string, err error) {
 
 	var addrParsed *url.URL
 	addrParsed, err = url.Parse(addr)
@@ -126,31 +126,37 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 		}
 	}
 
-	pubKeyId := fmt.Sprintf("https://%s/actor#main-key", svc.hostSelf)
+	var pubKeyId string
+	switch defaultActor {
+	case true:
+		pubKeyId = fmt.Sprintf("https://%s/actor#main-key", svc.hostSelf)
+	default:
+		pubKeyId = fmt.Sprintf("https://%s/actor/%s#main-key", svc.hostSelf, interestId)
+	}
 
-	var actor vocab.Actor
-	var actorTags util.ObjectTags
+	var target vocab.Actor
+	var targetTags util.ObjectTags
 	if err == nil {
-		actor, actorTags, err = svc.ap.FetchActor(ctx, vocab.IRI(addrResolved), pubKeyId)
+		target, targetTags, err = svc.ap.FetchActor(ctx, vocab.IRI(addrResolved), pubKeyId)
 		if err != nil {
 			err = fmt.Errorf("%w: failed to fetch actor: %s, cause: %s", ErrInvalid, addrResolved, err)
 		}
 	}
-	if err == nil && ActorHasNoBotTag(actorTags) {
-		err = fmt.Errorf("%w: actor %s", ErrNoBot, actor.ID)
+	if err == nil && ActorHasNoBotTag(targetTags) {
+		err = fmt.Errorf("%w: actor %s", ErrNoBot, target.ID)
 	}
 
 	var src model.Source
-	if err == nil {
-		src.ActorId = actor.ID.String()
+	if err == nil && defaultActor {
+		src.ActorId = target.ID.String()
 		src.GroupId = groupId
 		src.UserId = userId
-		src.Type = string(actor.Type)
-		src.Name = actor.Name.String()
-		src.Summary = actor.Summary.String()
+		src.Type = string(target.Type)
+		src.Name = target.Name.String()
+		src.Summary = target.Summary.String()
 		src.Created = time.Now().UTC()
 		src.Last = time.Now().UTC()
-		src.SubId = subId
+		src.SubId = interestId
 		src.Term = term
 		err = svc.stor.Create(ctx, src)
 		if err == nil {
@@ -162,11 +168,16 @@ func (svc service) RequestFollow(ctx context.Context, addr, groupId, userId, sub
 		activity := vocab.Activity{
 			Type:    vocab.FollowType,
 			Context: vocab.IRI(model.NsAs),
-			Actor:   vocab.IRI(fmt.Sprintf("https://%s/actor", svc.hostSelf)),
 			Object:  vocab.IRI(addrResolved),
 		}
-		err = svc.ap.SendActivity(ctx, activity, actor.Inbox.GetLink(), pubKeyId)
-		if err != nil {
+		switch defaultActor {
+		case true:
+			activity.Actor = vocab.IRI(fmt.Sprintf("https://%s/actor", svc.hostSelf))
+		default:
+			activity.Actor = vocab.IRI(fmt.Sprintf("https://%s/actor/%s", svc.hostSelf, interestId))
+		}
+		err = svc.ap.SendActivity(ctx, activity, target.Inbox.GetLink(), pubKeyId)
+		if err != nil && defaultActor {
 			src.Err = err.Error()
 			_ = svc.stor.Update(ctx, src)
 		}
