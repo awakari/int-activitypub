@@ -104,12 +104,12 @@ type QueueConfig struct {
 	Uri              string `envconfig:"API_QUEUE_URI" default:"queue:50051" required:"true"`
 	InterestsCreated struct {
 		BatchSize uint32 `envconfig:"API_QUEUE_INTERESTS_CREATED_BATCH_SIZE" default:"1" required:"true"`
-		Name      string `envconfig:"API_QUEUE_INTERESTS_CREATED_NAME" default:"int-mastodon" required:"true"`
+		Name      string `envconfig:"API_QUEUE_INTERESTS_CREATED_NAME" default:"int-activitypub" required:"true"`
 		Subj      string `envconfig:"API_QUEUE_INTERESTS_CREATED_SUBJ" default:"interests-created" required:"true"`
 	}
 	InterestsUpdated struct {
 		BatchSize uint32 `envconfig:"API_QUEUE_INTERESTS_UPDATED_BATCH_SIZE" default:"1" required:"true"`
-		Name      string `envconfig:"API_QUEUE_INTERESTS_UPDATED_NAME" default:"int-mastodon" required:"true"`
+		Name      string `envconfig:"API_QUEUE_INTERESTS_UPDATED_NAME" default:"int-activitypub" required:"true"`
 		Subj      string `envconfig:"API_QUEUE_INTERESTS_UPDATED_SUBJ" default:"interests-updated" required:"true"`
 	}
 }

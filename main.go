@@ -379,7 +379,6 @@ func consumeInterestEvents(
 		switch publicAttrPresent && publicAttr.GetCeBoolean() {
 		case true:
 			actor := interestId + "@" + cfg.Api.Http.Host
-			// TODO request follow on behalf of interest
 			_, _ = svc.RequestFollow(ctx, "@bsky.brid.gy@bsky.brid.gy", groupId, actor, interestId, "", false)
 		default:
 			log.Debug(fmt.Sprintf("interest %s event: public: %t/%t", interestId, publicAttrPresent, publicAttr.GetCeBoolean()))
