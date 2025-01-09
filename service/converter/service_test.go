@@ -601,12 +601,7 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 					Type:         "Note",
 					Name:         vocab.NaturalLanguageValues{},
 					AttributedTo: vocab.IRI("https://otakukart.com/feed/"),
-					Attachment: vocab.ItemCollection{
-						&vocab.Document{
-							Type: vocab.ImageType,
-							URL:  vocab.IRI("https://otakukart.com/wp-content/uploads/2024/07/The-10-Must-Watch-Futuristic-Anime-That-Every-Fan-Should-See.jpg"),
-						},
-					},
+					Attachment:   vocab.ItemCollection{},
 					Image: &vocab.Link{
 						ID:   "https://otakukart.com/wp-content/uploads/2024/07/The-10-Must-Watch-Futuristic-Anime-That-Every-Fan-Should-See.jpg",
 						Type: "Link",

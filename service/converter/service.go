@@ -864,11 +864,14 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 				}
 			}
 			if imgUrl != "" {
-				obj.Image = vocab.LinkNew(vocab.ID(imgUrl), vocab.LinkType)
-				attachments = append(attachments, &vocab.Object{
-					Type: vocab.ImageType,
-					URL:  vocab.IRI(imgUrl),
-				})
+				if obj.Image == nil {
+					obj.Image = vocab.LinkNew(vocab.ID(imgUrl), vocab.LinkType)
+				} else {
+					attachments = append(attachments, &vocab.Object{
+						Type: vocab.ImageType,
+						URL:  vocab.IRI(imgUrl),
+					})
+				}
 			}
 		}
 	}
