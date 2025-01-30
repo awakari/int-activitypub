@@ -39,6 +39,8 @@ spec:
             - name: API_HTTP_HOST
               value: "{{ .host }}"
             {{- end }}
+            - name: API_METRICS_PORT
+              value: "{{ .Values.service.metrics.port }}"
             - name: API_EVENT_TYPE
               value: "{{ .Values.api.event.type }}"
             - name: API_INTERESTS_URI
@@ -156,6 +158,9 @@ spec:
               protocol: TCP
             - name: callback
               containerPort: {{ .Values.service.callback.port }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ .Values.service.metrics.port }}
               protocol: TCP
           livenessProbe:
             grpc:

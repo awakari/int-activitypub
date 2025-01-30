@@ -21,6 +21,9 @@ import (
 	vocab "github.com/go-ap/activitypub"
 	apiProm "github.com/prometheus/client_golang/api"
 	apiPromV1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/writeas/go-nodeinfo"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -54,6 +57,18 @@ func main() {
 	}
 	stor = storage.NewLocalCache(stor, cfg.Db.Table.Following.Cache.Size, cfg.Db.Table.Following.Cache.Ttl)
 	defer stor.Close()
+
+	promauto.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "awk_source_activitypub_count_total",
+		Help: "Total count of ActivityPub sources",
+	}, func() float64 {
+		var count int64
+		count, err = stor.Count(context.Background())
+		if err != nil {
+			panic(err)
+		}
+		return float64(count)
+	})
 
 	svcPub := pub.NewService(http.DefaultClient, cfg.Api.Writer.Uri, cfg.Api.Token.Internal, cfg.Api.Writer.Timeout)
 	svcPub = pub.NewLogging(svcPub, log)
@@ -330,10 +345,15 @@ func main() {
 	internalCallbacks.
 		GET(cfg.Api.Reader.CallBack.Path, hc.Confirm).
 		POST(cfg.Api.Reader.CallBack.Path, hc.Deliver)
-	err = internalCallbacks.Run(fmt.Sprintf(":%d", cfg.Api.Reader.CallBack.Port))
-	if err != nil {
-		panic(err)
-	}
+	go func() {
+		err = internalCallbacks.Run(fmt.Sprintf(":%d", cfg.Api.Reader.CallBack.Port))
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	http.Handle("/metrics", promhttp.Handler())
+	http.ListenAndServe(fmt.Sprintf(":%d", cfg.Api.Metrics.Port), nil)
 }
 
 func consumeQueue(

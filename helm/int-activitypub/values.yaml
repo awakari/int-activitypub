@@ -42,6 +42,8 @@ service:
     port: 8080
   callback:
     port: 8081
+  metrics:
+    port: 9090
 
 ingress:
   enabled: false

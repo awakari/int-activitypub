@@ -18,7 +18,10 @@ type ApiConfig struct {
 		Host string `envconfig:"API_HTTP_HOST" required:"true"`
 		Port uint16 `envconfig:"API_HTTP_PORT" default:"8080" required:"true"`
 	}
-	Port      uint16 `envconfig:"API_PORT" default:"50051" required:"true"`
+	Port    uint16 `envconfig:"API_PORT" default:"50051" required:"true"`
+	Metrics struct {
+		Port uint16 `envconfig:"API_METRICS_PORT" default:"9090" required:"true"`
+	}
 	EventType EventTypeConfig
 	Interests struct {
 		Uri              string `envconfig:"API_INTERESTS_URI" required:"true" default:"http://interests-api:8080/v1"`
