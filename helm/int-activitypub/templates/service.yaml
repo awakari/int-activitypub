@@ -4,6 +4,10 @@ metadata:
   name: {{ include "int-activitypub.fullname" . }}
   labels:
     {{- include "int-activitypub.labels" . | nindent 4 }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "{{ .Values.service.metrics.port }}"
 spec:
   type: {{ .Values.service.type }}
   ports:
