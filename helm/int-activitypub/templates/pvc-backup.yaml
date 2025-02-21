@@ -3,6 +3,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: "{{ .Values.backup.secrets.volume.name }}"
 spec:
+  storageClassName: "standard"
   accessModes:
     - ReadWriteOnce
   resources:
