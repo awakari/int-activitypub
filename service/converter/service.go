@@ -902,7 +902,7 @@ func (svc service) ConvertEventToActorUpdate(ctx context.Context, evt *pb.CloudE
 
 func (svc service) initActivity(evt *pb.CloudEvent, interestId string, follower *vocab.Actor, t *time.Time, a *vocab.Activity) {
 	a.ID = vocab.ID(svc.urlBase + "/" + evt.Id)
-	a.URL = vocab.IRI(svc.urlReaderEvtBase + evt.Id + "?interestId=" + interestId)
+	a.URL = vocab.IRI(svc.urlReaderEvtBase + evt.Id + "&interestId=" + interestId)
 	a.Context = vocab.IRI(model.NsAs)
 	a.Actor = vocab.ID(fmt.Sprintf("%s/actor/%s", svc.urlBase, interestId))
 	switch t {

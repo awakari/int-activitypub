@@ -587,7 +587,7 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 			},
 			dst: vocab.Activity{
 				ID:      "https://base/2jrVcFeXfGNcExKHLCcrrXBYyLJ",
-				URL:     vocab.IRI("https://reader/evt2jrVcFeXfGNcExKHLCcrrXBYyLJ?interestId=interest1"),
+				URL:     vocab.IRI("https://reader/evt2jrVcFeXfGNcExKHLCcrrXBYyLJ&interestId=interest1"),
 				Type:    "Create",
 				Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
 				Actor:   vocab.IRI("https://base/actor/interest1"),
@@ -607,7 +607,7 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 						Type: "Link",
 					},
 					Content: vocab.DefaultNaturalLanguageValue(
-						`The 10 Must-Watch Futuristic Anime That Every Fan Should See Anime is known for its wide range of...<br/><br/><a href="https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/">https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/</a><br/><br/><a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/anime">#anime</a> <a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/otaku">#otaku</a><br/><br/><a href="https://reader/evt2jrVcFeXfGNcExKHLCcrrXBYyLJ?interestId=interest1">Result Details</a>`),
+						`The 10 Must-Watch Futuristic Anime That Every Fan Should See Anime is known for its wide range of...<br/><br/><a href="https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/">https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/</a><br/><br/><a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/anime">#anime</a> <a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/otaku">#otaku</a><br/><br/><a href="https://reader/evt2jrVcFeXfGNcExKHLCcrrXBYyLJ&interestId=interest1">Result Details</a>`),
 					Published: ts,
 					Replies: &vocab.Collection{
 						ID:      "https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/replies",
@@ -684,7 +684,7 @@ func TestService_ConvertEventToActorUpdate(t *testing.T) {
 			},
 			dst: vocab.Activity{
 				ID:      "https://base/2jrVcFeXfGNcExKHLCcrrXBYyLJ-update",
-				URL:     vocab.IRI("https://reader/evt2jrVcFeXfGNcExKHLCcrrXBYyLJ?interestId=interest1"),
+				URL:     vocab.IRI("https://reader/evt2jrVcFeXfGNcExKHLCcrrXBYyLJ&interestId=interest1"),
 				Type:    "Update",
 				Context: vocab.IRI("https://www.w3.org/ns/activitystreams"),
 				Actor:   vocab.IRI("https://base/actor/interest1"),
