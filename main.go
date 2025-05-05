@@ -134,50 +134,6 @@ func main() {
 	svcQueue := queue.NewService(clientQueue)
 	svcQueue = queue.NewLoggingMiddleware(svcQueue, log)
 
-	err = svcQueue.SetConsumer(context.TODO(), cfg.Api.Queue.InterestsCreated.Name, cfg.Api.Queue.InterestsCreated.Subj)
-	if err != nil {
-		panic(err)
-	}
-	log.Info(fmt.Sprintf("initialized the %s queue", cfg.Api.Queue.InterestsCreated.Name))
-	go func() {
-		err = consumeQueue(
-			context.Background(),
-			svc,
-			svcQueue,
-			cfg.Api.Queue.InterestsCreated.Name,
-			cfg.Api.Queue.InterestsCreated.Subj,
-			cfg.Api.Queue.InterestsCreated.BatchSize,
-			func(ctx context.Context, svc service.Service, evts []*pb.CloudEvent) {
-				consumeInterestEvents(ctx, svc, evts, cfg, log)
-			},
-		)
-		if err != nil {
-			panic(err)
-		}
-	}()
-
-	err = svcQueue.SetConsumer(context.TODO(), cfg.Api.Queue.InterestsUpdated.Name, cfg.Api.Queue.InterestsUpdated.Subj)
-	if err != nil {
-		panic(err)
-	}
-	log.Info(fmt.Sprintf("initialized the %s queue", cfg.Api.Queue.InterestsUpdated.Name))
-	go func() {
-		err = consumeQueue(
-			context.Background(),
-			svc,
-			svcQueue,
-			cfg.Api.Queue.InterestsUpdated.Name,
-			cfg.Api.Queue.InterestsUpdated.Subj,
-			cfg.Api.Queue.InterestsUpdated.BatchSize,
-			func(ctx context.Context, svc service.Service, evts []*pb.CloudEvent) {
-				consumeInterestEvents(ctx, svc, evts, cfg, log)
-			},
-		)
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	// nodeinfo
 	cfgNodeInfo := nodeinfo.Config{
 		BaseURL: fmt.Sprintf("https://%s", cfg.Api.Http.Host),
@@ -373,36 +329,4 @@ func consumeQueue(
 			panic(err)
 		}
 	}
-}
-
-func consumeInterestEvents(
-	ctx context.Context,
-	svc service.Service,
-	evts []*pb.CloudEvent,
-	cfg config.Config,
-	log *slog.Logger,
-) {
-	log.Debug(fmt.Sprintf("consumeInterestEvents(%d))\n", len(evts)))
-	for _, evt := range evts {
-
-		interestId := evt.GetTextData()
-		var groupId string
-		if groupIdAttr, groupIdIdPresent := evt.Attributes[ceKeyGroupId]; groupIdIdPresent {
-			groupId = groupIdAttr.GetCeString()
-		}
-		if groupId == "" {
-			log.Error(fmt.Sprintf("interest %s event: empty group id, skipping", interestId))
-			continue
-		}
-
-		publicAttr, publicAttrPresent := evt.Attributes[ceKeyPublic]
-		switch publicAttrPresent && publicAttr.GetCeBoolean() {
-		case true:
-			actor := interestId + "@" + cfg.Api.Http.Host
-			_, _ = svc.RequestFollow(ctx, "@bsky.brid.gy@bsky.brid.gy", groupId, actor, interestId, "", false)
-		default:
-			log.Debug(fmt.Sprintf("interest %s event: public: %t/%t", interestId, publicAttrPresent, publicAttr.GetCeBoolean()))
-		}
-	}
-	return
 }
