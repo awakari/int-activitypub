@@ -24,7 +24,7 @@ func NewFollowersHandler(svcReader reader.Service, baseUrl string) Handler {
 
 func (hf followers) Handle(ctx *gin.Context) {
 	interestId := ctx.Param("id")
-	count, err := hf.svcReader.CountByInterest(ctx, interestId)
+	count, err := hf.svcReader.CountByInterest(ctx, interestId, model.GroupIdDefault, model.UserIdDefault)
 	if err != nil {
 		ctx.String(http.StatusInternalServerError, fmt.Sprintf("failed to estimate count of followers: %s", err))
 		return

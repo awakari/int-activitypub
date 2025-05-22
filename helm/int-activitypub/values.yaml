@@ -120,7 +120,7 @@ api:
     uri: "http://interests-api:8080/v1"
     detailsUriPrefix: "https://awakari.com/sub-details.html?id="
   reader:
-    uri: "http://reader:8080/v1"
+    uri: "http://reader:8080"
     uriEvtBase: "https://awakari.com/pub-msg.html?id="
     callback:
       protocol: "http"

@@ -30,7 +30,7 @@ func NewOutboxHandler(svcReader reader.Service, svcConv converter.Service, baseU
 func (oh outboxHandler) Handle(ctx *gin.Context) {
 
 	id := ctx.Param("id")
-	evts, err := oh.svcReader.Read(ctx, id, maxPageLen)
+	evts, err := oh.svcReader.Feed(ctx, id, maxPageLen)
 	if err != nil {
 		ctx.String(http.StatusInternalServerError, err.Error())
 		return

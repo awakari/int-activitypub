@@ -213,7 +213,7 @@ func (svc service) handleFollowActivity(ctx context.Context, actorIdLocal, pubKe
 	d, _ := sonic.Marshal(activity)
 	fmt.Printf("Follow activity payload: %s\n", d)
 	cbUrl := svc.makeCallbackUrl(actorId)
-	err = svc.r.CreateCallback(ctx, actorIdLocal, cbUrl)
+	err = svc.r.Subscribe(ctx, actorIdLocal, model.GroupIdDefault, actorId, cbUrl, 0)
 	var actor vocab.Actor
 	if err == nil {
 		actor, _, err = svc.ap.FetchActor(ctx, vocab.IRI(actorId), pubKeyId)
@@ -235,7 +235,7 @@ func (svc service) handleUndoActivity(ctx context.Context, actorIdLocal, actorId
 	switch activity.Object.GetType() {
 	case vocab.FollowType:
 		cbUrl := svc.makeCallbackUrl(actorId)
-		err = svc.r.DeleteCallback(ctx, actorIdLocal, cbUrl)
+		err = svc.r.Unsubscribe(ctx, actorIdLocal, model.GroupIdDefault, actorId, cbUrl)
 	}
 	return
 }
