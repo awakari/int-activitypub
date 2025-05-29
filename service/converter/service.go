@@ -67,6 +67,8 @@ const fmtLenMaxBodyTxt = 100
 
 const ceTypePrefixFollowersOnly = "com_awakari_mastodon_"
 
+const prefixBridgy = "https://bsky.brid.gy/ap/did:plc:"
+
 var ErrFail = errors.New("failed to convert")
 
 var htmlStripTags = bluemonday.
@@ -86,9 +88,13 @@ func NewService(ceType, urlBase, evtReaderBase string, actorType vocab.ActivityV
 
 func (svc service) ConvertActivityToEvent(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (evt *pb.CloudEvent, err error) {
 	//
+	src := actor.ID.String()
+	if strings.HasPrefix(src, prefixBridgy) {
+		src = "https://bsky.app/profile/did:plc:" + strings.TrimPrefix(src, prefixBridgy)
+	}
 	evt = &pb.CloudEvent{
 		Id:          ksuid.New().String(),
-		Source:      actor.ID.String(),
+		Source:      src,
 		SpecVersion: CeSpecVersion,
 		Type:        svc.ceType,
 		Attributes: map[string]*pb.CloudEventAttributeValue{
@@ -150,9 +156,16 @@ func (svc service) convertActivity(a vocab.Activity, evt *pb.CloudEvent, tags ut
 			CeString: string(a.Type),
 		},
 	}
+	var objUrl string
+	if a.URL != nil {
+		objUrl = strings.TrimPrefix(string(a.URL.GetLink()), "https://bsky.brid.gy/r/")
+	}
+	if objUrl == "" {
+		objUrl = a.ID.String()
+	}
 	evt.Attributes[CeKeyObjectUrl] = &pb.CloudEventAttributeValue{
 		Attr: &pb.CloudEventAttributeValue_CeUri{
-			CeUri: a.ID.String(),
+			CeUri: objUrl,
 		},
 	}
 	if att := a.Attachment; att != nil {

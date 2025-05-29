@@ -475,7 +475,7 @@ func TestService_ConvertActivityToEvent(t *testing.T) {
 					},
 					"objecturl": {
 						Attr: &pb.CloudEventAttributeValue_CeUri{
-							CeUri: "https://mastodon.social/users/akurilov/statuses/112614067761000729",
+							CeUri: "https://mastodon.social/@akurilov/112614067761000729",
 						},
 					},
 					"time": {
