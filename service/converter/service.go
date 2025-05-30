@@ -67,7 +67,8 @@ const fmtLenMaxBodyTxt = 100
 
 const ceTypePrefixFollowersOnly = "com_awakari_mastodon_"
 
-const prefixBridgy = "https://bsky.brid.gy/ap/did:plc:"
+const prefixSrcBridgy = "https://bsky.brid.gy/ap/did:plc:"
+const prefixObjUrlBridgy = "https://bsky.brid.gy/r/"
 
 var ErrFail = errors.New("failed to convert")
 
@@ -89,8 +90,8 @@ func NewService(ceType, urlBase, evtReaderBase string, actorType vocab.ActivityV
 func (svc service) ConvertActivityToEvent(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (evt *pb.CloudEvent, err error) {
 	//
 	src := actor.ID.String()
-	if strings.HasPrefix(src, prefixBridgy) {
-		src = "https://bsky.app/profile/did:plc:" + strings.TrimPrefix(src, prefixBridgy)
+	if strings.HasPrefix(src, prefixSrcBridgy) {
+		src = "https://bsky.app/profile/did:plc:" + strings.TrimPrefix(src, prefixSrcBridgy)
 	}
 	evt = &pb.CloudEvent{
 		Id:          ksuid.New().String(),
@@ -134,7 +135,7 @@ func (svc service) ConvertActivityToEvent(ctx context.Context, actor vocab.Actor
 			case true:
 				evt.Attributes[CeKeyObjectUrl] = &pb.CloudEventAttributeValue{
 					Attr: &pb.CloudEventAttributeValue_CeUri{
-						CeUri: obj.GetLink().String(),
+						CeUri: strings.TrimPrefix(string(obj.GetLink()), prefixObjUrlBridgy),
 					},
 				}
 			default:
@@ -158,14 +159,14 @@ func (svc service) convertActivity(a vocab.Activity, evt *pb.CloudEvent, tags ut
 	}
 	var objUrl string
 	if a.URL != nil {
-		objUrl = strings.TrimPrefix(string(a.URL.GetLink()), "https://bsky.brid.gy/r/")
+		objUrl = string(a.URL.GetLink())
 	}
 	if objUrl == "" {
 		objUrl = a.ID.String()
 	}
 	evt.Attributes[CeKeyObjectUrl] = &pb.CloudEventAttributeValue{
 		Attr: &pb.CloudEventAttributeValue_CeUri{
-			CeUri: objUrl,
+			CeUri: strings.TrimPrefix(objUrl, prefixObjUrlBridgy),
 		},
 	}
 	if att := a.Attachment; att != nil {
@@ -315,7 +316,7 @@ func (svc service) convertObject(obj *vocab.Object, evt *pb.CloudEvent) (public 
 	}
 	evt.Attributes[CeKeyObjectUrl] = &pb.CloudEventAttributeValue{
 		Attr: &pb.CloudEventAttributeValue_CeUri{
-			CeUri: obj.ID.String(),
+			CeUri: strings.TrimPrefix(string(obj.ID), prefixObjUrlBridgy),
 		},
 	}
 	if att := obj.Attachment; att != nil {
@@ -454,7 +455,7 @@ func (svc service) convertQuestion(obj *vocab.Question, evt *pb.CloudEvent) (pub
 	}
 	evt.Attributes[CeKeyObjectUrl] = &pb.CloudEventAttributeValue{
 		Attr: &pb.CloudEventAttributeValue_CeUri{
-			CeUri: obj.ID.String(),
+			CeUri: strings.TrimPrefix(string(obj.ID), prefixObjUrlBridgy),
 		},
 	}
 	if att := obj.Attachment; att != nil {
