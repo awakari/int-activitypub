@@ -278,7 +278,7 @@ func (svc service) handleSourceActivity(
 				}
 				userId := src.UserId
 				if userId == "" {
-					userId = srcId
+					userId = evt.Source
 				}
 				err = svc.svcPub.Publish(ctx, evt, src.GroupId, userId)
 				if errors.Is(err, pub.ErrNoAck) {

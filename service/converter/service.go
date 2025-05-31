@@ -996,8 +996,8 @@ func truncateStringUtf8(s string, lenMax int) string {
 func objectUrl(src string) (dst string) {
 	switch {
 	case strings.HasPrefix(src, prefixObjUrlBridgy):
-		dst = strings.TrimPrefix(src, prefixObjUrlBridgy)
-		dst = strings.Replace(src, "/app.bsky.feed.post/", "/post/", 1)
+		dst = prefixObjUrlBluesky + strings.TrimPrefix(src, prefixObjUrlBridgy)
+		dst = strings.Replace(dst, "/app.bsky.feed.post/", "/post/", 1)
 	default:
 		dst = src
 	}
