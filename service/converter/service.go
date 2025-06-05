@@ -27,6 +27,7 @@ type Service interface {
 type service struct {
 	ceType           string
 	urlBase          string
+	urlInterestBase  string
 	urlReaderEvtBase string
 	actorType        vocab.ActivityVocabularyType
 }
@@ -79,10 +80,11 @@ var htmlStripTags = bluemonday.
 
 var reMultiSpace = regexp.MustCompile(`\s+`)
 
-func NewService(ceType, urlBase, evtReaderBase string, actorType vocab.ActivityVocabularyType) Service {
+func NewService(ceType, urlBase, urlInterestBase, evtReaderBase string, actorType vocab.ActivityVocabularyType) Service {
 	return service{
 		ceType:           ceType,
 		urlBase:          urlBase,
+		urlInterestBase:  urlInterestBase,
 		urlReaderEvtBase: evtReaderBase,
 		actorType:        actorType,
 	}
@@ -801,8 +803,8 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 		tagsFormattedStr = fmt.Sprintf("<br/><br/>%s", strings.Join(tagsFormatted, " "))
 	}
 	txt += fmt.Sprintf(
-		"<br/><br/><a href=\"%s\">%s</a>%s<br/><br/><a href=\"%s\">Result Details</a>",
-		addrOrigin, addrOrigin, tagsFormattedStr, a.URL,
+		"<br/>%s<br/><a href=\"%s\">Origin</a> | <a href=\"%s%s\">Interest</a> | <a href=\"%s\">Match</a>",
+		tagsFormattedStr, addrOrigin, svc.urlInterestBase, interestId, a.URL,
 	)
 	obj.Content = vocab.DefaultNaturalLanguageValue(txt)
 

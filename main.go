@@ -98,6 +98,7 @@ func main() {
 	svcConv := converter.NewService(
 		cfg.Api.EventType.Self,
 		fmt.Sprintf("https://%s", cfg.Api.Http.Host),
+		cfg.Api.Interests.DetailsUriPrefix,
 		cfg.Api.Reader.UriEventBase,
 		vocab.ActivityVocabularyType(cfg.Api.Actor.Type),
 	)

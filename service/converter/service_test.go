@@ -15,7 +15,7 @@ import (
 )
 
 func TestService_ConvertActivityToEvent(t *testing.T) {
-	svc := NewService("foo", "urlBase", "https://reader/evt", vocab.ServiceType)
+	svc := NewService("foo", "urlBase", "https://awakari.com/sub-details.html?id=", "https://reader/evt", vocab.ServiceType)
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
 		actor vocab.Actor
@@ -517,7 +517,7 @@ func TestService_ConvertActivityToEvent(t *testing.T) {
 }
 
 func TestService_ConvertEventToActivity(t *testing.T) {
-	svc := NewService("foo", "https://base", "https://reader/evt", vocab.ServiceType)
+	svc := NewService("foo", "https://base", "https://awakari.com/sub-details.html?id=", "https://reader/evt", vocab.ServiceType)
 	svc = NewLogging(svc, slog.Default())
 	ts := time.Date(2024, 7, 27, 1, 32, 21, 0, time.UTC)
 	cases := map[string]struct {
@@ -607,7 +607,7 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 						Type: "Link",
 					},
 					Content: vocab.DefaultNaturalLanguageValue(
-						`The 10 Must-Watch Futuristic Anime That Every Fan Should See Anime is known for its wide range of...<br/><br/><a href="https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/">https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/</a><br/><br/><a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/anime">#anime</a> <a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/otaku">#otaku</a><br/><br/><a href="https://reader/evt2jrVcFeXfGNcExKHLCcrrXBYyLJ&interestId=interest1">Result Details</a>`),
+						`The 10 Must-Watch Futuristic Anime That Every Fan Should See Anime is known for its wide range of...<br/><br/><br/><a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/anime">#anime</a> <a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/otaku">#otaku</a><br/><a href="https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/">Origin</a> | <a href="https://awakari.com/sub-details.html?id=interest1">Interest</a> | <a href="https://reader/evt2jrVcFeXfGNcExKHLCcrrXBYyLJ&interestId=interest1">Match</a>`),
 					Published: ts,
 					Replies: &vocab.Collection{
 						ID:      "https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/replies",
@@ -656,7 +656,7 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 }
 
 func TestService_ConvertEventToActorUpdate(t *testing.T) {
-	svc := NewService("foo", "https://base", "https://reader/evt", vocab.ServiceType)
+	svc := NewService("foo", "https://base", "https://awakari.com/sub-details.html?id=", "https://reader/evt", vocab.ServiceType)
 	svc = NewLogging(svc, slog.Default())
 	ts := time.Date(2024, 7, 27, 1, 32, 21, 0, time.UTC)
 	cases := map[string]struct {
