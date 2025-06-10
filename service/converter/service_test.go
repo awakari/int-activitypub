@@ -606,8 +606,7 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 						ID:   "https://otakukart.com/wp-content/uploads/2024/07/The-10-Must-Watch-Futuristic-Anime-That-Every-Fan-Should-See.jpg",
 						Type: "Link",
 					},
-					Content: vocab.DefaultNaturalLanguageValue(
-						`The 10 Must-Watch Futuristic Anime That Every Fan Should See Anime is known for its wide range of...<br/><br/><br/><a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/anime">#anime</a> <a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/otaku">#otaku</a><br/><br/><a href="https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/">Origin</a> | <a href="https://awakari.com/sub-details.html?id=interest1">Interest</a> | <a href="https://reader/evt2jrVcFeXfGNcExKHLCcrrXBYyLJ&interestId=interest1">Match</a>`),
+					Content:   vocab.DefaultNaturalLanguageValue(`The 10 Must-Watch Futuristic Anime That Every Fan Should See Anime is known for its wide range of...<br/><br/><a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/anime">#anime</a> <a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/otaku">#otaku</a><br/><br/><a href="https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/">Origin</a> | <a href="https://awakari.com/sub-details.html?id=interest1">Interest</a> | <a href="https://reader/evt2jrVcFeXfGNcExKHLCcrrXBYyLJ&interestId=interest1">Match</a>`),
 					Published: ts,
 					Replies: &vocab.Collection{
 						ID:      "https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/replies",
@@ -641,6 +640,144 @@ func TestService_ConvertEventToActivity(t *testing.T) {
 						vocab.IRI("https://www.w3.org/ns/activitystreams#Public"),
 					},
 					URL: vocab.IRI("https://otakukart.com/the-10-must-watch-futuristic-anime-that-every-fan-should-see/"),
+				},
+			},
+		},
+		"2": {
+			src: &pb.CloudEvent{
+				Id:          "RdkNYGkgLyvmI7G4XhHmIeGgANM",
+				SpecVersion: CeSpecVersion,
+				Source:      "http://rss.arxiv.org/rss/hep-ex",
+				Type:        "com_awakari_feeds_v1",
+				Attributes: map[string]*pb.CloudEventAttributeValue{
+					"subject": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "rss-help@arxiv.org",
+						},
+					},
+					"awakarigroupid": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "default",
+						},
+					},
+					"awakarimatchfound": {
+						Attr: &pb.CloudEventAttributeValue_CeBoolean{
+							CeBoolean: true,
+						},
+					},
+					"awakariuserid": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "http://rss.arxiv.org/rss/hep-ex",
+						},
+					},
+					"categories": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "hep-ph hep-ex",
+						},
+					},
+					"copyright": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "http://creativecommons.org/licenses/by/4.0/",
+						},
+					},
+					"language": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "en",
+						},
+					},
+					"object": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "oai:arXiv.org:2506.07763v1",
+						},
+					},
+					"objecturl": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "https://arxiv.org/abs/2506.07763",
+						},
+					},
+					"sentiment": {
+						Attr: &pb.CloudEventAttributeValue_CeInteger{
+							CeInteger: 47,
+						},
+					},
+					"sourcedescription": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "hep-ex updates on the arXiv.org e-print archive.",
+						},
+					},
+					"sourcetitle": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "hep-ex updates on arXiv.org",
+						},
+					},
+					"summary": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "arXiv:2506.07763v1 Announce Type: cross \nAbstract: Light dark matter with sub-eV masses has a high number density in our galaxy, and its scattering cross section with macroscopic objects can be significantly enhanced by coherence effects. Repeated scattering with a target object can induce a measurable acceleration. Torsion balance experiments with geometric asymmetry are, in principle, capable of detecting such signals. Our analysis shows that existing torsion balances designed to test the Equivalence Principle already place the most stringent constraints on DM-nucleon scattering in the $(10^{-2}, 1)\\,$eV mass range.",
+						},
+					},
+					"title": {
+						Attr: &pb.CloudEventAttributeValue_CeString{
+							CeString: "Torsion Balance Experiments Enable Direct Detection of Sub-eV Dark Matter",
+						},
+					},
+				},
+			},
+			interestId: "interest1",
+			follower: &vocab.Actor{
+				ID:   "https://mastodon.social/users/johndoe",
+				URL:  vocab.IRI("https://mastodon.social/users/johndoe"),
+				Name: vocab.DefaultNaturalLanguageValue("John Doe"),
+			},
+			dst: vocab.Activity{
+				ID:        vocab.IRI("https://base/RdkNYGkgLyvmI7G4XhHmIeGgANM"),
+				Type:      vocab.CreateType,
+				Context:   vocab.IRI("https://www.w3.org/ns/activitystreams"),
+				Published: time.Date(2024, 7, 27, 1, 32, 21, 0, time.UTC),
+				URL:       vocab.IRI("https://reader/evtRdkNYGkgLyvmI7G4XhHmIeGgANM&interestId=interest1"),
+				To: vocab.ItemCollection{
+					vocab.IRI("https://mastodon.social/users/johndoe"),
+					vocab.IRI("https://www.w3.org/ns/activitystreams#Public"),
+				},
+				Actor: vocab.IRI("https://base/actor/interest1"),
+				Object: &vocab.Object{
+					ID:           vocab.IRI("https://base/RdkNYGkgLyvmI7G4XhHmIeGgANM"),
+					Type:         vocab.NoteType,
+					Name:         vocab.NaturalLanguageValues{},
+					Attachment:   vocab.ItemCollection{},
+					AttributedTo: vocab.IRI("http://rss.arxiv.org/rss/hep-ex"),
+					Content:      vocab.DefaultNaturalLanguageValue(`Torsion Balance Experiments Enable Direct Detection of Sub-eV Dark Matter arXiv:2506.07763v1 Anno...<br/><br/><a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/hep-ph">#hep-ph</a> <a rel="tag" class="mention hashtag" href="https://mastodon.social/tags/hep-ex">#hep-ex</a><br/><br/><a href="https://arxiv.org/abs/2506.07763">Origin</a> | <a href="https://awakari.com/sub-details.html?id=interest1">Interest</a> | <a href="https://reader/evtRdkNYGkgLyvmI7G4XhHmIeGgANM&interestId=interest1">Match</a>`),
+					Replies: &vocab.Collection{
+						ID:      vocab.IRI("https://arxiv.org/abs/2506.07763/replies"),
+						Type:    vocab.CollectionType,
+						Name:    vocab.NaturalLanguageValues{},
+						Content: vocab.NaturalLanguageValues{},
+						Summary: vocab.NaturalLanguageValues{},
+						First: &vocab.CollectionPage{
+							Type:    vocab.CollectionPageType,
+							Name:    vocab.NaturalLanguageValues{},
+							Content: vocab.NaturalLanguageValues{},
+							Summary: vocab.NaturalLanguageValues{},
+							PartOf:  vocab.IRI("https://arxiv.org/abs/2506.07763/replies"),
+							Next:    vocab.IRI("https://arxiv.org/abs/2506.07763/replies"),
+						},
+					},
+					Tag: vocab.ItemCollection{
+						&vocab.Link{
+							Type: "Hashtag",
+							Name: vocab.DefaultNaturalLanguageValue("#hep-ph"),
+							Href: "https://mastodon.social/tags/hep-ph",
+						},
+						&vocab.Link{
+							Type: "Hashtag",
+							Name: vocab.DefaultNaturalLanguageValue("#hep-ex"),
+							Href: "https://mastodon.social/tags/hep-ex",
+						},
+					},
+					To: vocab.ItemCollection{
+						vocab.IRI("https://mastodon.social/users/johndoe"),
+						vocab.IRI("https://www.w3.org/ns/activitystreams#Public"),
+					},
+					URL: vocab.IRI("https://arxiv.org/abs/2506.07763"),
 				},
 			},
 		},

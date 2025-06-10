@@ -800,7 +800,7 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 
 	var tagsFormattedStr string
 	if len(tagsFormatted) > 0 {
-		tagsFormattedStr = fmt.Sprintf("<br/><br/>%s", strings.Join(tagsFormatted, " "))
+		tagsFormattedStr = fmt.Sprintf("<br/>%s", strings.Join(tagsFormatted, " "))
 	}
 	txt += fmt.Sprintf(
 		"<br/>%s<br/><br/><a href=\"%s\">Origin</a> | <a href=\"%s%s\">Interest</a> | <a href=\"%s\">Match</a>",
