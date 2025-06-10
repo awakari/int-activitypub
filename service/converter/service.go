@@ -803,7 +803,7 @@ func (svc service) ConvertEventToActivity(ctx context.Context, evt *pb.CloudEven
 		tagsFormattedStr = fmt.Sprintf("<br/><br/>%s", strings.Join(tagsFormatted, " "))
 	}
 	txt += fmt.Sprintf(
-		"<br/>%s<br/><a href=\"%s\">Origin</a> | <a href=\"%s%s\">Interest</a> | <a href=\"%s\">Match</a>",
+		"<br/>%s<br/><br/><a href=\"%s\">Origin</a> | <a href=\"%s%s\">Interest</a> | <a href=\"%s\">Match</a>",
 		tagsFormattedStr, addrOrigin, svc.urlInterestBase, interestId, a.URL,
 	)
 	obj.Content = vocab.DefaultNaturalLanguageValue(txt)
