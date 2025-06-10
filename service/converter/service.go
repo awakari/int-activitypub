@@ -64,7 +64,7 @@ const CeKeyUpdated = "updated"
 
 const asPublic = "https://www.w3.org/ns/activitystreams#Public"
 
-const fmtLenMaxBodyTxt = 100
+const fmtLenMaxBodyTxt = 200
 
 const ceTypePrefixFollowersOnly = "com_awakari_mastodon_"
 
