@@ -182,7 +182,7 @@ log:
   # https://pkg.go.dev/golang.org/x/exp/slog#Level
   level: -4
 queue:
-  uri: "queue:50051"
+  uri: "instance-20250706-1012.awakari.com:50065"
   interestsCreated:
     batchSize: 1
     name: "int-activitypub"
