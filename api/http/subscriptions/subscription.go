@@ -1,4 +1,4 @@
-package reader
+package subscriptions
 
 type Subscription struct {
 	Url    string `json:"url"`

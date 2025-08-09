@@ -27,8 +27,12 @@ type ApiConfig struct {
 		Uri              string `envconfig:"API_INTERESTS_URI" required:"true" default:"http://interests-api:8080/v1"`
 		DetailsUriPrefix string `envconfig:"API_INTERESTS_DETAILS_URI_PREFIX" required:"true" default:"https://awakari.com/sub-details.html?id="`
 	}
-	Reader ReaderConfig
-	Writer struct {
+	Reader struct {
+		Uri          string `envconfig:"API_READER_URI" default:"http://reader:8080/v1" required:"true"`
+		UriEventBase string `envconfig:"API_READER_URI_EVT_BASE" default:"https://awakari.com/pub-msg.html?id=" required:"true"`
+	}
+	Subscriptions SubscriptionsConfig
+	Writer        struct {
 		Backoff time.Duration `envconfig:"API_WRITER_BACKOFF" default:"10s" required:"true"`
 		Timeout time.Duration `envconfig:"API_WRITER_TIMEOUT" default:"10s" required:"true"`
 		Uri     string        `envconfig:"API_WRITER_URI" default:"http://pub:8080/v1" required:"true"`
@@ -87,14 +91,13 @@ type PrometheusConfig struct {
 	Uri string `envconfig:"API_PROMETHEUS_URI" default:"http://prometheus-server:80" required:"true"`
 }
 
-type ReaderConfig struct {
-	Uri          string `envconfig:"API_READER_URI" default:"http://reader:8080" required:"true"`
-	UriEventBase string `envconfig:"API_READER_URI_EVT_BASE" default:"https://awakari.com/pub-msg.html?id=" required:"true"`
-	CallBack     struct {
-		Protocol string `envconfig:"API_READER_CALLBACK_PROTOCOL" default:"http" required:"true"`
-		Host     string `envconfig:"API_READER_CALLBACK_HOST" default:"int-activitypub" required:"true"`
-		Port     uint16 `envconfig:"API_READER_CALLBACK_PORT" default:"8081" required:"true"`
-		Path     string `envconfig:"API_READER_CALLBACK_PATH" default:"/v1/callback" required:"true"`
+type SubscriptionsConfig struct {
+	Uri      string `envconfig:"API_SUBSCRIPTIONS_URI" default:"http://subscriptions:8080" required:"true"`
+	CallBack struct {
+		Protocol string `envconfig:"API_SUBSCRIPTIONS_CALLBACK_PROTOCOL" default:"http" required:"true"`
+		Host     string `envconfig:"API_SUBSCRIPTIONS_CALLBACK_HOST" default:"int-activitypub" required:"true"`
+		Port     uint16 `envconfig:"API_SUBSCRIPTIONS_CALLBACK_PORT" default:"8081" required:"true"`
+		Path     string `envconfig:"API_SUBSCRIPTIONS_CALLBACK_PATH" default:"/v1/callback" required:"true"`
 	}
 }
 

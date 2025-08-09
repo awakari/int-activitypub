@@ -3,7 +3,7 @@ package handler
 import (
 	"errors"
 	"fmt"
-	"github.com/awakari/int-activitypub/api/http/reader"
+	"github.com/awakari/int-activitypub/api/http/subscriptions"
 	"github.com/awakari/int-activitypub/config"
 	"github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/service/converter"
@@ -51,7 +51,7 @@ func NewCallbackHandler(topicPrefixBase, host string, svcConv converter.Service,
 func (ch callbackHandler) Confirm(ctx *gin.Context) {
 	topic := ctx.Query(keyHubTopic)
 	challenge := ctx.Query(keyHubChallenge)
-	if strings.HasPrefix(topic, ch.topicPrefixBase+"/sub/"+reader.FmtJson) {
+	if strings.HasPrefix(topic, ch.topicPrefixBase+"/sub/"+subscriptions.FmtJson) {
 		ctx.String(http.StatusOK, challenge)
 	} else {
 		ctx.String(http.StatusBadRequest, fmt.Sprintf("invalid topic: %s", topic))
@@ -88,9 +88,9 @@ func (ch callbackHandler) Deliver(ctx *gin.Context) {
 	}
 	pubKeyId := fmt.Sprintf("https://%s/actor/%s#main-key", ch.host, interestId)
 
-	followerUrl, err := url.QueryUnescape(ctx.Query(reader.QueryParamFollower))
+	followerUrl, err := url.QueryUnescape(ctx.Query(subscriptions.QueryParamFollower))
 	if err != nil || followerUrl == "" {
-		ctx.String(http.StatusBadRequest, fmt.Sprintf("follower parameter is missing or invalid: val=%s, err=%s", ctx.Query(reader.QueryParamFollower), err))
+		ctx.String(http.StatusBadRequest, fmt.Sprintf("follower parameter is missing or invalid: val=%s, err=%s", ctx.Query(subscriptions.QueryParamFollower), err))
 		return
 	}
 

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/awakari/int-activitypub/api/http/pub"
-	"github.com/awakari/int-activitypub/api/http/reader"
+	"github.com/awakari/int-activitypub/api/http/subscriptions"
 	"github.com/awakari/int-activitypub/util"
 	"github.com/bytedance/sonic"
 	"github.com/cenkalti/backoff/v4"
@@ -60,7 +60,7 @@ type service struct {
 	conv             converter.Service
 	svcPub           pub.Service
 	backoffTimeLimit time.Duration
-	r                reader.Service
+	svcSubs          subscriptions.Service
 	cbUrlBase        string
 }
 
@@ -78,7 +78,7 @@ func NewService(
 	conv converter.Service,
 	svcPub pub.Service,
 	backoffTimeLimit time.Duration,
-	r reader.Service,
+	svcSubs subscriptions.Service,
 	cbUrlBase string,
 ) Service {
 	return service{
@@ -88,7 +88,7 @@ func NewService(
 		conv:             conv,
 		svcPub:           svcPub,
 		backoffTimeLimit: backoffTimeLimit,
-		r:                r,
+		svcSubs:          svcSubs,
 		cbUrlBase:        cbUrlBase,
 	}
 }
@@ -213,7 +213,7 @@ func (svc service) handleFollowActivity(ctx context.Context, actorIdLocal, pubKe
 	d, _ := sonic.Marshal(activity)
 	fmt.Printf("Follow activity payload: %s\n", d)
 	cbUrl := svc.makeCallbackUrl(actorId)
-	err = svc.r.Subscribe(ctx, actorIdLocal, model.GroupIdDefault, model.UserIdDefault, cbUrl, 0)
+	err = svc.svcSubs.Subscribe(ctx, actorIdLocal, model.GroupIdDefault, model.UserIdDefault, cbUrl, 0)
 	var actor vocab.Actor
 	if err == nil {
 		actor, _, err = svc.ap.FetchActor(ctx, vocab.IRI(actorId), pubKeyId)
@@ -235,13 +235,13 @@ func (svc service) handleUndoActivity(ctx context.Context, actorIdLocal, actorId
 	switch activity.Object.GetType() {
 	case vocab.FollowType:
 		cbUrl := svc.makeCallbackUrl(actorId)
-		err = svc.r.Unsubscribe(ctx, actorIdLocal, model.GroupIdDefault, model.UserIdDefault, cbUrl)
+		err = svc.svcSubs.Unsubscribe(ctx, actorIdLocal, model.GroupIdDefault, model.UserIdDefault, cbUrl)
 	}
 	return
 }
 
 func (svc service) makeCallbackUrl(actorId string) (cbUrl string) {
-	cbUrl = svc.cbUrlBase + "?" + reader.QueryParamFollower + "=" + url.QueryEscape(actorId)
+	cbUrl = svc.cbUrlBase + "?" + subscriptions.QueryParamFollower + "=" + url.QueryEscape(actorId)
 	return
 }
 

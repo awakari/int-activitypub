@@ -122,6 +122,8 @@ api:
   reader:
     uri: "http://reader:8080"
     uriEvtBase: "https://awakari.com/pub-msg.html?id="
+  subscriptions:
+    uri: "http://subscriptions:8080"
     callback:
       protocol: "http"
       path: "/v1/callback"

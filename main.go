@@ -10,6 +10,7 @@ import (
 	"github.com/awakari/int-activitypub/api/http/interests"
 	"github.com/awakari/int-activitypub/api/http/pub"
 	"github.com/awakari/int-activitypub/api/http/reader"
+	"github.com/awakari/int-activitypub/api/http/subscriptions"
 	"github.com/awakari/int-activitypub/config"
 	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/service"
@@ -104,18 +105,21 @@ func main() {
 	)
 	svcConv = converter.NewLogging(svcConv, log)
 
-	// init websub reader
-	svcReader := reader.NewService(clientHttp, cfg.Api.Reader.Uri, cfg.Api.Token.Internal)
-	svcReader = reader.NewServiceLogging(svcReader, log)
+	svcReader := reader.NewService(clientHttp, cfg.Api.Reader.Uri)
+	svcReader = reader.NewLogging(svcReader, log)
+
+	// init websub
+	svcSubs := subscriptions.NewService(clientHttp, cfg.Api.Subscriptions.Uri, cfg.Api.Token.Internal)
+	svcSubs = subscriptions.NewServiceLogging(svcSubs, log)
 	urlCallbackBase := fmt.Sprintf(
 		"%s://%s:%d%s",
-		cfg.Api.Reader.CallBack.Protocol,
-		cfg.Api.Reader.CallBack.Host,
-		cfg.Api.Reader.CallBack.Port,
-		cfg.Api.Reader.CallBack.Path,
+		cfg.Api.Subscriptions.CallBack.Protocol,
+		cfg.Api.Subscriptions.CallBack.Host,
+		cfg.Api.Subscriptions.CallBack.Port,
+		cfg.Api.Subscriptions.CallBack.Path,
 	)
 
-	svc := service.NewService(stor, svcActivityPub, cfg.Api.Http.Host, svcConv, svcPub, cfg.Api.Writer.Backoff, svcReader, urlCallbackBase)
+	svc := service.NewService(stor, svcActivityPub, cfg.Api.Http.Host, svcConv, svcPub, cfg.Api.Writer.Backoff, svcSubs, urlCallbackBase)
 	svc = service.NewLogging(svc, log)
 
 	log.Info(fmt.Sprintf("starting to listen the gRPC API @ port #%d...", cfg.Api.Port))
@@ -260,7 +264,7 @@ func main() {
 		First:   vocab.IRI(fmt.Sprintf("https://%s/outbox?page=1", cfg.Api.Http.Host)),
 	})
 	hFollowing := handler.NewFollowingHandler(stor, fmt.Sprintf("https://%s/following", cfg.Api.Http.Host))
-	hFollowers := handler.NewFollowersHandler(svcReader, fmt.Sprintf("https://%s/followers", cfg.Api.Http.Host))
+	hFollowers := handler.NewFollowersHandler(svcSubs, fmt.Sprintf("https://%s/followers", cfg.Api.Http.Host))
 
 	r := gin.Default()
 	r.GET("/.well-known/webfinger", hwf.Handle)
@@ -295,15 +299,15 @@ func main() {
 		}
 	}()
 
-	hc := handler.NewCallbackHandler(cfg.Api.Reader.Uri+"/v1", cfg.Api.Http.Host, svcConv, svcActivityPub, cfg.Api.EventType)
+	hc := handler.NewCallbackHandler(cfg.Api.Subscriptions.Uri+"/v1", cfg.Api.Http.Host, svcConv, svcActivityPub, cfg.Api.EventType)
 
-	log.Info(fmt.Sprintf("starting to listen the HTTP API @ port #%d...", cfg.Api.Reader.CallBack.Port))
+	log.Info(fmt.Sprintf("starting to listen the HTTP API @ port #%d...", cfg.Api.Subscriptions.CallBack.Port))
 	internalCallbacks := gin.Default()
 	internalCallbacks.
-		GET(cfg.Api.Reader.CallBack.Path, hc.Confirm).
-		POST(cfg.Api.Reader.CallBack.Path, hc.Deliver)
+		GET(cfg.Api.Subscriptions.CallBack.Path, hc.Confirm).
+		POST(cfg.Api.Subscriptions.CallBack.Path, hc.Deliver)
 	go func() {
-		err = internalCallbacks.Run(fmt.Sprintf(":%d", cfg.Api.Reader.CallBack.Port))
+		err = internalCallbacks.Run(fmt.Sprintf(":%d", cfg.Api.Subscriptions.CallBack.Port))
 		if err != nil {
 			panic(err)
 		}

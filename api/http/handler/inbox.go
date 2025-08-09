@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/awakari/int-activitypub/api/http/pub"
-	"github.com/awakari/int-activitypub/api/http/reader"
+	"github.com/awakari/int-activitypub/api/http/subscriptions"
 	"github.com/awakari/int-activitypub/service"
 	"github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/util"
@@ -95,7 +95,7 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 	var post func()
 	post, err = h.svc.HandleActivity(ctx, actorIdLocal, pubKeyId, actor, actorTags, activity, tags)
 	switch {
-	case errors.Is(err, reader.ErrConflict):
+	case errors.Is(err, subscriptions.ErrConflict):
 		ctx.String(http.StatusConflict, err.Error())
 		return
 	case errors.Is(err, service.ErrNoAccept), errors.Is(err, service.ErrNoBot):

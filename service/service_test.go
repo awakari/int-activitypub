@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"github.com/awakari/int-activitypub/api/http/pub"
-	"github.com/awakari/int-activitypub/api/http/reader"
+	"github.com/awakari/int-activitypub/api/http/subscriptions"
 	"github.com/awakari/int-activitypub/model"
 	"github.com/awakari/int-activitypub/service/activitypub"
 	"github.com/awakari/int-activitypub/service/converter"
@@ -21,10 +21,10 @@ func TestService_RequestFollow(t *testing.T) {
 		storage.NewStorageMock(),
 		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
 		"test.social",
-		converter.NewLogging(converter.NewService("foo", "urlBase", "", vocab.ServiceType), slog.Default()),
+		converter.NewLogging(converter.NewService("foo", "urlBase", "", "", vocab.ServiceType), slog.Default()),
 		pub.NewLogging(pub.NewMock(), slog.Default()),
 		1*time.Second,
-		reader.NewServiceLogging(reader.NewServiceMock(), slog.Default()),
+		subscriptions.NewServiceLogging(subscriptions.NewServiceMock(), slog.Default()),
 		"http://int-activitypub:8081",
 	)
 	svc = NewLogging(svc, slog.Default())
@@ -100,10 +100,10 @@ func TestService_HandleActivity(t *testing.T) {
 		storage.NewStorageMock(),
 		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
 		"test.social",
-		converter.NewLogging(converter.NewService("foo", "urlBase", "", vocab.ServiceType), slog.Default()),
+		converter.NewLogging(converter.NewService("foo", "urlBase", "", "", vocab.ServiceType), slog.Default()),
 		pub.NewLogging(pub.NewMock(), slog.Default()),
 		1*time.Second,
-		reader.NewServiceLogging(reader.NewServiceMock(), slog.Default()),
+		subscriptions.NewServiceLogging(subscriptions.NewServiceMock(), slog.Default()),
 		"http://int-activitypub:8081",
 	)
 	svc = NewLogging(svc, slog.Default())
@@ -130,10 +130,10 @@ func TestService_Read(t *testing.T) {
 		storage.NewStorageMock(),
 		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
 		"test.social",
-		converter.NewLogging(converter.NewService("foo", "urlBase", "", vocab.ServiceType), slog.Default()),
+		converter.NewLogging(converter.NewService("foo", "urlBase", "", "", vocab.ServiceType), slog.Default()),
 		pub.NewLogging(pub.NewMock(), slog.Default()),
 		1*time.Second,
-		reader.NewServiceLogging(reader.NewServiceMock(), slog.Default()),
+		subscriptions.NewServiceLogging(subscriptions.NewServiceMock(), slog.Default()),
 		"http://int-activitypub:8081",
 	)
 	svc = NewLogging(svc, slog.Default())
@@ -168,10 +168,10 @@ func TestService_List(t *testing.T) {
 		storage.NewStorageMock(),
 		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
 		"test.social",
-		converter.NewLogging(converter.NewService("foo", "urlBase", "", vocab.ServiceType), slog.Default()),
+		converter.NewLogging(converter.NewService("foo", "urlBase", "", "", vocab.ServiceType), slog.Default()),
 		pub.NewLogging(pub.NewMock(), slog.Default()),
 		1*time.Second,
-		reader.NewServiceLogging(reader.NewServiceMock(), slog.Default()),
+		subscriptions.NewServiceLogging(subscriptions.NewServiceMock(), slog.Default()),
 		"http://int-activitypub:8081",
 	)
 	svc = NewLogging(svc, slog.Default())
@@ -208,10 +208,10 @@ func TestService_Unfollow(t *testing.T) {
 		storage.NewStorageMock(),
 		activitypub.NewServiceLogging(activitypub.NewServiceMock(), slog.Default()),
 		"test.social",
-		converter.NewLogging(converter.NewService("foo", "urlBase", "", vocab.ServiceType), slog.Default()),
+		converter.NewLogging(converter.NewService("foo", "urlBase", "", "", vocab.ServiceType), slog.Default()),
 		pub.NewLogging(pub.NewMock(), slog.Default()),
 		1*time.Second,
-		reader.NewServiceLogging(reader.NewServiceMock(), slog.Default()),
+		subscriptions.NewServiceLogging(subscriptions.NewServiceMock(), slog.Default()),
 		"http://int-activitypub:8081",
 	)
 	svc = NewLogging(svc, slog.Default())

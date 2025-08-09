@@ -57,14 +57,16 @@ spec:
               value: "{{ .Values.api.reader.uri }}"
             - name: API_READER_URI_EVT_BASE
               value: "{{ .Values.api.reader.uriEvtBase }}"
-            - name: API_READER_CALLBACK_PROTOCOL
-              value: "{{ .Values.api.reader.callback.protocol }}"
-            - name: API_READER_CALLBACK_HOST
+            - name: API_SUBSCRIPTIONS_URI
+              value: "{{ .Values.api.subscriptions.uri }}"
+            - name: API_SUBSCRIPTIONS_CALLBACK_PROTOCOL
+              value: "{{ .Values.api.subscriptions.callback.protocol }}"
+            - name: API_SUBSCRIPTIONS_CALLBACK_HOST
               value: "{{ include "int-activitypub.fullname" . }}"
-            - name: API_READER_CALLBACK_PORT
+            - name: API_SUBSCRIPTIONS_CALLBACK_PORT
               value: "{{ .Values.service.callback.port }}"
-            - name: API_READER_CALLBACK_PATH
-              value: "{{ .Values.api.reader.callback.path }}"
+            - name: API_SUBSCRIPTIONS_CALLBACK_PATH
+              value: "{{ .Values.api.subscriptions.callback.path }}"
             - name: API_PROMETHEUS_URI
               value: "{{ .Values.api.prometheus.protocol}}://{{ .Values.api.prometheus.host }}:{{ .Values.api.prometheus.port }}"
             - name: DB_NAME
