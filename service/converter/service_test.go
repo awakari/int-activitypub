@@ -19,6 +19,7 @@ func TestService_ConvertActivityToEvent(t *testing.T) {
 	svc = NewLogging(svc, slog.Default())
 	cases := map[string]struct {
 		actor vocab.Actor
+		cm    util.ActivityContentMap
 		in    string
 		out   *pb.CloudEvent
 		err   error
@@ -500,7 +501,7 @@ func TestService_ConvertActivityToEvent(t *testing.T) {
 			var activity vocab.Activity
 			err := sonic.Unmarshal([]byte(c.in), &activity)
 			require.Nil(t, err)
-			evt, err := svc.ConvertActivityToEvent(context.TODO(), c.actor, activity, util.ActivityTags{})
+			evt, err := svc.ConvertActivityToEvent(context.TODO(), c.actor, activity, util.ActivityTags{}, c.cm)
 			if c.out == nil {
 				assert.Nil(t, evt)
 			} else {

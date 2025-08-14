@@ -118,7 +118,7 @@ func TestService_HandleActivity(t *testing.T) {
 	}
 	for k, c := range cases {
 		t.Run(k, func(t *testing.T) {
-			post, err := svc.HandleActivity(context.TODO(), "", "foo.bar#main.key", vocab.Actor{ID: c.url}, util.ObjectTags{}, c.activity, util.ActivityTags{})
+			post, err := svc.HandleActivity(context.TODO(), "", "foo.bar#main.key", vocab.Actor{ID: c.url}, util.ObjectTags{}, c.activity, util.ActivityTags{}, util.ActivityContentMap{})
 			assert.Nil(t, post)
 			assert.ErrorIs(t, err, c.err)
 		})

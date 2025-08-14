@@ -8,7 +8,7 @@ require (
 	github.com/cloudevents/sdk-go/binding/format/protobuf/v2 v2.16.1
 	github.com/cloudevents/sdk-go/v2 v2.16.1
 	github.com/gin-gonic/gin v1.10.1
-	github.com/go-ap/activitypub v0.0.0-20250707121747-61ebb8da72cd
+	github.com/go-ap/activitypub v0.0.0-20250810115208-cb73b20a1742
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/kelseyhightower/envconfig v1.4.0
@@ -73,6 +73,6 @@ require (
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250804133106-a7a43d27e69b // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250811230008-5f3141c8851a // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -14,3 +14,7 @@ type ActivityTag struct {
 	Type string `json:"type"`
 	Name string `json:"name"`
 }
+
+type ActivityContentMap struct {
+	ContentMap map[string]string `json:"contentMap,omitempty"`
+}

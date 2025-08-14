@@ -32,7 +32,7 @@ func (m mock) RequestFollow(ctx context.Context, addr, groupId, userId, subId, t
 	return
 }
 
-func (m mock) HandleActivity(ctx context.Context, actorIdLocal, pubKeyId string, actor vocab.Actor, actorTags util.ObjectTags, activity vocab.Activity, tags util.ActivityTags) (post func(), err error) {
+func (m mock) HandleActivity(ctx context.Context, actorIdLocal, pubKeyId string, actor vocab.Actor, actorTags util.ObjectTags, activity vocab.Activity, tags util.ActivityTags, cm util.ActivityContentMap) (post func(), err error) {
 	switch actor.ID {
 	case "fail":
 		err = storage.ErrInternal

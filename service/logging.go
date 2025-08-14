@@ -27,9 +27,20 @@ func (l logging) RequestFollow(ctx context.Context, addr, groupId, userId, subId
 	return
 }
 
-func (l logging) HandleActivity(ctx context.Context, actorIdLocal, pubKeyId string, actor vocab.Actor, actorTags util.ObjectTags, activity vocab.Activity, activityTags util.ActivityTags) (post func(), err error) {
-	post, err = l.svc.HandleActivity(ctx, actorIdLocal, pubKeyId, actor, actorTags, activity, activityTags)
-	l.log.Log(ctx, util.LogLevel(err), fmt.Sprintf("service.HandleActivity(actorIdLocal=%s, actor.Id=%s, actor.Tags=%d, activity.Type=%s, activity.Tags=%d): err=%s", actorIdLocal, actor.ID, len(actorTags.Tag), activity.Type, len(activityTags.Tag), err))
+func (l logging) HandleActivity(
+	ctx context.Context,
+	actorIdLocal, pubKeyId string,
+	actor vocab.Actor,
+	actorTags util.ObjectTags,
+	activity vocab.Activity,
+	activityTags util.ActivityTags,
+	cm util.ActivityContentMap,
+) (post func(), err error) {
+	post, err = l.svc.HandleActivity(ctx, actorIdLocal, pubKeyId, actor, actorTags, activity, activityTags, cm)
+	l.log.Log(ctx, util.LogLevel(err), fmt.Sprintf(
+		"service.HandleActivity(actorIdLocal=%s, actor.Id=%s, actor.Tags=%d, activity.Type=%s, activity.Tags=%d): err=%s",
+		actorIdLocal, actor.ID, len(actorTags.Tag), activity.Type, len(activityTags.Tag), err,
+	))
 	return
 }
 

@@ -32,6 +32,7 @@ type Service interface {
 		actorTags util.ObjectTags,
 		activity vocab.Activity,
 		activityTags util.ActivityTags,
+		contentMap util.ActivityContentMap,
 	) (
 		post func(),
 		err error,
@@ -193,6 +194,7 @@ func (svc service) HandleActivity(
 	actorTags util.ObjectTags,
 	activity vocab.Activity,
 	activityTags util.ActivityTags,
+	cm util.ActivityContentMap,
 ) (
 	post func(),
 	err error,
@@ -204,7 +206,7 @@ func (svc service) HandleActivity(
 	case vocab.UndoType:
 		err = svc.handleUndoActivity(ctx, actorIdLocal, actorId, activity)
 	default:
-		err = svc.handleSourceActivity(ctx, actorId, pubKeyId, actor, actorTags, activity, activityTags)
+		err = svc.handleSourceActivity(ctx, actorId, pubKeyId, actor, actorTags, activity, activityTags, cm)
 	}
 	return
 }
@@ -252,6 +254,7 @@ func (svc service) handleSourceActivity(
 	actorTags util.ObjectTags,
 	activity vocab.Activity,
 	activityTags util.ActivityTags,
+	cm util.ActivityContentMap,
 ) (err error) {
 	var src model.Source
 	src, err = svc.stor.Read(ctx, srcId)
@@ -268,7 +271,7 @@ func (svc service) handleSourceActivity(
 			err = svc.stor.Delete(ctx, srcId, src.GroupId, src.UserId)
 		case src.Accepted:
 			var evt *pb.CloudEvent
-			evt, _ = svc.conv.ConvertActivityToEvent(ctx, actor, activity, activityTags)
+			evt, _ = svc.conv.ConvertActivityToEvent(ctx, actor, activity, activityTags, cm)
 			if evt != nil && evt.Data != nil {
 				t := time.Now().UTC()
 				// don't update the storage on every activity but only when difference is higher than the threshold

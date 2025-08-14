@@ -5,7 +5,7 @@ RUN \
     apk add protoc protobuf-dev make git && \
     make build
 
-FROM alpine:3.22.0
+FROM alpine:3.22.1
 RUN apk --no-cache add ca-certificates \
     && update-ca-certificates
 COPY --from=builder /go/src/int-activitypub/int-activitypub /bin/int-activitypub

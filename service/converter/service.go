@@ -19,7 +19,13 @@ import (
 )
 
 type Service interface {
-	ConvertActivityToEvent(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (evt *pb.CloudEvent, err error)
+	ConvertActivityToEvent(
+		ctx context.Context,
+		actor vocab.Actor,
+		activity vocab.Activity,
+		tags util.ActivityTags,
+		cm util.ActivityContentMap,
+	) (evt *pb.CloudEvent, err error)
 	ConvertEventToActivity(ctx context.Context, evt *pb.CloudEvent, interestId string, follower *vocab.Actor, t *time.Time) (a vocab.Activity, err error)
 	ConvertEventToActorUpdate(ctx context.Context, evt *pb.CloudEvent, interestId string, follower *vocab.Actor, t *time.Time) (a vocab.Activity, err error)
 }
@@ -90,7 +96,13 @@ func NewService(ceType, urlBase, urlInterestBase, evtReaderBase string, actorTyp
 	}
 }
 
-func (svc service) ConvertActivityToEvent(ctx context.Context, actor vocab.Actor, activity vocab.Activity, tags util.ActivityTags) (evt *pb.CloudEvent, err error) {
+func (svc service) ConvertActivityToEvent(
+	ctx context.Context,
+	actor vocab.Actor,
+	activity vocab.Activity,
+	tags util.ActivityTags,
+	cm util.ActivityContentMap,
+) (evt *pb.CloudEvent, err error) {
 	//
 	src := actor.ID.String()
 	if strings.HasPrefix(src, prefixSrcBridgy) {
@@ -146,6 +158,24 @@ func (svc service) ConvertActivityToEvent(ctx context.Context, actor vocab.Actor
 			}
 		}
 	}
+
+	// missing language detection attempt
+	if _, langOk := evt.Attributes[CeKeyLanguage]; !langOk && len(cm.ContentMap) > 0 {
+		for langCode := range cm.ContentMap {
+			if len(langCode) > 1 {
+				if len(langCode) > 2 {
+					langCode = langCode[:2]
+				}
+				evt.Attributes[CeKeyLanguage] = &pb.CloudEventAttributeValue{
+					Attr: &pb.CloudEventAttributeValue_CeString{
+						CeString: langCode,
+					},
+				}
+				break
+			}
+		}
+	}
+
 	// honor the privacy: discard any publication that is not explicitly public
 	if !public && !publicObj {
 		evt = nil

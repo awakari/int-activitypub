@@ -62,6 +62,9 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 		return
 	}
 
+	var cm util.ActivityContentMap
+	_ = sonic.Unmarshal(data, &cm)
+
 	t := activity.Type
 	if t == "" || t == vocab.DeleteType && activity.Actor.GetID() == activity.Object.GetID() {
 		ctx.Status(http.StatusAccepted)
@@ -93,7 +96,7 @@ func (h inboxHandler) Handle(ctx *gin.Context) {
 	}
 
 	var post func()
-	post, err = h.svc.HandleActivity(ctx, actorIdLocal, pubKeyId, actor, actorTags, activity, tags)
+	post, err = h.svc.HandleActivity(ctx, actorIdLocal, pubKeyId, actor, actorTags, activity, tags, cm)
 	switch {
 	case errors.Is(err, subscriptions.ErrConflict):
 		ctx.String(http.StatusConflict, err.Error())
