@@ -67,6 +67,7 @@ type service struct {
 
 const lastUpdateThreshold = 1 * time.Hour
 const backoffInitDelay = 100 * time.Millisecond
+const defaultResultsInterval = 1 * time.Minute
 
 var ErrInvalid = errors.New("invalid argument")
 var ErrNoAccept = errors.New("follow request is not accepted yet")
@@ -215,7 +216,7 @@ func (svc service) handleFollowActivity(ctx context.Context, actorIdLocal, pubKe
 	d, _ := sonic.Marshal(activity)
 	fmt.Printf("Follow activity payload: %s\n", d)
 	cbUrl := svc.makeCallbackUrl(actorId)
-	err = svc.svcSubs.Subscribe(ctx, actorIdLocal, model.GroupIdDefault, model.UserIdDefault, cbUrl, 0)
+	err = svc.svcSubs.Subscribe(ctx, actorIdLocal, model.GroupIdDefault, model.UserIdDefault, cbUrl, defaultResultsInterval)
 	var actor vocab.Actor
 	if err == nil {
 		actor, _, err = svc.ap.FetchActor(ctx, vocab.IRI(actorId), pubKeyId)
